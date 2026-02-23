@@ -1,9 +1,10 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
-from func_cp.controllers.acp_mpc import AdaptiveCPMPC
-from visualization_utils import render
+from controllers.acp_mpc import AdaptiveCPMPC
+from sims.visualization_utils import render
 
 
 def run_acp_mpc(
@@ -41,7 +42,12 @@ def run_acp_mpc(
     metric_dict = dict()
 
     trajectories = []
+
+    
     for scene_idx, scenario_begin in enumerate(scenarios):
+
+        ctrl_times_ms = []
+        loop_times_ms = []
         xys = []
         eval_metrics = {
             'collisions': [],
@@ -114,14 +120,22 @@ def run_acp_mpc(
                     if not done:
                         eval_metrics['collisions'].append(collision)
 
-                    velocity, info = controller(pos_x=position_x,
-                                                pos_y=position_y,
-                                                orientation_z=orientation_z,
-                                                boxes=[],  # TODO
-                                                predictions=p_dict,
-                                                confidence_intervals=confidence_intervals,
-                                                goal=goal_pos
-                                                )
+
+                    t_loop0 = time.perf_counter()
+
+                    t0 = time.perf_counter()
+                    velocity, info = controller(
+                        pos_x=position_x,
+                        pos_y=position_y,
+                        orientation_z=orientation_z,
+                        boxes=[],
+                        predictions=p_dict,
+                        confidence_intervals=confidence_intervals,
+                        goal=goal_pos
+                    )
+                    t1 = time.perf_counter()
+                    ctrl_times_ms.append((t1 - t0) * 1000.0)
+
 
                     if not done:
                         infeasible = False if info['feasible'] else True
@@ -135,6 +149,7 @@ def run_acp_mpc(
                     if count >= 15 and not done:
                         cost = info['cost']
                         eval_metrics['costs'].append(cost)
+                        loop_times_ms.append((time.perf_counter() - t_loop0) * 1000.0)
 
                 linear_x, angular_z = velocity
 
@@ -155,6 +170,9 @@ def run_acp_mpc(
 
         trajectories.append(xys)
 
+
+        eval_metrics["timing_ctrl_ms"] = np.asarray(ctrl_times_ms, dtype=np.float32)
+        eval_metrics["timing_loop_ms"] = np.asarray(loop_times_ms, dtype=np.float32)
         metric_dict[scene_idx] = eval_metrics
 
     plt.clf(), plt.cla()

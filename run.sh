@@ -21,15 +21,15 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-datasets=("zara1" "zara2" "hotel" "univ" "eth")
-controllers=("ecp-mpc" "acp-mpc" "cc")
+datasets=("zara1" "zara2" "univ" "eth")
+controllers=("ecp-mpc" "acp-mpc" "cc" "fcp-mpc")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 for dataset in "${datasets[@]}"; do
     for controller in "${controllers[@]}"; do
         echo "Evaluating dataset: $dataset / controller: $controller"
 
-        cmd=(python "$SCRIPT_DIR/evaluate_controller.py" \
+        cmd=(python "$SCRIPT_DIR/runner_2d.py" \
              --dataset "$dataset" \
              --controller "$controller")
         if [[ -n $VISUALIZE_FLAG ]]; then

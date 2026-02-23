@@ -14,7 +14,7 @@ from quad_env import (
     distance_field_points_3d,
 )
 
-from cp.functional_cp import get_envelopes_value_and_function
+from cp.functional_cp import get_envelopes_value_and_function, compute_cp_upper_envelopes
 from controllers.func_3d_mpc import FunctionalCPMPC3D
 
 import rerun as rr
@@ -442,6 +442,7 @@ def run_one_episode_visual_3d(
     save_rrd: bool = False,
     rrd_path: str = "cp_mpc_3d.rrd",
     only_log_every: int = 1,
+    visualize: bool = False,
 ):
     safe_rad = ROBOT_RAD + OBSTACLE_RAD
 
@@ -480,23 +481,26 @@ def run_one_episode_visual_3d(
         vz_lim=(-MAX_VZ, MAX_VZ),
     )
 
-    g_upper_grid, cp_params = get_envelopes_value_and_function(
-        residuals_train=residuals,
-        p_base=p_base,
-        K=k_mix,
-        alpha=alpha,
-        test_size=test_size,
-        random_state=random_state,
-        n_jobs=n_jobs,
-        backend=backend,
-    )
-    g_upper_grid = g_upper_grid.astype(np.float32)
+
+    g_upper_grid = None
+
+    if CP:
+        g_upper_grid = compute_cp_upper_envelopes(
+            residuals_train=residuals,
+            p_base=p_base,
+            K=k_mix,
+            alpha=alpha,
+            test_size=test_size,
+            random_state=random_state,
+            n_jobs=n_jobs,
+            backend=backend,
+        )
 
     # ----------------------------
     # 2) Controller Setup
     # ----------------------------
     ctrl = FunctionalCPMPC3D(
-        cp_params=cp_params,
+        cp_upper_grid=g_upper_grid,
         xs=xs,
         ys=ys,
         zs=zs,
@@ -520,12 +524,14 @@ def run_one_episode_visual_3d(
     obs = env.reset()
     goal = np.asarray(obs.get("goal_xyz", [0, 0, 0]), dtype=np.float32).reshape(3,)
 
-    episode_history: List[Dict] = []
+    episode_history: List[Dict] = [] if visualize else None
     timing = {"ctrl_ms": [], "step_ms": [], "loop_ms": []}
     vx_global, vy_global, vz_global, yaw_rate = 0.0, 0.0, 0.0, 0.0
 
     n_collisions = 0
     n_infeasible = 0
+    reached_goal = False
+    steps = 0
 
     for k in range(max_steps):
         t_loop0 = time.perf_counter()
@@ -534,7 +540,7 @@ def run_one_episode_visual_3d(
         yaw = float(obs["robot_yaw"])
 
         if np.linalg.norm(robot - goal) <= goal_finish_dist:
-            print(f"Goal reached at step {k}")
+            reached_goal = True
             break
 
         obs_now = _get_obs_positions_from_history(obs)                           # current obstacles (after step)
@@ -586,66 +592,80 @@ def run_one_episode_visual_3d(
         timing["step_ms"].append(step_ms)
         timing["loop_ms"].append(loop_ms)
 
-        episode_history.append(
-            {
-                "step": k,
-                "obs": _deepcopy_obs_dict(obs),
-                "robot": robot,
-                "yaw": yaw,
-                "act": act_to_store,
-                "feasible": bool(is_feasible),
-                "pred": pred,
-                "pred_mask": pred_mask,
-                "timing": {"ctrl_ms": ctrl_ms, "step_ms": step_ms, "loop_ms": loop_ms},
-            }
-        )
+        if visualize:
 
-    total_frames = len(episode_history)
+            episode_history.append(
+                {
+                    "step": k,
+                    "obs": _deepcopy_obs_dict(obs),
+                    "robot": robot,
+                    "yaw": yaw,
+                    "act": act_to_store,
+                    "feasible": bool(is_feasible),
+                    "pred": pred,
+                    "pred_mask": pred_mask,
+                    "timing": {"ctrl_ms": ctrl_ms, "step_ms": step_ms, "loop_ms": loop_ms},
+                }
+            )
+        steps +=1
 
-    print(f"{n_collisions} collisions, {n_infeasible} infeasibility {total_frames} step")
+    total_frames = steps
 
-    def _summ(x: List[float], name: str):
-        arr = np.asarray(x, dtype=np.float64)
-        if arr.size == 0:
-            print(f"[timing] {name}: no data")
-            return
-        p50, p90, p99 = np.percentile(arr, [50, 90, 99])
-        print(
-            f"[timing] {name}: mean={arr.mean():.3f} ms | "
-            f"p50={p50:.3f} | p90={p90:.3f} | p99={p99:.3f} | max={arr.max():.3f}"
-        )
+    if visualize:
 
-    print("\n==== Online compute timing (ms) ====")
-    _summ(timing["ctrl_ms"], "controller (FunctionalCPMPC3D)")
-    _summ(timing["step_ms"], "env.step (physics)")
-    _summ(timing["loop_ms"], "total loop")
-    print("===================================\n")
-    print(f"Simulation finished. Total frames: {total_frames}. Starting Rerun Visualization...")
+        print(f"{n_collisions} collisions, {n_infeasible} infeasibility {total_frames} step")
+
+        def _summ(x: List[float], name: str):
+            arr = np.asarray(x, dtype=np.float64)
+            if arr.size == 0:
+                print(f"[timing] {name}: no data")
+                return
+            p50, p90, p99 = np.percentile(arr, [50, 90, 99])
+            print(
+                f"[timing] {name}: mean={arr.mean():.3f} ms | "
+                f"p50={p50:.3f} | p90={p90:.3f} | p99={p99:.3f} | max={arr.max():.3f}"
+            )
+
+        print("\n==== Online compute timing (ms) ====")
+        _summ(timing["ctrl_ms"], "controller (FunctionalCPMPC3D)")
+        _summ(timing["step_ms"], "env.step (physics)")
+        _summ(timing["loop_ms"], "total loop")
+        print("===================================\n")
+        print(f"Simulation finished. Total frames: {total_frames}. Starting Rerun Visualization...")
 
     # ----------------------------
     # 4) Rerun Visualization (Replay)
     # ----------------------------
-    visualize_with_rerun(
-        episode_history=episode_history,
-        goal=goal,
-        xs=xs,
-        ys=ys,
-        zs=zs,
-        X=X,
-        Y=Y,
-        Z=Z,
-        g_upper_grid=g_upper_grid,
-        safe_rad=safe_rad,
-        nx=nx,
-        ny=ny,
-        nz=nz,
-        i_view=i_view,
-        mc_stride=mc_stride,
-        CP=CP,
-        save_rrd=save_rrd,
-        rrd_path=rrd_path,
-        only_log_every=only_log_every,
-    )
+
+        visualize_with_rerun(
+            episode_history=episode_history,
+            goal=goal,
+            xs=xs,
+            ys=ys,
+            zs=zs,
+            X=X,
+            Y=Y,
+            Z=Z,
+            g_upper_grid=g_upper_grid,
+            safe_rad=safe_rad,
+            nx=nx,
+            ny=ny,
+            nz=nz,
+            i_view=i_view,
+            mc_stride=mc_stride,
+            CP=CP,
+            save_rrd=save_rrd,
+            rrd_path=rrd_path,
+            only_log_every=only_log_every,
+        )
+    return {
+        "reached_goal": bool(reached_goal),
+        "steps": int(total_frames),
+        "collisions": int(n_collisions),
+        "infeasible_steps": int(n_infeasible),
+        "ctrl_times_ms": list(timing["ctrl_ms"]),
+        "loop_times_ms": list(timing["loop_ms"]),
+    }
 
 
 if __name__ == "__main__":
@@ -654,7 +674,7 @@ if __name__ == "__main__":
         horizon=20,
         n_obs=280,
         world_bounds_xyz=((-3, 7), (-3, 7), (0.0, 8.0)),
-        seed=5,
+        seed=2,
 
         pred_model_noise=0.20,
 
@@ -689,8 +709,9 @@ if __name__ == "__main__":
         n_calib_samples=120,
         goal_finish_dist=0.3,
         mc_stride=2,
-        CP=True,
+        CP=False,
         save_rrd=False,
         rrd_path="nocp_mpc_3d.rrd",
         only_log_every=1,
+        visualize=True,
     )

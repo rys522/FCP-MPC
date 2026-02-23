@@ -1,9 +1,11 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
-from visualization_utils import render
-from func_cp.controllers.cc import ConformalController
+from sims.visualization_utils import render
+from controllers.cc import ConformalController
+
 
 
 def run_cc(
@@ -42,8 +44,11 @@ def run_cc(
     metric_dict = dict()
 
     trajectories = []
+
     for scene_idx, scenario_begin in enumerate(scenarios):
         xys = []
+        ctrl_times_ms = []
+        loop_times_ms = []
         eval_metrics = {
             'collisions': [],
             'costs': [],
@@ -109,13 +114,20 @@ def run_cc(
                     if not done:
                         eval_metrics['collisions'].append(collision)
 
-                    velocity, info = controller(pos_x=position_x,
-                                                pos_y=position_y,
-                                                orientation_z=orientation_z,
-                                                boxes=[],  # TODO
-                                                predictions=p_dict,
-                                                goal=goal_pos
-                                                )
+                    t_loop0 = time.perf_counter()
+
+                    t0 = time.perf_counter()
+                    velocity, info = controller(
+                        pos_x=position_x,
+                        pos_y=position_y,
+                        orientation_z=orientation_z,
+                        boxes=[],
+                        predictions=p_dict,
+                        goal=goal_pos
+                    )
+                    t1 = time.perf_counter()
+
+                    ctrl_times_ms.append((t1 - t0) * 1000.0)
                 conformal_info = controller.update_conformal_var(position_x, position_y, h_dict)
 
                 if not info['feasible']:
@@ -125,9 +137,11 @@ def run_cc(
                     if count >= 15 and not done:
                         cost = info['cost']
                         eval_metrics['costs'].append(cost)
+                        loop_times_ms.append((time.perf_counter() - t_loop0) * 1000.0)
 
                 infeasible = False if info['feasible'] else True
                 eval_metrics['infeasible'].append(infeasible)
+
 
 
                 linear_x, angular_z = velocity
@@ -147,6 +161,9 @@ def run_cc(
                 count += 1
 
             ts_key += 1
+
+        eval_metrics["timing_ctrl_ms"] = np.asarray(ctrl_times_ms, dtype=np.float32)
+        eval_metrics["timing_loop_ms"] = np.asarray(loop_times_ms, dtype=np.float32)
         metric_dict[scene_idx] = eval_metrics
         trajectories.append(xys)
 

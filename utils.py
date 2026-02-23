@@ -5,6 +5,8 @@ from matplotlib.animation import FuncAnimation
 from typing import Optional, Tuple, Sequence
 from matplotlib.transforms import Affine2D
 
+import time
+
 
 
 def build_grid(ego_box: float, H: int, W: int):
@@ -617,3 +619,16 @@ def render_cp_comparison_paper_multi(
         fig.savefig(savepath, bbox_inches="tight", pad_inches=0.02)
 
     return fig, axes
+
+
+def _stats_ms(arr):
+    a = np.asarray(arr, dtype=np.float64)
+    if a.size == 0:
+        return {"mean": np.nan, "p50": np.nan, "p90": np.nan, "p99": np.nan, "max": np.nan}
+    return {
+        "mean": float(np.mean(a)),
+        "p50": float(np.percentile(a, 50)),
+        "p90": float(np.percentile(a, 90)),
+        "p99": float(np.percentile(a, 99)),
+        "max": float(np.max(a)),
+    }

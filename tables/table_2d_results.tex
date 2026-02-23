@@ -1,0 +1,25 @@
+\begin{tabular}{llcccc}
+\hline
+Dataset & Method & Collision rate $\downarrow$ & Infeasible rate $\downarrow$ & Steps to goal $\downarrow$ & Ctrl.\ time (ms) $\downarrow$ \\
+\hline
+zara1 & CC-MPC & 0.076 & \textbf{0.000} & 91.0 & N/A \\
+ & ECP-MPC & \textbf{0.063} & 0.136 & \textbf{58.7} & \textbf{42.35} \\
+ & ACP-MPC & 0.135 & 0.491 & 91.3 & N/A \\
+ & FCP-MPC (ours) & 0.181 & \textbf{0.000} & 63.0 & N/A \\
+\hline
+zara2 & CC-MPC & \textbf{0.064} & \textbf{0.000} & 97.3 & N/A \\
+ & ECP-MPC & 0.201 & 0.322 & \textbf{81.7} & \textbf{47.26} \\
+ & ACP-MPC & 0.247 & 0.672 & 93.3 & N/A \\
+ & FCP-MPC (ours) & 0.233 & \textbf{0.000} & 83.7 & N/A \\
+\hline
+eth & CC-MPC & 0.118 & \textbf{0.000} & 99.0 & N/A \\
+ & ECP-MPC & 0.103 & 0.241 & 65.0 & \textbf{37.32} \\
+ & ACP-MPC & 0.093 & 0.359 & 79.0 & N/A \\
+ & FCP-MPC (ours) & \textbf{0.000} & \textbf{0.000} & \textbf{13.3} & N/A \\
+\hline
+univ & CC-MPC & 0.077 & \textbf{0.000} & timeout & N/A \\
+ & ECP-MPC & 0.351 & 0.629 & 263.0 & 63.00 \\
+ & ACP-MPC & \textbf{0.011} & 0.344 & timeout & N/A \\
+ & FCP-MPC (ours) & 0.305 & \textbf{0.000} & \textbf{95.0} & \textbf{11.62} \\
+\hline
+\end{tabular}

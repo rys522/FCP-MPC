@@ -368,7 +368,7 @@ def run_one_episode_visual_from_file(
     all_data = load_prediction_results(dataset)
     pred_all = all_data["prediction"]
     hist_all = all_data["history"]
-    fut_all = all_data["future"]  # <-- IMPORTANT: use future dict to align time axis
+    fut_all = all_data["future"]
 
     # --------- AUTO world/grid inference (CRITICAL FIX) ----------
     points_xy = _collect_points_for_bounds(
@@ -392,24 +392,30 @@ def run_one_episode_visual_from_file(
     print(f"[world] inferred box={box:.2f}, world_center={world_center.tolist()}")
 
     # Offline calibration (same world/grid!)
-    g_upper_grid, cp_params = calibrate_cp_from_file(
-        all_data=all_data,
-        Xg=Xg,
-        Yg=Yg,
-        world_center=world_center,
-        time_horizon=time_horizon,
-        p_base=p_base,
-        k_mix=k_mix,
-        alpha=alpha,
-        test_size=test_size,
-        random_state=random_state,
-        n_jobs=n_jobs,
-        backend=backend,
-    )
+
+    if CP:
+        g_upper_grid, cp_params = calibrate_cp_from_file(
+            all_data=all_data,
+            Xg=Xg,
+            Yg=Yg,
+            world_center=world_center,
+            time_horizon=time_horizon,
+            p_base=p_base,
+            k_mix=k_mix,
+            alpha=alpha,
+            test_size=test_size,
+            random_state=random_state,
+            n_jobs=n_jobs,
+            backend=backend,
+        )
+    else:
+        g_upper_grid = None
+        cp_params = None
+    
 
     # Controller init (use inferred box/world_center)
     ctrl = FunctionalCPMPC(
-        cp_params=cp_params,
+        cp_upper_grid=g_upper_grid,
         box=box,
         world_center=world_center,
         n_steps=time_horizon,

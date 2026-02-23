@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import time
-from cp.functional_cp import CPStepParameters
 
 
 @dataclass
@@ -20,7 +19,7 @@ class FunctionalCPMPC3D:
     def __init__(
         self,
         *,
-        cp_params: List[CPStepParameters],
+        cp_upper_grid: Optional[np.ndarray],
         xs: np.ndarray, ys: np.ndarray, zs: np.ndarray,
         n_steps: int,
         dt: float,
@@ -37,7 +36,14 @@ class FunctionalCPMPC3D:
         default_U: float = 1.0,
         endpoint_sigma: float = 1.0,
     ):
-        self.params: Dict[int, CPStepParameters] = {int(p.t_idx): p for p in cp_params}
+        if cp_upper_grid is None:
+            self.U_grid = None
+        else:
+            U = np.asarray(cp_upper_grid, dtype=np.float32)
+            if U.ndim != 4:
+                raise ValueError(f"g_upper_grid must have shape (T,nz,ny,nx), got {U.shape}")
+            self.U_grid = U
+
 
         self.xs = np.asarray(xs, dtype=np.float32)
         self.ys = np.asarray(ys, dtype=np.float32)
@@ -140,45 +146,83 @@ class FunctionalCPMPC3D:
 
         idx = (k * self.ny + j) * self.nx + i
         return idx.astype(np.int64)
-
+    
     def evaluate_U_batch(self, pos_world: np.ndarray, t_idx: int) -> np.ndarray:
         """
+        Lookup U(x) from precomputed grid g_upper_grid via trilinear interpolation.
+
         pos_world: (N,3)
-        returns:
-          U: (N,) float32
+        returns:   (N,) float32
         """
         pos_world = np.asarray(pos_world, dtype=np.float32)
         N = pos_world.shape[0]
 
-        p = self.params.get(int(t_idx))
-        if p is None:
-            return np.full((N,), self.default_U, dtype=np.float32)
+        # If CP disabled or no grid, return zeros (no tightening) or default_U
+        if (not self.CP) or (self.U_grid is None):
+            return np.zeros((N,), dtype=np.float32)
 
-        ijk_float, valid = self._world_to_grid_ijk_float_batch(pos_world)
-        idx = self._grid_flat_index_batch(ijk_float)  # (N,)
+        # clamp t index
+        T = int(self.U_grid.shape[0])
+        t = int(np.clip(int(t_idx), 0, T - 1))
 
-        # phi: (D,N)
-        phi = p.phi_basis[:, idx].astype(np.float32, copy=False)
+        ijk_float, valid = self._world_to_grid_ijk_float_batch(pos_world)  # (N,3), (N,)
+        kf = ijk_float[:, 0]
+        jf = ijk_float[:, 1]
+        if_ = ijk_float[:, 2]
 
-        # centers: (K,N)
-        mus = np.asarray(p.mus, dtype=np.float32)
-        centers = mus @ phi
+        # floor indices
+        k0 = np.floor(kf).astype(np.int64)
+        j0 = np.floor(jf).astype(np.int64)
+        i0 = np.floor(if_).astype(np.int64)
 
-        # quads: (K,N) where quad_k(n) = phi_n^T Sigma_k phi_n
-        sigmas = np.asarray(p.sigmas, dtype=np.float32)
-        tmp = np.einsum("kij,jn->kin", sigmas, phi, optimize=True)   # (K,D,N)
-        quads = np.einsum("in,kin->kn", phi, tmp, optimize=True)     # (K,N)
+        # frac
+        tz = (kf - k0.astype(np.float32)).astype(np.float32)
+        ty = (jf - j0.astype(np.float32)).astype(np.float32)
+        tx = (if_ - i0.astype(np.float32)).astype(np.float32)
 
-        rks = np.asarray(p.rks, dtype=np.float32).reshape(-1, 1)     # (K,1)
-        upper = centers + rks * np.sqrt(np.maximum(quads, 0.0))      # (K,N)
+        # upper neighbors
+        k1 = np.clip(k0 + 1, 0, self.nz - 1)
+        j1 = np.clip(j0 + 1, 0, self.ny - 1)
+        i1 = np.clip(i0 + 1, 0, self.nx - 1)
 
-        U = (float(p.epsilon) + np.max(upper, axis=0)).astype(np.float32)  # (N,)
+        # clamp lower neighbors too (numerical safety)
+        k0 = np.clip(k0, 0, self.nz - 1)
+        j0 = np.clip(j0, 0, self.ny - 1)
+        i0 = np.clip(i0, 0, self.nx - 1)
 
-        # out-of-bounds -> default_U (match your old scalar behavior)
+        U = self.U_grid[t]  # (nz,ny,nx)
+
+        # gather 8 corners
+        c000 = U[k0, j0, i0]
+        c001 = U[k0, j0, i1]
+        c010 = U[k0, j1, i0]
+        c011 = U[k0, j1, i1]
+        c100 = U[k1, j0, i0]
+        c101 = U[k1, j0, i1]
+        c110 = U[k1, j1, i0]
+        c111 = U[k1, j1, i1]
+
+        # trilinear interpolation
+        wx0 = (1.0 - tx); wx1 = tx
+        wy0 = (1.0 - ty); wy1 = ty
+        wz0 = (1.0 - tz); wz1 = tz
+
+        c00 = c000 * wx0 + c001 * wx1
+        c01 = c010 * wx0 + c011 * wx1
+        c10 = c100 * wx0 + c101 * wx1
+        c11 = c110 * wx0 + c111 * wx1
+
+        c0 = c00 * wy0 + c01 * wy1
+        c1 = c10 * wy0 + c11 * wy1
+
+        out = (c0 * wz0 + c1 * wz1).astype(np.float32)
+
+        # out-of-bounds -> default_U (너의 기존 정책 유지)
         if not np.all(valid):
-            U = U.copy()
-            U[~valid] = self.default_U
-        return U
+            out = out.copy()
+            out[~valid] = self.default_U
+
+        return out
 
 
     def _solve_quintic_coeffs(self, start_pos, start_vel, start_acc, end_pos, end_vel, end_acc, T):

@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 import time
 
-from visualization_utils import render
-from func_cp.controllers.ecp_mpc import EgocentricCPMPC
+from sims.visualization_utils import render
+from controllers.ecp_mpc import EgocentricCPMPC
 
 
 def run_ecp_mpc(
@@ -40,6 +40,9 @@ def run_ecp_mpc(
     trajectories = []
 
     for scene_idx, scenario_begin in enumerate(scenarios):
+        ctrl_times_ms = []
+        loop_times_ms = [] 
+
         xys = []
         eval_metrics = {
             'collisions': [],
@@ -86,6 +89,8 @@ def run_ecp_mpc(
                 h_dict = histories_dict[ts_key]
                 f_dict = futures_dict[ts_key]
 
+
+
                 err = controller.update_observations(h_dict)
                 eval_metrics['miscoverage'].append(np.mean(err))
 
@@ -112,6 +117,8 @@ def run_ecp_mpc(
                         eval_metrics['collisions'].append(collision)
 
                     begin = time.time()
+                    t_loop0 = time.perf_counter()
+                    t0 = time.perf_counter()
                     velocity, info = controller(pos_x=position_x,
                                                 pos_y=position_y,
                                                 orientation_z=orientation_z,
@@ -124,6 +131,10 @@ def run_ecp_mpc(
 
                     # print('computation time: {:.5f}sec /'.format(comp_time), end=' ')
 
+                    t1 = time.perf_counter()
+
+                    ctrl_times_ms.append((t1 - t0) * 1000.0)
+
                     if not done:
                         infeasible = 0. if info['feasible'] else 1.
                         eval_metrics['infeasible'].append(infeasible)
@@ -135,6 +146,7 @@ def run_ecp_mpc(
                     if count >= 15 and not done:
                         cost = info['cost']
                         eval_metrics['costs'].append(cost)
+                        loop_times_ms.append((time.perf_counter() - t_loop0) * 1000.0)
                     # velocity = np.array([1., 0.])
                     # print('linear_x={} / angular_z={} (feasible)'.format(*velocity))
 
@@ -159,6 +171,8 @@ def run_ecp_mpc(
                 count += 1
             ts_key += 1
 
+        eval_metrics["timing_ctrl_ms"] = np.asarray(ctrl_times_ms, dtype=np.float32)
+        eval_metrics["timing_loop_ms"] = np.asarray(loop_times_ms, dtype=np.float32)
         trajectories.append(xys)
         metric_dict[scene_idx] = eval_metrics
 
