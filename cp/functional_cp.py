@@ -338,6 +338,44 @@ class PCAGMMResidualCP:
 
     # ---------- core extraction ----------
 
+    def _fit_gmm_exact(self, Xi_train: np.ndarray, K_val: int) -> GaussianMixture:
+        return GaussianMixture(
+            n_components=K_val,
+            covariance_type="full",
+            random_state=self.cfg.random_state,
+        ).fit(Xi_train)
+
+    def _fit_gmm_robust(self, Xi_train: np.ndarray) -> Tuple[GaussianMixture, int, bool]:
+        K_init = int(min(self.cfg.K, len(Xi_train)))
+        if K_init < 1:
+            raise ValueError("Need at least one training sample to fit GMM.")
+
+        try:
+            return self._fit_gmm_exact(Xi_train, K_init), K_init, False
+        except (ValueError, np.linalg.LinAlgError) as err:
+            last_err = err
+
+        Xi64 = np.asarray(Xi_train, dtype=np.float64)
+        unique_count = int(np.unique(Xi64, axis=0).shape[0])
+        K_max = max(1, min(K_init, unique_count if unique_count > 0 else 1))
+        reg_base = max(float(self.cfg.cov_jitter), 1e-6)
+        reg_candidates = tuple(sorted({reg_base, 1e-5, 1e-4, 1e-3}))
+
+        for K_val in range(K_max, 0, -1):
+            for reg_covar in reg_candidates:
+                try:
+                    gmm = GaussianMixture(
+                        n_components=K_val,
+                        covariance_type="full",
+                        random_state=self.cfg.random_state,
+                        reg_covar=reg_covar,
+                    ).fit(Xi64)
+                    return gmm, K_val, True
+                except (ValueError, np.linalg.LinAlgError) as err:
+                    last_err = err
+
+        raise last_err
+
     def _extract_params_for_idx(self, t_idx: int) -> CPStepParameters:
         self._assert_fitted()
         N, Yw, grid_shape, D = self._get_flat_view(t_idx)
@@ -361,26 +399,27 @@ class PCAGMMResidualCP:
         )
         epsilon = float(np.quantile(err_cal, 1.0 - alpha_eps))
 
-        # 3) Fit GMM and choose lambda (density superlevel) via calibration
-        K_val = int(min(self.cfg.K, len(Xi_train)))
-        gmm = GaussianMixture(
-            n_components=K_val,
-            covariance_type="full",
-            random_state=self.cfg.random_state,
-        ).fit(Xi_train)
+        # 3) Fit GMM and choose lambda (density superlevel) via calibration.
+        # Keep the original path unchanged; only fall back if that fit would fail.
+        gmm, K_val, used_fallback = self._fit_gmm_robust(Xi_train)
 
-        weighted_log_probs = gmm._estimate_weighted_log_prob(Xi_cal) # (N_cal, K)
+        Xi_cal_eval = Xi_cal
+        if used_fallback and Xi_cal_eval.dtype != gmm.means_.dtype:
+            Xi_cal_eval = Xi_cal_eval.astype(gmm.means_.dtype, copy=False)
+
+        weighted_log_probs = gmm._estimate_weighted_log_prob(Xi_cal_eval) # (N_cal, K)
         max_log_weighted_probs = np.max(weighted_log_probs, axis=1)  # (N_cal,)
         
         lam = float(np.exp(np.quantile(max_log_weighted_probs, alpha_gmm)))
 
+        sigmas = gmm.covariances_ + self.cfg.cov_jitter * np.eye(p_eff)
 
         rks = np.zeros(K_val, dtype=np.float32)
         for k in range(K_val):
             pi_k = float(gmm.weights_[k])
             threshold_k = lam / pi_k 
             
-            Sigma_k = gmm.covariances_[k] + self.cfg.cov_jitter * np.eye(p_eff)
+            Sigma_k = sigmas[k]
             logZk = _log_norm_const(Sigma_k, p_eff)
             
             val_log = math.log(max(threshold_k, 1e-300)) + logZk
@@ -392,7 +431,7 @@ class PCAGMMResidualCP:
             phi_basis=phi_basis.astype(np.float32),
             epsilon=float(epsilon),
             mus=gmm.means_.astype(np.float32),
-            sigmas=(gmm.covariances_ + self.cfg.cov_jitter * np.eye(p_eff)).astype(np.float32),
+            sigmas=sigmas.astype(np.float32),
             rks=rks.astype(np.float32),
             K=K_val,
             p_eff=p_eff,
