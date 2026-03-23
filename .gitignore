@@ -11,3 +11,7 @@
 **/metric_2d
 **/*.txt
 **/*.json
+**/*.tex
+**/*.txt
+**/*.pdf
+**/*.mov

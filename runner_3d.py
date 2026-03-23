@@ -516,6 +516,7 @@ def main():
     ap.add_argument("--out-dt-fail-frac", type=float, default=0.10)
     ap.add_argument("--fail-on", type=str, default="loop", choices=["loop", "ctrl"])
     ap.add_argument("--dump-json", action="store_true", default=True)
+    ap.add_argument("--n-obs", type=int, default=280, help="Number of dynamic obstacles")
     args = ap.parse_args()
 
     selected = _parse_methods_arg(args.methods)
@@ -528,7 +529,7 @@ def main():
     seeds = list(range(args.seed_from, args.seed_to + 1))
 
     env_base = dict(
-        dt=0.1, horizon=20, n_obs=280,
+        dt=0.1, horizon=20, n_obs=args.n_obs,
         world_bounds_xyz=((-3, 7), (-3, 7), (0, 8)),
         pred_model_noise=0.20, obs_process_noise=0.22, gt_future_noise=0.20,
         mode_switch_p=0.95, mode_min_ttl=1, mode_max_ttl=6,
