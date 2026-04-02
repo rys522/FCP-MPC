@@ -9,8 +9,8 @@ import time
 
 from utils import build_grid, distance_field_points
 from sims.sim_utils import min_dist_robot_to_peds, unicycle_step
-from cp.functional_cp import compute_cp_upper_envelopes, CPStepParameters
-from controllers.func_cp_mpc_hard import FunctionalCPMPC
+from cp.functional_cp import CPStepParameters, get_envelopes_value_and_function
+from controllers.func_cp_mpc import FunctionalCPMPC
 
 
 # -------------------------
@@ -156,38 +156,55 @@ def calibrate_or_load_cp(
     random_state: int,
     n_jobs: int,
     backend: str,
-) -> np.ndarray:
+) -> Tuple[np.ndarray, List[CPStepParameters]]:
+    def _fit_and_cache() -> Tuple[np.ndarray, List[CPStepParameters]]:
+        all_scenes = sorted(list(all_data["prediction"].keys()))
+        residuals = build_training_residuals_from_file(
+            all_data_dict=all_data,
+            scene_ids=all_scenes,
+            Xg=Xg,
+            Yg=Yg,
+            world_center=world_center,
+            time_horizon=time_horizon,
+        )
+
+        g_upper_grid, cp_params = get_envelopes_value_and_function(
+            residuals_train=residuals,
+            p_base=p_base,
+            K=k_mix,
+            alpha=alpha,
+            test_size=test_size,
+            random_state=random_state,
+            n_jobs=n_jobs,
+            backend=backend,
+        )
+
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        with open(cache_path, "wb") as f:
+            pickle.dump(
+                {
+                    "g_upper_grid": g_upper_grid.astype(np.float32),
+                    "cp_params": cp_params,
+                },
+                f,
+            )
+
+        return g_upper_grid.astype(np.float32), cp_params
+
     if os.path.isfile(cache_path):
         with open(cache_path, "rb") as f:
             obj = pickle.load(f)
-        return obj["g_upper_grid"]
 
-    all_scenes = sorted(list(all_data["prediction"].keys()))
-    residuals = build_training_residuals_from_file(
-        all_data_dict=all_data,
-        scene_ids=all_scenes,
-        Xg=Xg,
-        Yg=Yg,
-        world_center=world_center,
-        time_horizon=time_horizon,
-    )
+        g_upper_grid = obj.get("g_upper_grid")
+        cp_params = obj.get("cp_params")
 
-    g_upper_grid = compute_cp_upper_envelopes(
-        residuals_train=residuals,
-        p_base=p_base,
-        K=k_mix,
-        alpha=alpha,
-        test_size=test_size,
-        random_state=random_state,
-        n_jobs=n_jobs,
-        backend=backend,
-    )
+        if g_upper_grid is not None and cp_params is not None:
+            return np.asarray(g_upper_grid, dtype=np.float32), cp_params
 
-    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-    with open(cache_path, "wb") as f:
-        pickle.dump({"g_upper_grid": g_upper_grid}, f)
+        # Legacy cache missing cp_params – recompute to populate new format.
+        return _fit_and_cache()
 
-    return g_upper_grid
+    return _fit_and_cache()
 
 
 def stack_pred_from_p_dict(p_dict: Dict, horizon: int) -> Tuple[np.ndarray, np.ndarray]:
@@ -286,7 +303,7 @@ def run_fcp_mpc(
             f"{dataset}_H{time_horizon}_G{grid_H}x{grid_W}_a{alpha:.3f}_p{p_base}_k{k_mix}.pkl",
         )
 
-        g_upper_grid = calibrate_or_load_cp(
+        _, cp_params = calibrate_or_load_cp(
             cache_path=cache_path,
             all_data=predictions,
             Xg=Xg,
@@ -304,7 +321,7 @@ def run_fcp_mpc(
 
         # --- controller ---
         ctrl = FunctionalCPMPC(
-            cp_upper_grid=g_upper_grid,
+            cp_params=cp_params,
             box=float(box),
             world_center=world_center,
             grid_H=int(grid_H),

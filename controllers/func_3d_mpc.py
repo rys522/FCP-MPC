@@ -2,9 +2,200 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+from collections import defaultdict
+import copy
 
 import numpy as np
 import time
+
+from cp.functional_cp import CPStepParameters
+
+
+def _build_grid_from_axes(xs: np.ndarray, ys: np.ndarray, zs: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    X, Y, Z = np.meshgrid(xs, ys, zs, indexing="xy")
+    # Match simulator ordering: (nz, ny, nx)
+    return (
+        np.transpose(X, (2, 0, 1)).astype(np.float32),
+        np.transpose(Y, (2, 0, 1)).astype(np.float32),
+        np.transpose(Z, (2, 0, 1)).astype(np.float32),
+    )
+
+
+def distance_field_points_3d(points_xyz: np.ndarray, X: np.ndarray, Y: np.ndarray, Z: np.ndarray) -> np.ndarray:
+    if points_xyz is None or points_xyz.size == 0:
+        return np.full_like(X, np.inf, dtype=np.float32)
+    pts = np.asarray(points_xyz, dtype=np.float32)
+    dx = X[..., None] - pts[:, 0][None, None, None, :]
+    dy = Y[..., None] - pts[:, 1][None, None, None, :]
+    dz = Z[..., None] - pts[:, 2][None, None, None, :]
+    d2 = dx * dx + dy * dy + dz * dz
+    return np.sqrt(np.min(d2, axis=-1)).astype(np.float32)
+
+
+class CPOnlineAdapter3D:
+    """
+    Online adapter that mirrors the 2D adapter but operates on 3D residual grids.
+    """
+
+    def __init__(
+        self,
+        cp_params: List[CPStepParameters],
+        *,
+        xs: np.ndarray,
+        ys: np.ndarray,
+        zs: np.ndarray,
+        target_violation: float = 0.1,
+        eta: float = 0.05,
+        warmup_frames: int = 10,
+        coeff_limits: Tuple[float, float] = (1e-4, 10.0),
+    ):
+        if cp_params is None or len(cp_params) == 0:
+            raise ValueError("CPOnlineAdapter3D requires non-empty cp_params.")
+
+        self.base_params = sorted(copy.deepcopy(cp_params), key=lambda p: int(p.t_idx))
+        self.idx_map = {int(p.t_idx): i for i, p in enumerate(self.base_params)}
+        self.horizon = len(self.base_params)
+
+        self.xs = np.asarray(xs, dtype=np.float32)
+        self.ys = np.asarray(ys, dtype=np.float32)
+        self.zs = np.asarray(zs, dtype=np.float32)
+        self.Xg, self.Yg, self.Zg = _build_grid_from_axes(self.xs, self.ys, self.zs)
+        self.vector_size = int(self.Xg.size)
+
+        self.target_violation = float(target_violation)
+        self.eta = float(eta)
+        self.warmup_frames = max(0, int(warmup_frames))
+        self.coeff_limits = (float(coeff_limits[0]), float(coeff_limits[1]))
+
+        self.current_coeffs: List[np.ndarray] = [
+            np.asarray(p.coeff_upper, dtype=np.float32).copy() for p in self.base_params
+        ]
+
+        self.pending_preds: Dict[int, Dict[int, List[np.ndarray]]] = defaultdict(lambda: defaultdict(list))
+
+    def step(
+        self,
+        frame_idx: int,
+        observed_pts: Optional[np.ndarray],
+        pred_xyz: Optional[np.ndarray],
+        pred_mask: Optional[np.ndarray],
+    ) -> bool:
+        self._register_predictions(frame_idx, pred_xyz, pred_mask)
+        actual_pts = self._extract_actual_points(observed_pts)
+        matured = self._pop_predictions(frame_idx)
+
+        if actual_pts is None or actual_pts.size == 0 or not matured:
+            self._cleanup(frame_idx)
+            return False
+
+        updated = False
+        for step_idx, pred_pts in matured.items():
+            field = self._build_residual_field(pred_pts, actual_pts)
+            if field is None:
+                continue
+            coeff = self._project_coefficients(step_idx, field)
+            if coeff is None:
+                continue
+            if frame_idx >= self.warmup_frames:
+                updated |= self._apply_update(step_idx, coeff)
+
+        self._cleanup(frame_idx)
+        return updated
+
+    def snapshot(self) -> List[CPStepParameters]:
+        params = []
+        for p in self.base_params:
+            idx = self.idx_map[int(p.t_idx)]
+            q = copy.deepcopy(p)
+            q.coeff_upper = self.current_coeffs[idx].copy()
+            params.append(q)
+        return params
+
+    # --- helpers ---
+
+    def _register_predictions(
+        self,
+        frame_idx: int,
+        pred_xyz: Optional[np.ndarray],
+        pred_mask: Optional[np.ndarray],
+    ) -> None:
+        if pred_xyz is None:
+            return
+        arr = np.asarray(pred_xyz, dtype=np.float32)
+        if arr.ndim != 3 or arr.shape[2] < 3:
+            return
+        steps = min(arr.shape[0], self.horizon)
+        mask = None if pred_mask is None else np.asarray(pred_mask, dtype=bool)
+        for step_idx in range(steps):
+            pts = arr[step_idx]
+            if mask is not None:
+                valid = mask[step_idx]
+                pts = pts[valid]
+            if pts.size == 0:
+                continue
+            target_frame = frame_idx + step_idx + 1
+            self.pending_preds[target_frame][step_idx].append(pts[:, :3].copy())
+
+    def _pop_predictions(self, frame_idx: int) -> Dict[int, np.ndarray]:
+        frame_store = self.pending_preds.pop(frame_idx, None)
+        if not frame_store:
+            return {}
+        out: Dict[int, np.ndarray] = {}
+        for step_idx, pts in frame_store.items():
+            if len(pts) == 0:
+                continue
+            out[step_idx] = np.concatenate(pts, axis=0).astype(np.float32)
+        return out
+
+    def _extract_actual_points(self, observed_pts: Optional[np.ndarray]) -> Optional[np.ndarray]:
+        if observed_pts is None:
+            return None
+        arr = np.asarray(observed_pts, dtype=np.float32)
+        if arr.ndim != 2 or arr.shape[1] < 3:
+            return None
+        return arr[:, :3]
+
+    def _build_residual_field(self, pred_pts: np.ndarray, actual_pts: np.ndarray) -> Optional[np.ndarray]:
+        if pred_pts is None or pred_pts.size == 0:
+            return None
+        if actual_pts is None or actual_pts.size == 0:
+            return None
+        sdf_pred = distance_field_points_3d(pred_pts, self.Xg, self.Yg, self.Zg)
+        sdf_true = distance_field_points_3d(actual_pts, self.Xg, self.Yg, self.Zg)
+        return (sdf_pred - sdf_true).astype(np.float32)
+
+    def _project_coefficients(self, step_idx: int, field: np.ndarray) -> Optional[np.ndarray]:
+        idx = self.idx_map.get(int(step_idx))
+        if idx is None:
+            return None
+        vec = field.reshape(-1).astype(np.float32)
+        if vec.shape[0] != self.vector_size:
+            return None
+        params = self.base_params[idx]
+        centered = vec - params.mean.reshape(-1)
+        coeff = centered @ params.phi_basis.T
+        return coeff.astype(np.float32)
+
+    def _apply_update(self, step_idx: int, coeff: np.ndarray) -> bool:
+        idx = self.idx_map.get(int(step_idx))
+        if idx is None:
+            return False
+
+        current = self.current_coeffs[idx]
+        indicator = (np.abs(coeff) > current).astype(np.float32)
+        delta = self.eta * (indicator - self.target_violation)
+        if not np.any(np.abs(delta) > 1e-6):
+            return False
+
+        updated = current + delta
+        updated = np.clip(updated, self.coeff_limits[0], self.coeff_limits[1])
+        self.current_coeffs[idx] = updated.astype(np.float32)
+        return True
+
+    def _cleanup(self, frame_idx: int) -> None:
+        stale = [k for k in list(self.pending_preds.keys()) if k + self.horizon < frame_idx]
+        for key in stale:
+            self.pending_preds.pop(key, None)
 
 
 @dataclass
@@ -19,8 +210,10 @@ class FunctionalCPMPC3D:
     def __init__(
         self,
         *,
-        cp_upper_grid: Optional[np.ndarray],
-        xs: np.ndarray, ys: np.ndarray, zs: np.ndarray,
+        cp_params: Optional[List[CPStepParameters]] = None,
+        xs: np.ndarray,
+        ys: np.ndarray,
+        zs: np.ndarray,
         n_steps: int,
         dt: float,
         n_skip: int,
@@ -36,19 +229,11 @@ class FunctionalCPMPC3D:
         default_U: float = 1.0,
         endpoint_sigma: float = 1.0,
     ):
-        if cp_upper_grid is None:
-            self.U_grid = None
-        else:
-            U = np.asarray(cp_upper_grid, dtype=np.float32)
-            if U.ndim != 4:
-                raise ValueError(f"g_upper_grid must have shape (T,nz,ny,nx), got {U.shape}")
-            self.U_grid = U
-
-
         self.xs = np.asarray(xs, dtype=np.float32)
         self.ys = np.asarray(ys, dtype=np.float32)
         self.zs = np.asarray(zs, dtype=np.float32)
         self.nx, self.ny, self.nz = self.xs.size, self.ys.size, self.zs.size
+        self.Xg, self.Yg, self.Zg = _build_grid_from_axes(self.xs, self.ys, self.zs)
 
         self.n_steps = int(n_steps)
         self.dt = float(dt)
@@ -71,12 +256,33 @@ class FunctionalCPMPC3D:
         self.default_U = float(default_U)
         self.endpoint_sigma = float(endpoint_sigma)
 
+        self.params: Dict[int, CPStepParameters] = {}
+        self.U_grid: Optional[np.ndarray] = None
+
+        cp_params = cp_params or []
+        if cp_params:
+            self.set_cp_params(cp_params)
+        elif self.CP:
+            raise ValueError("FunctionalCPMPC3D requires cp_params or cp_upper_grid when CP=True.")
+
         self.hold_beta = 0.35 
         self.hold_vel_eps = 1e-2
         self.hold_active = False
         self.hold_pos: Optional[np.ndarray] = None
 
         self.last_cmd_vel_env = np.zeros(4, dtype=np.float32)
+        self._frame_idx = 0
+        self._cp_adapter: Optional[CPOnlineAdapter3D] = None
+        if self.CP and cp_params:
+            self._cp_adapter = CPOnlineAdapter3D(
+                self.get_cp_params(),
+                xs=self.xs,
+                ys=self.ys,
+                zs=self.zs,
+                target_violation=0.1,
+                eta=0.05,
+                warmup_frames=self.n_steps,
+            )
 
     def _world_to_grid_ijk_float_batch(self, pos_world: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -149,50 +355,92 @@ class FunctionalCPMPC3D:
     
     def evaluate_U_batch(self, pos_world: np.ndarray, t_idx: int) -> np.ndarray:
         """
-        Lookup U(x) from precomputed grid g_upper_grid via trilinear interpolation.
-
-        pos_world: (N,3)
-        returns:   (N,) float32
+        Evaluate conformal envelope values for a batch of world positions.
         """
         pos_world = np.asarray(pos_world, dtype=np.float32)
         N = pos_world.shape[0]
 
-        # If CP disabled or no grid, return zeros (no tightening) or default_U
-        if (not self.CP) or (self.U_grid is None):
+        if not self.CP:
             return np.zeros((N,), dtype=np.float32)
+        if self.U_grid is not None:
+            return self._lookup_from_grid(pos_world, t_idx)
+        if self.params:
+            return self._evaluate_from_params_batch(pos_world, t_idx)
+        return self.default_U * np.ones((N,), dtype=np.float32)
 
-        # clamp t index
+    def set_cp_params(self, params_list: List[CPStepParameters]) -> None:
+        if params_list is None or len(params_list) == 0:
+            raise ValueError("cp_params must be a non-empty list.")
+        sorted_params = sorted(params_list, key=lambda p: int(p.t_idx))
+        self.params = {int(p.t_idx): p for p in sorted_params}
+        self.U_grid = self._build_cp_grid_from_params(sorted_params)
+
+    def get_cp_params(self) -> List[CPStepParameters]:
+        return [self.params[k] for k in sorted(self.params.keys())]
+
+    def _build_cp_grid_from_params(self, params_list: List[CPStepParameters]) -> np.ndarray:
+        nz, ny, nx = self.nz, self.ny, self.nx
+        D = int(nz * ny * nx)
+        grids: List[np.ndarray] = []
+
+        for p in params_list:
+            phi = np.asarray(p.phi_basis, dtype=np.float32)
+            if phi.shape[1] != D:
+                raise ValueError(f"phi_basis dimension mismatch: expected {D}, got {phi.shape[1]}")
+            mean_vec = np.asarray(p.mean, dtype=np.float32).reshape(D,)
+            coeff = np.asarray(p.coeff_upper, dtype=np.float32).reshape(-1)
+            g_upper_vec = mean_vec + phi.T @ coeff + float(p.epsilon)
+            grids.append(g_upper_vec.reshape(nz, ny, nx))
+
+        return np.stack(grids, axis=0).astype(np.float32)
+
+    def _evaluate_from_params_batch(self, pos_world: np.ndarray, t_idx: int) -> np.ndarray:
+        p = self.params.get(int(t_idx))
+        if p is None:
+            return self.default_U * np.ones((pos_world.shape[0],), dtype=np.float32)
+
+        ijk_float, valid = self._world_to_grid_ijk_float_batch(pos_world)
+        idx = self._grid_flat_index_batch(ijk_float)
+
+        phi = p.phi_basis[:, idx].astype(np.float32, copy=False)
+        coeff = p.coeff_upper.astype(np.float32, copy=False)
+        mean_vec = np.asarray(p.mean, dtype=np.float32).reshape(-1)
+        Ui = (mean_vec[idx] + coeff @ phi + float(p.epsilon)).astype(np.float32)
+
+        out = np.full((pos_world.shape[0],), float(self.default_U), dtype=np.float32)
+        out[valid] = Ui[valid]
+        return out
+
+    def _lookup_from_grid(self, pos_world: np.ndarray, t_idx: int) -> np.ndarray:
+        if self.U_grid is None:
+            return np.zeros((pos_world.shape[0],), dtype=np.float32)
+
         T = int(self.U_grid.shape[0])
         t = int(np.clip(int(t_idx), 0, T - 1))
 
-        ijk_float, valid = self._world_to_grid_ijk_float_batch(pos_world)  # (N,3), (N,)
+        ijk_float, valid = self._world_to_grid_ijk_float_batch(pos_world)
         kf = ijk_float[:, 0]
         jf = ijk_float[:, 1]
         if_ = ijk_float[:, 2]
 
-        # floor indices
         k0 = np.floor(kf).astype(np.int64)
         j0 = np.floor(jf).astype(np.int64)
         i0 = np.floor(if_).astype(np.int64)
 
-        # frac
         tz = (kf - k0.astype(np.float32)).astype(np.float32)
         ty = (jf - j0.astype(np.float32)).astype(np.float32)
         tx = (if_ - i0.astype(np.float32)).astype(np.float32)
 
-        # upper neighbors
         k1 = np.clip(k0 + 1, 0, self.nz - 1)
         j1 = np.clip(j0 + 1, 0, self.ny - 1)
         i1 = np.clip(i0 + 1, 0, self.nx - 1)
 
-        # clamp lower neighbors too (numerical safety)
         k0 = np.clip(k0, 0, self.nz - 1)
         j0 = np.clip(j0, 0, self.ny - 1)
         i0 = np.clip(i0, 0, self.nx - 1)
 
-        U = self.U_grid[t]  # (nz,ny,nx)
+        U = self.U_grid[t]
 
-        # gather 8 corners
         c000 = U[k0, j0, i0]
         c001 = U[k0, j0, i1]
         c010 = U[k0, j1, i0]
@@ -202,7 +450,6 @@ class FunctionalCPMPC3D:
         c110 = U[k1, j1, i0]
         c111 = U[k1, j1, i1]
 
-        # trilinear interpolation
         wx0 = (1.0 - tx); wx1 = tx
         wy0 = (1.0 - ty); wy1 = ty
         wz0 = (1.0 - tz); wz1 = tz
@@ -216,12 +463,9 @@ class FunctionalCPMPC3D:
         c1 = c10 * wy0 + c11 * wy1
 
         out = (c0 * wz0 + c1 * wz1).astype(np.float32)
-
-        # out-of-bounds -> default_U (너의 기존 정책 유지)
         if not np.all(valid):
             out = out.copy()
             out[~valid] = self.default_U
-
         return out
 
 
@@ -450,6 +694,7 @@ class FunctionalCPMPC3D:
         pred_mask: np.ndarray,
         boxes_3d: Optional[List[Any]] = None,
         robot_vel: Optional[np.ndarray] = None,
+        observed_xyz: Optional[np.ndarray] = None,
     ):
         boxes_3d = boxes_3d or []
         t0 = time.perf_counter()
@@ -457,6 +702,12 @@ class FunctionalCPMPC3D:
         robot_xyz = np.asarray(robot_xyz, dtype=np.float32).reshape(3,)
         goal_xyz = np.asarray(goal_xyz, dtype=np.float32).reshape(3,)
         robot_vel = np.asarray(robot_vel, dtype=np.float32).reshape(3,) if robot_vel is not None else np.zeros(3, dtype=np.float32)
+
+        self._frame_idx += 1
+        if self.CP and self._cp_adapter is not None:
+            updated = self._cp_adapter.step(self._frame_idx, observed_xyz, pred_xyz, pred_mask)
+            if updated:
+                self.set_cp_params(self._cp_adapter.snapshot())
 
         # 1) Generate
         paths, vels = self.generate_paths_trajectory(robot_xyz, float(robot_yaw), robot_vel, goal_xyz)

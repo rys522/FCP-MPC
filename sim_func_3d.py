@@ -14,7 +14,7 @@ from quad_env import (
     distance_field_points_3d,
 )
 
-from cp.functional_cp import get_envelopes_value_and_function, compute_cp_upper_envelopes
+from cp.functional_cp import get_envelopes_value_and_function
 from controllers.func_3d_mpc import FunctionalCPMPC3D
 
 import rerun as rr
@@ -483,9 +483,10 @@ def run_one_episode_visual_3d(
 
 
     g_upper_grid = None
+    cp_params = None
 
     if CP:
-        g_upper_grid = compute_cp_upper_envelopes(
+        g_upper_grid, cp_params = get_envelopes_value_and_function(
             residuals_train=residuals,
             p_base=p_base,
             K=k_mix,
@@ -500,7 +501,7 @@ def run_one_episode_visual_3d(
     # 2) Controller Setup
     # ----------------------------
     ctrl = FunctionalCPMPC3D(
-        cp_upper_grid=g_upper_grid,
+        cp_params=cp_params,
         xs=xs,
         ys=ys,
         zs=zs,
@@ -560,6 +561,7 @@ def run_one_episode_visual_3d(
             pred_mask=pred_mask,
             boxes_3d=wall_boxes,
             robot_vel=(vx_global, vy_global, vz_global),
+            observed_xyz=obs_now,
         )
         t1 = time.perf_counter()
 
@@ -691,9 +693,9 @@ if __name__ == "__main__":
 
     run_one_episode_visual_3d(
         env,
-        nx=100,
-        ny=100,
-        nz=100,
+        nx=40,
+        ny=40,
+        nz=40,
         time_horizon=12,
         alpha=0.10,
         p_base=8,

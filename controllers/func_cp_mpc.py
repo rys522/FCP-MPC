@@ -29,8 +29,8 @@ class CPOnlineAdapter:
         grid_H: int,
         grid_W: int,
         target_violation: float = 0.1,
-        eta: float = 0.05,
-        warmup_frames: int = 10,
+        eta: float = 0.15,
+        warmup_frames: int = 15,
         coeff_limits: Tuple[float, float] = (1e-4, 10.0),
     ):
         if cp_params is None or len(cp_params) == 0:
@@ -717,8 +717,18 @@ class FunctionalCPMPC:
                 if self.CP:
                     U_vec = self.evaluate_U_batch(x_t, t)  # (Palive,)
                     d_lower = np.maximum(d_nom - U_vec, 0.0)
+                
+                # ICS relaxation
 
-                hit = d_lower < self.safe_rad              # (Palive,)
+                a_lat_max = self.max_v * self.max_w
+                
+                elapsed_time = t * self.dt
+                delta_evade = 0.5 * a_lat_max * (elapsed_time ** 2)
+                
+                effective_r_safe = max(0.0, self.safe_rad - delta_evade)
+
+                hit = d_lower < effective_r_safe
+
                 if np.any(hit):
                     idx_alive = np.flatnonzero(alive)      # indices in [0,P)
                     mask_dynamic_unsafe[idx_alive[hit]] = True
