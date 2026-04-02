@@ -3,16 +3,185 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
+from collections import defaultdict
+import copy
 
 import math
 import time
 
 import numpy as np
 
+from cp.functional_cp import CPStepParameters
+from utils import build_grid, distance_field_points
+
+
+class CPOnlineAdapter:
+    """
+    Maintains residual buffers and adapts coefficient quantiles using ACP.
+    """
+
+    def __init__(
+        self,
+        cp_params: List[CPStepParameters],
+        *,
+        world_center: np.ndarray,
+        box: float,
+        grid_H: int,
+        grid_W: int,
+        target_violation: float = 0.1,
+        eta: float = 0.05,
+        warmup_frames: int = 10,
+        coeff_limits: Tuple[float, float] = (1e-4, 10.0),
+    ):
+        if cp_params is None or len(cp_params) == 0:
+            raise ValueError("CPOnlineAdapter requires non-empty cp_params.")
+
+        self.base_params = sorted(copy.deepcopy(cp_params), key=lambda p: int(p.t_idx))
+        self.idx_map = {int(p.t_idx): i for i, p in enumerate(self.base_params)}
+        self.horizon = len(self.base_params)
+        self.world_center = np.asarray(world_center, dtype=np.float32).reshape(2,)
+        self.box = float(box)
+        self.grid_H = int(grid_H)
+        self.grid_W = int(grid_W)
+        _, _, self.Xg, self.Yg = build_grid(self.box, self.grid_H, self.grid_W)
+        self.vector_size = int(self.grid_H * self.grid_W)
+
+        self.target_violation = float(target_violation)
+        self.eta = float(eta)
+        self.warmup_frames = max(0, int(warmup_frames))
+        self.coeff_limits = (float(coeff_limits[0]), float(coeff_limits[1]))
+
+        self.current_coeffs: List[np.ndarray] = [
+            np.asarray(p.coeff_upper, dtype=np.float32).copy() for p in self.base_params
+        ]
+
+        self.pending_preds: Dict[int, Dict[int, List[np.ndarray]]] = defaultdict(lambda: defaultdict(list))
+
+    def step(
+        self,
+        frame_idx: int,
+        observations: Optional[Dict[Any, np.ndarray]],
+        predictions: Optional[Dict[Any, np.ndarray]],
+    ) -> bool:
+        self._register_predictions(frame_idx, predictions)
+        actual_pts = self._extract_actual_points(observations)
+        matured = self._pop_predictions(frame_idx)
+
+        if actual_pts is None or actual_pts.size == 0 or not matured:
+            self._cleanup(frame_idx)
+            return False
+
+        updated = False
+        for step_idx, pred_pts in matured.items():
+            field = self._build_residual_field(pred_pts, actual_pts)
+            if field is None:
+                continue
+            coeff = self._project_coefficients(step_idx, field)
+            if coeff is None:
+                continue
+            if frame_idx >= self.warmup_frames:
+                updated |= self._apply_update(step_idx, coeff)
+
+        self._cleanup(frame_idx)
+        return updated
+
+    def snapshot(self) -> List[CPStepParameters]:
+        params = []
+        for p in self.base_params:
+            idx = self.idx_map[int(p.t_idx)]
+            q = copy.deepcopy(p)
+            q.coeff_upper = self.current_coeffs[idx].copy()
+            params.append(q)
+        return params
+
+    # --- helpers ---
+
+    def _register_predictions(self, frame_idx: int, predictions: Optional[Dict[Any, np.ndarray]]) -> None:
+        if not predictions:
+            return
+        for traj in predictions.values():
+            if traj is None:
+                continue
+            arr = np.asarray(traj, dtype=np.float32)
+            if arr.ndim != 2 or arr.shape[1] < 2:
+                continue
+            steps = min(arr.shape[0], self.horizon)
+            for step_idx in range(steps):
+                target_frame = frame_idx + step_idx + 1
+                self.pending_preds[target_frame][step_idx].append(arr[step_idx, :2].copy())
+
+    def _pop_predictions(self, frame_idx: int) -> Dict[int, np.ndarray]:
+        frame_store = self.pending_preds.pop(frame_idx, None)
+        if not frame_store:
+            return {}
+        out: Dict[int, np.ndarray] = {}
+        for step_idx, pts in frame_store.items():
+            if len(pts) == 0:
+                continue
+            out[step_idx] = np.asarray(pts, dtype=np.float32)
+        return out
+
+    def _extract_actual_points(self, observations: Optional[Dict[Any, np.ndarray]]) -> Optional[np.ndarray]:
+        if not observations:
+            return None
+        pts = []
+        for traj in observations.values():
+            if traj is None or len(traj) == 0:
+                continue
+            arr = np.asarray(traj, dtype=np.float32)
+            if arr.ndim == 2 and arr.shape[1] >= 2:
+                pts.append(arr[-1, :2])
+        if not pts:
+            return None
+        return np.asarray(pts, dtype=np.float32)
+
+    def _build_residual_field(self, pred_pts: np.ndarray, actual_pts: np.ndarray) -> Optional[np.ndarray]:
+        if pred_pts is None or pred_pts.size == 0:
+            return None
+        if actual_pts is None or actual_pts.size == 0:
+            return None
+        pred_rel = pred_pts - self.world_center[None, :]
+        true_rel = actual_pts - self.world_center[None, :]
+        sdf_pred = distance_field_points(pred_rel, self.Xg, self.Yg)
+        sdf_true = distance_field_points(true_rel, self.Xg, self.Yg)
+        return (sdf_pred - sdf_true).astype(np.float32)
+
+    def _project_coefficients(self, step_idx: int, field: np.ndarray) -> Optional[np.ndarray]:
+        idx = self.idx_map.get(int(step_idx))
+        if idx is None:
+            return None
+        vec = field.reshape(-1).astype(np.float32)
+        if vec.shape[0] != self.vector_size:
+            return None
+        params = self.base_params[idx]
+        centered = vec - params.mean.reshape(-1)
+        coeff = centered @ params.phi_basis.T
+        return coeff.astype(np.float32)
+
+    def _apply_update(self, step_idx: int, coeff: np.ndarray) -> bool:
+        idx = self.idx_map.get(int(step_idx))
+        if idx is None:
+            return False
+
+        current = self.current_coeffs[idx]
+        indicator = (np.abs(coeff) > current).astype(np.float32)
+        delta = self.eta * (indicator - self.target_violation)
+        if not np.any(np.abs(delta) > 1e-6):
+            return False
+
+        updated = current + delta
+        updated = np.clip(updated, self.coeff_limits[0], self.coeff_limits[1])
+        self.current_coeffs[idx] = updated.astype(np.float32)
+        return True
+
+    def _cleanup(self, frame_idx: int) -> None:
+        stale = [k for k in list(self.pending_preds.keys()) if k + self.horizon < frame_idx]
+        for key in stale:
+            self.pending_preds.pop(key, None)
+
 # NOTE:
 # - CPStepParameters is assumed to be produced offline for each horizon index (time-to-go),
 #   and cached for online pointwise queries along rollouts.
-
 
 # =============================================================================
 # Configuration dataclasses
@@ -23,11 +192,6 @@ class FuncMPCWeights:
     """
     Weights for the MPC objective.
 
-    The controller uses:
-      - goal tracking (intermediate + terminal),
-      - control effort penalty,
-      - soft safety shaping (optional), with a separate adaptive multiplier.
-
     Parameters
     ----------
     w_terminal : float
@@ -36,21 +200,10 @@ class FuncMPCWeights:
         Intermediate goal tracking weight (sum along the horizon).
     w_control : float
         Control effort weight.
-    w_safety : float
-        Adaptive multiplier (updated online) for the soft safety shaping accumulator.
-    w_margin : float
-        Weight for the soft barrier against safety margin violation.
-    safety_scale : float
-        Reserved knob (kept for compatibility); can be used to scale the safety term.
     """
     w_terminal: float = 10.0
     w_intermediate: float = 1.0
     w_control: float = 0.001
-
-    # soft-safety shaping
-    w_safety: float = 10.0
-    w_margin: float = 10.0
-    safety_scale: float = 0.2
 
 
 # =============================================================================
@@ -84,7 +237,7 @@ class FunctionalCPMPC:
     def __init__(
         self,
         *,
-        cp_upper_grid: Optional[np.ndarray],
+        cp_params: Optional[List[CPStepParameters]] = None,
         box: float,
         world_center: np.ndarray,
         grid_H: int,
@@ -101,8 +254,6 @@ class FunctionalCPMPC:
         n_paths: int,
         seed: int = 0,
         weights: Optional[FuncMPCWeights] = None,
-        risk_level: float = 0.8,
-        step_size: float = 10.,
         CP: bool = True,
     ):
         """
@@ -126,28 +277,18 @@ class FunctionalCPMPC:
             RNG seed for reproducibility.
         weights
             MPC objective weights. If None, defaults are used.
-        risk_level
-            Target slack level used by the adaptive safety-weight update.
-        step_size
-            Step size for the adaptive update of w_safety.
         """
         # Workspace/grid configuration
         self.box = float(box)
         self.world_center = np.asarray(world_center, dtype=np.float32)
         self.grid_H, self.grid_W = int(grid_H), int(grid_W)
 
-        # Cache CP parameters by horizon index i ("time-to-go")
-        if cp_upper_grid is None:
-            self.U_grid = None
-        else:
-            U = np.asarray(cp_upper_grid, dtype=np.float32)
-            if U.ndim != 3:
-                raise ValueError(f"cp_upper_grid must have shape (T,H,W), got {U.shape}")
-            if U.shape[1] != self.grid_H or U.shape[2] != self.grid_W:
-                raise ValueError(
-                    f"cp_upper_grid H,W mismatch: grid=({self.grid_H},{self.grid_W}), U=({U.shape[1]},{U.shape[2]})"
-                )
-            self.U_grid = U
+        self.params: Dict[int, CPStepParameters] = {}
+        self.U_grid: Optional[np.ndarray] = None
+
+        if cp_params is None or len(cp_params) == 0:
+            raise ValueError("FunctionalCPMPC requires a non-empty cp_params list.")
+        self.set_cp_params(cp_params)
 
         # MPC rollout configuration
         self.n_steps = int(n_steps)
@@ -169,10 +310,20 @@ class FunctionalCPMPC:
         self.weights = weights or FuncMPCWeights()
         self.last_best_vels: Optional[np.ndarray] = None  # warm-start storage
 
-        # Adaptive soft-safety tuning (simple feedback controller)
-        self._target_slack = float(risk_level)
-        self._eta = float(step_size)
         self.CP = CP
+        self._frame_idx = 0
+        self._cp_adapter: Optional[CPOnlineAdapter] = None
+        if self.CP:
+            self._cp_adapter = CPOnlineAdapter(
+                self.get_cp_params(),
+                world_center=self.world_center,
+                box=self.box,
+                grid_H=self.grid_H,
+                grid_W=self.grid_W,
+                target_violation=0.1,
+                eta=0.05,
+                warmup_frames=self.n_steps,
+            )
 
     # ---------------------------------------------------------------------
     # Grid geometry helpers (world <-> grid)
@@ -201,64 +352,121 @@ class FunctionalCPMPC:
         """Flatten (i,j) index into [0, H*W)."""
         i, j = ij
         return i * self.grid_W + j
-    
-    def _world_to_grid_ij_batch(self, x_world: np.ndarray):
-        x = np.asarray(x_world, dtype=np.float32)
-        rel = x - self.world_center[None, :]
 
+    def set_cp_params(self, params_list: List[CPStepParameters]) -> None:
+        """
+        Cache CPStepParameters for online envelope evaluations.
+        """
+        if params_list is None or len(params_list) == 0:
+            raise ValueError("cp_params must be a non-empty list.")
+        for p in params_list:
+            if not hasattr(p, "mean"):
+                raise ValueError(
+                    "CPStepParameters missing PCA mean; regenerate the CP cache with the new format."
+                )
+        sorted_params = sorted(params_list, key=lambda p: int(p.t_idx))
+        self.params = {int(p.t_idx): p for p in sorted_params}
+        self.U_grid = self._build_cp_grid_from_params(sorted_params)
+
+    def get_cp_params(self) -> List[CPStepParameters]:
+        """
+        Return the cached CPStepParameters sorted by horizon index.
+        """
+        return [self.params[k] for k in sorted(self.params.keys())]
+
+    def _build_cp_grid_from_params(self, params_list: List[CPStepParameters]) -> np.ndarray:
+        """
+        Reconstruct the envelope grid from CPStepParameters.
+        """
+        H, W = self.grid_H, self.grid_W
+        D = H * W
+        grids: List[np.ndarray] = []
+
+        for p in params_list:
+            phi = np.asarray(p.phi_basis, dtype=np.float32)
+            if phi.shape[1] != D:
+                raise ValueError(
+                    f"phi_basis dimension mismatch: expected {D}, got {phi.shape[1]}"
+                )
+            mean_vec = np.asarray(p.mean, dtype=np.float32).reshape(D,)
+            AT = phi.T  # (D, p_eff)
+
+            coeff = np.asarray(p.coeff_upper, dtype=np.float32).reshape(-1)
+            g_upper_vec = mean_vec + AT @ coeff + float(p.epsilon)
+            grids.append(g_upper_vec.reshape(H, W))
+
+        return np.stack(grids, axis=0).astype(np.float32)
+
+    # ---------------------------------------------------------------------
+    # Functional CP envelope evaluation: U_i(x)
+    # ---------------------------------------------------------------------
+
+    def evaluate_U(self, pos_world: np.ndarray, t_idx: int) -> float:
+        """
+        Evaluate U_i(x) either from cached CPStepParameters or from the grid.
+        """
+        batch = self.evaluate_U_batch(np.asarray(pos_world, dtype=np.float32)[None, :], t_idx)
+        return float(batch[0])
+
+    def evaluate_U_batch(self, pos_world: np.ndarray, t_idx: int) -> np.ndarray:
+        """
+        pos_world: (P,2)
+        returns: (P,) U_i(x)
+        """
+        X = np.asarray(pos_world, dtype=np.float32)
+        if X.ndim != 2 or X.shape[1] != 2:
+            raise ValueError("pos_world must have shape (P, 2).")
+
+        if self.U_grid is not None:
+            return self._lookup_from_grid(X, t_idx)
+        if self.params:
+            return self._evaluate_from_params_batch(X, t_idx)
+        return np.ones((X.shape[0],), dtype=np.float32)
+
+    def _evaluate_from_params_batch(self, pos_world: np.ndarray, t_idx: int) -> np.ndarray:
+        p = self.params.get(int(t_idx))
+        if p is None:
+            return np.ones((pos_world.shape[0],), dtype=np.float32)
+
+        rel = pos_world - self.world_center[None, :]
         u = (rel[:, 0] + self.box / 2.0) / self.box * (self.grid_W - 1)
         v = (rel[:, 1] + self.box / 2.0) / self.box * (self.grid_H - 1)
 
         inside = (u >= 0.0) & (u <= (self.grid_W - 1)) & (v >= 0.0) & (v <= (self.grid_H - 1))
+        out = np.ones((pos_world.shape[0],), dtype=np.float32)
+        if not np.any(inside):
+            return out
 
-        j = np.rint(u).astype(np.int32)
-        i = np.rint(v).astype(np.int32)
+        j = np.rint(u[inside]).astype(np.int32)
+        i = np.rint(v[inside]).astype(np.int32)
+        idx = (i * self.grid_W + j).astype(np.int32)
 
-        j = np.clip(j, 0, self.grid_W - 1)
-        i = np.clip(i, 0, self.grid_H - 1)
-        return i, j, inside
+        phi = p.phi_basis[:, idx].astype(np.float32, copy=False)
+        coeff = p.coeff_upper.astype(np.float32, copy=False)
+        mean_vec = np.asarray(p.mean, dtype=np.float32).reshape(-1)
+        mean_vals = mean_vec[idx]
+        Ui = (mean_vals + coeff @ phi + float(p.epsilon)).astype(np.float32)
+        out[inside] = Ui
+        return out
 
-    # ---------------------------------------------------------------------
-    # Adaptive update helper
-    # ---------------------------------------------------------------------
+    def _lookup_from_grid(self, pos_world: np.ndarray, t_idx: int) -> np.ndarray:
+        if self.U_grid is None:
+            return np.ones((pos_world.shape[0],), dtype=np.float32)
+        T = int(self.U_grid.shape[0])
+        idx_t = min(max(int(t_idx), 0), T - 1)
 
-    def _update_w_safety_from_slack(
-        self,
-        min_slack: float,
-        *,
-        target_slack: float,
-        w_min: float = 1e-2,
-        w_max: float = 1e4,
-    ) -> float:
+        rel = pos_world - self.world_center[None, :]
+        u = (rel[:, 0] + self.box / 2.0) / self.box * (self.grid_W - 1)
+        v = (rel[:, 1] + self.box / 2.0) / self.box * (self.grid_H - 1)
+        inside = (u >= 0.0) & (u <= (self.grid_W - 1)) & (v >= 0.0) & (v <= (self.grid_H - 1))
+        out = np.ones((pos_world.shape[0],), dtype=np.float32)
+        if not np.any(inside):
+            return out
 
-        if not np.isfinite(min_slack):
-            return float(self.weights.w_safety)
-
-        # -----------------------------
-        # 1. instantaneous target weight
-        # -----------------------------
-        raw_w = self._eta * (max(target_slack - float(min_slack), 0.0)) ** 2
-
-        if min_slack > 1.5 * target_slack:
-            raw_w = w_min
-            self._eta += 0.1
-
-        raw_w = float(np.clip(raw_w, w_min, w_max))
-
-        # -----------------------------
-        # 2. smoothing using n_steps
-        # -----------------------------
-        # effective smoothing horizon ≈ n_steps
-        alpha = 1.0 / max(self.n_steps, 1)   # or 2/(n_steps+1)
-
-        w_prev = float(self.weights.w_safety)
-        w_new = (1.0 - alpha) * w_prev + alpha * raw_w
-
-        w_new = float(np.clip(w_new, w_min, w_max))
-        self.weights.w_safety = w_new
-
-        return w_new
-
+        j = np.rint(u[inside]).astype(np.int32)
+        i = np.rint(v[inside]).astype(np.int32)
+        out[inside] = self.U_grid[idx_t, i, j]
+        return out
 
     # ---------------------------------------------------------------------
     # Public MPC API
@@ -272,6 +480,7 @@ class FunctionalCPMPC:
         boxes=None,
         predictions=None,
         goal=None,
+        observations: Optional[Dict[Any, np.ndarray]] = None,
         *,
         obst_pred_traj: Optional[np.ndarray] = None,  # (H, M, 2) or (H,2)
         obst_mask: Optional[np.ndarray] = None,       # (H, M) or (H,)
@@ -285,6 +494,8 @@ class FunctionalCPMPC:
             Current robot pose.
         goal
             Goal position as (2,) array-like in world coordinates.
+        observations
+            Optional dict of tracked agent trajectories used for online CP adaptation.
         boxes
             Optional list of static obstacle boxes with fields: pos, w, h, rad.
         predictions
@@ -309,6 +520,16 @@ class FunctionalCPMPC:
 
         if predictions is None:
             predictions = {}
+        if observations is None:
+            obs_dict: Dict[Any, np.ndarray] = {}
+        else:
+            obs_dict = observations
+
+        self._frame_idx += 1
+        if self.CP and self._cp_adapter is not None:
+            updated = self._cp_adapter.step(self._frame_idx, obs_dict, predictions)
+            if updated:
+                self.set_cp_params(self._cp_adapter.snapshot())
 
         boxes = boxes or []
 
@@ -345,11 +566,7 @@ class FunctionalCPMPC:
 
         # 3) Score feasible candidates and pick the best
         t_score0 = time.perf_counter()
-        best_idx, best_cost, best_min_slack = self.score_paths(safe_paths, safe_vels, goal, predictions)
-        self._update_w_safety_from_slack(
-            best_min_slack,
-            target_slack=self._target_slack,
-        )
+        best_idx, best_cost = self.score_paths(safe_paths, safe_vels, goal)
         self.last_best_vels = safe_vels[best_idx].copy()
         t_score1 = time.perf_counter()
 
@@ -367,7 +584,6 @@ class FunctionalCPMPC:
                 "score_ms": (t_score1 - t_score0) * 1000.0,
             },
             "counts": stats,
-            "safety_weight": float(self.weights.w_safety),
         }
         return act, info
 
@@ -498,14 +714,8 @@ class FunctionalCPMPC:
                 d_nom = np.min(np.linalg.norm(diff, axis=-1), axis=1)  # (Palive,)
 
                 d_lower = d_nom
-                if self.CP and (self.U_grid is not None):
-                    tU = min(max(int(t), 0), int(self.U_grid.shape[0]) - 1)
-
-                    i, j, inside = self._world_to_grid_ij_batch(x_t)
-                    U_vec = np.zeros((x_t.shape[0],), dtype=np.float32)
-                    if np.any(inside):
-                        U_vec[inside] = self.U_grid[tU, i[inside], j[inside]]
-
+                if self.CP:
+                    U_vec = self.evaluate_U_batch(x_t, t)  # (Palive,)
                     d_lower = np.maximum(d_nom - U_vec, 0.0)
 
                 hit = d_lower < self.safe_rad              # (Palive,)
@@ -515,7 +725,6 @@ class FunctionalCPMPC:
                     alive[idx_alive[hit]] = False
 
                 mask_safe = ~(mask_static_unsafe | mask_dynamic_unsafe)
-                mask_safe = ~ mask_static_unsafe
 
         if np.any(mask_safe):
             return paths[mask_safe], vels[mask_safe], float(cp_violation)
@@ -641,10 +850,7 @@ class FunctionalCPMPC:
         paths: np.ndarray,                # (P, T+1, 2)
         vels: np.ndarray,                 # (P, T, 2)
         goal: np.ndarray,                 # (2,)
-        predictions: Dict[Any, np.ndarray],
-    ) -> Tuple[int, float, float]:
-        P, T1, _ = paths.shape
-        T = T1 - 1
+    ) -> Tuple[int, float]:
 
         # -----------------------------
         # Standard MPC terms
@@ -654,72 +860,6 @@ class FunctionalCPMPC:
         control = self.weights.w_control * np.sum(vels ** 2, axis=(-2, -1))
         total_cost = intermediate + terminal + control
 
-        # -----------------------------
-        # Slack summary used for adaptation
-        # -----------------------------
-        tau = 0.2
-        softmin_acc = np.zeros(P, dtype=np.float32)
-        softmin = np.full(P, np.inf, dtype=np.float32)
-
-        # -----------------------------
-        # Soft safety shaping
-        # -----------------------------
-        if self.weights.w_safety > 0.0 and predictions and len(predictions) > 0:
-            pred_arr = np.asarray(list(predictions.values()), dtype=np.float32).transpose(1, 0, 2)  # (T_pred, M, 2)
-            T_use = min(T, pred_arr.shape[0])
-
-            safety_acc = np.zeros(P, dtype=np.float32)
-            prev_d_lower: Optional[np.ndarray] = None
-
-            sigma = 0.2  # smoothness for softplus
-
-            for t in range(T_use):
-                x_t = paths[:, t + 1, :]  # (P,2)
-
-                # Nominal distance to nearest predicted agent at step t
-                diff = x_t[:, None, :] - pred_arr[t][None, :, :]          # (P, M, 2)
-                d_nom = np.min(np.linalg.norm(diff, axis=-1), axis=1)      # (P,)
-
-                # Conformalized lower bound distance
-                if self.CP and (self.U_grid is not None):
-                    tU = min(max(int(t), 0), int(self.U_grid.shape[0]) - 1)
-
-                    i, j, inside = self._world_to_grid_ij_batch(x_t)
-                    U_vec = np.zeros((x_t.shape[0],), dtype=np.float32)
-                    if np.any(inside):
-                        U_vec[inside] = self.U_grid[tU, i[inside], j[inside]]
-
-                    d_lower = np.maximum(d_nom - U_vec, 0.0)
-
-                else:
-                    d_lower = d_nom.astype(np.float32, copy=False)
-
-                # Smooth barrier against violating the safety radius
-                violation = (self.safe_rad - d_lower) / sigma  # (P,)
-                phi = np.log1p(np.exp(violation)).astype(np.float32, copy=False)  # softplus
-
-                urgency_weight = max(0.0, 1.0 - t / max(1, T_use))
-                penalty = (self.weights.w_margin * phi).astype(np.float32, copy=False)
-
-                if prev_d_lower is not None:
-                    delta = d_lower - prev_d_lower
-                    gain = np.maximum(delta, 0.0)
-                    gain = np.minimum(gain, 0.5)
-                    penalty = penalty - (self._eta * gain).astype(np.float32, copy=False)
-
-                prev_d_lower = d_lower
-                safety_acc += urgency_weight * penalty
-
-                # Slack summary accumulation
-                slack_t = d_lower - (self.safe_rad + self._target_slack)   # (P,)
-                w_t = np.exp(-t / 0.9).astype(np.float32)                  # scalar
-                softmin_acc += w_t * np.exp(-slack_t / tau).astype(np.float32, copy=False)
-
-            total_cost = total_cost + self.weights.w_safety * (safety_acc / max(1, T_use))
-            softmin = -tau * np.log(softmin_acc + 1e-12)
-
         best_idx = int(np.argmin(total_cost))
         best_cost = float(total_cost[best_idx])
-        best_min_slack = float(softmin[best_idx])
-
-        return best_idx, best_cost, best_min_slack
+        return best_idx, best_cost

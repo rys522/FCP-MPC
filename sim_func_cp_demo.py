@@ -9,11 +9,6 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from utils import build_grid, distance_field_points
-from sims.sim_utils import (
-    compute_lower_field_single_step,
-    min_dist_robot_to_peds,
-    unicycle_step,
-)
 from cp.functional_cp import get_envelopes_value_and_function, CPStepParameters
 from controllers.func_cp_mpc import FunctionalCPMPC
 import time
@@ -63,6 +58,45 @@ MAX_N_STEPS = {
     "hotel": 100,
     "univ": 300,
 }
+
+
+def unicycle_step(xy: np.ndarray, th: float, v: float, w: float, dt: float):
+    x = xy[0] + dt * v * np.cos(th)
+    y = xy[1] + dt * v * np.sin(th)
+    th = th + dt * w
+    return np.array([x, y], dtype=np.float32), float(th)
+
+
+def min_dist_robot_to_peds(robot_xy: np.ndarray, peds_xy: np.ndarray) -> float:
+    if peds_xy.size == 0:
+        return float("inf")
+    d = peds_xy - robot_xy[None, :]
+    return float(np.sqrt(np.sum(d * d, axis=1)).min())
+
+
+def compute_lower_field_single_step(
+    obst_pred_step: np.ndarray,
+    obst_mask_step: np.ndarray,
+    Xg: np.ndarray,
+    Yg: np.ndarray,
+    g_up: Optional[np.ndarray],
+    world_center: np.ndarray,
+) -> np.ndarray:
+    if g_up is None:
+        return np.full(Xg.shape, np.inf, dtype=np.float32)
+
+    lower = np.full(Xg.shape, np.inf, dtype=np.float32)
+    for m in range(obst_pred_step.shape[0]):
+        if not bool(obst_mask_step[m]):
+            continue
+        y_hat = obst_pred_step[m] - world_center
+        d_pred = distance_field_points(y_hat, Xg, Yg)
+        lower_m = np.maximum(d_pred - g_up, 0.0)
+        lower = np.minimum(lower, lower_m)
+
+    if not np.isfinite(lower).any():
+        return np.full(Xg.shape, 20.0, dtype=np.float32)
+    return lower
 
 
 # ==============================================================================
@@ -415,7 +449,7 @@ def run_one_episode_visual_from_file(
 
     # Controller init (use inferred box/world_center)
     ctrl = FunctionalCPMPC(
-        cp_upper_grid=g_upper_grid,
+        cp_params=cp_params,
         box=box,
         world_center=world_center,
         n_steps=time_horizon,
@@ -681,7 +715,7 @@ def run_one_episode_visual_from_file(
 
 
 if __name__ == "__main__":
-    DATASET = "univ"
+    DATASET = "zara1"
     run_one_episode_visual_from_file(
         dataset=DATASET,
         scenario_idx=0,
@@ -698,6 +732,6 @@ if __name__ == "__main__":
         n_skip=2,
         n_paths=1200,
         max_tracking_error=0.05,
-        i_view=6,
+        i_view=0,
         CP = True,
     )

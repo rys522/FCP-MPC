@@ -71,20 +71,14 @@ class CPStepParameters:
     # shape (p_i, D), where each row corresponds to a basis function φ_{i,j}
     phi_basis: np.ndarray
 
+    # PCA mean vector used for coefficient projection, shape (D,)
+    mean: np.ndarray
+
     # projection slack ε_i (L_infty reconstruction error bound)
     epsilon: float
 
-    # GMM means μ_{k,i} in coefficient space, shape (K, p_i)
-    mus: np.ndarray
-
-    # GMM covariances Σ_{k,i} in coefficient space, shape (K, p_i, p_i)
-    sigmas: np.ndarray
-
-    # refined ellipsoidal radii r_{k,i} for each mixture component, shape (K,)
-    rks: np.ndarray
-
-    # number of Gaussian mixture components K
-    K: int
+    # Upper-quantile coefficient vector (length = p_eff)
+    coeff_upper: np.ndarray
 
     # effective projection dimension p_i
     p_eff: int
@@ -388,6 +382,7 @@ class PCAGMMResidualCP:
         pca = PCA(n_components=p_eff, svd_solver="randomized", random_state=self.cfg.random_state)
         scores = pca.fit_transform(Yw)             # (N, p_eff)
         phi_basis = pca.components_                # (p_eff, D)
+        mean_vec = pca.mean_.astype(np.float32)
 
         # 2) reconstruction slack epsilon (L_infty across coordinates)
         Y_recon = pca.inverse_transform(scores)
@@ -417,23 +412,27 @@ class PCAGMMResidualCP:
         rks = np.zeros(K_val, dtype=np.float32)
         for k in range(K_val):
             pi_k = float(gmm.weights_[k])
-            threshold_k = lam / pi_k 
-            
+            threshold_k = lam / max(pi_k, 1e-12)
+
             Sigma_k = sigmas[k]
             logZk = _log_norm_const(Sigma_k, p_eff)
-            
+
             val_log = math.log(max(threshold_k, 1e-300)) + logZk
             rk_sq = max(0.0, -2.0 * val_log)
             rks[k] = float(math.sqrt(rk_sq))
 
+        diag_std = np.sqrt(np.clip(np.diagonal(sigmas, axis1=1, axis2=2), 0.0, None))
+        coeff_upper = np.max(
+            gmm.means_ + rks[:, None] * diag_std,
+            axis=0,
+        ).astype(np.float32)
+
         return CPStepParameters(
             t_idx=t_idx,
             phi_basis=phi_basis.astype(np.float32),
+            mean=mean_vec,
             epsilon=float(epsilon),
-            mus=gmm.means_.astype(np.float32),
-            sigmas=sigmas.astype(np.float32),
-            rks=rks.astype(np.float32),
-            K=K_val,
+            coeff_upper=coeff_upper,
             p_eff=p_eff,
         )
 
@@ -441,17 +440,10 @@ class PCAGMMResidualCP:
         p = self._extract_params_for_idx(t_idx)
         D = int(p.phi_basis.shape[1])
         AT = p.phi_basis.T  # (D, p_eff)
+        mean_vec = np.asarray(p.mean, dtype=np.float32).reshape(D,)
 
-        upper_bounds = np.zeros((p.K, D), dtype=np.float32)
-        for k in range(p.K):
-            center = AT @ p.mus[k]  # (D,)
-            AS = AT @ p.sigmas[k]   # (D,p)
-            quad_diag = np.einsum("dp,dp->d", AS, AT)
-            rad = p.rks[k] * np.sqrt(np.clip(quad_diag, 0.0, None))
-            upper_bounds[k] = center + rad
-
-        g_upper_vec = np.max(upper_bounds, axis=0) + p.epsilon
-
+        g_upper_vec = mean_vec + AT @ p.coeff_upper
+        g_upper_vec = g_upper_vec + float(p.epsilon)
         grid_shape = self._extract_shapes()
         return self._unflatten(g_upper_vec.astype(np.float32), grid_shape)
 
@@ -531,16 +523,9 @@ class PCAGMMResidualCP:
         def one(p: CPStepParameters) -> np.ndarray:
             D = int(p.phi_basis.shape[1])
             AT = p.phi_basis.T  # (D, p_eff)
-
-            upper_bounds = np.zeros((p.K, D), dtype=np.float32)
-            for k in range(p.K):
-                center = AT @ p.mus[k]
-                AS = AT @ p.sigmas[k]
-                quad_diag = np.einsum("dp,dp->d", AS, AT)
-                rad = float(p.rks[k]) * np.sqrt(np.clip(quad_diag, 0.0, None))
-                upper_bounds[k] = center + rad
-
-            g_upper_vec = np.max(upper_bounds, axis=0) + float(p.epsilon)
+            mean_vec = np.asarray(p.mean, dtype=np.float32).reshape(D,)
+            coeff = np.asarray(p.coeff_upper, dtype=np.float32).reshape(-1)
+            g_upper_vec = mean_vec + AT @ coeff + float(p.epsilon)
             return self._unflatten(g_upper_vec.astype(np.float32), grid_shape)
 
         results = Parallel(n_jobs=self.cfg.n_jobs, backend=self.cfg.backend)(

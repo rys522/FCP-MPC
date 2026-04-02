@@ -691,9 +691,9 @@ if __name__ == "__main__":
 
     run_one_episode_visual_3d(
         env,
-        nx=40,
-        ny=40,
-        nz=40,
+        nx=100,
+        ny=100,
+        nz=100,
         time_horizon=12,
         alpha=0.10,
         p_base=8,
@@ -709,9 +709,9 @@ if __name__ == "__main__":
         n_calib_samples=120,
         goal_finish_dist=0.3,
         mc_stride=2,
-        CP=False,
+        CP=True,
         save_rrd=False,
-        rrd_path="nocp_mpc_3d.rrd",
+        rrd_path="cp_mpc_3d.rrd",
         only_log_every=1,
         visualize=True,
     )

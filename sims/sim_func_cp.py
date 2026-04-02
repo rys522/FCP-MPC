@@ -10,7 +10,7 @@ import time
 from utils import build_grid, distance_field_points
 from sims.sim_utils import min_dist_robot_to_peds, unicycle_step
 from cp.functional_cp import compute_cp_upper_envelopes, CPStepParameters
-from controllers.func_cp_mpc import FunctionalCPMPC
+from controllers.func_cp_mpc_hard import FunctionalCPMPC
 
 
 # -------------------------
