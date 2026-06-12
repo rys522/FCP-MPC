@@ -91,8 +91,8 @@ if __name__ == "__main__":
         # Four explicit variants for the ablation study
         'fcp-hard-adaptive':    {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': True,  'safety_mode': 'hard'},
         'fcp-hard-nonadaptive': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'hard'},
-        'fcp-soft-adaptive':    {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': True,  'safety_mode': 'soft'},
-        'fcp-soft-nonadaptive': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft'},
+        'fcp-soft-adaptive':    {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': True,  'safety_mode': 'soft', 'w_safety': 100.0},
+        'fcp-soft-nonadaptive': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 100.0},
     }
 
     eval_functions = {
@@ -170,9 +170,13 @@ if __name__ == "__main__":
     np.save(os.path.join(os.path.dirname(__file__), f'traj/{args.dataset}_{args.controller}.npy'), trajectories)
 
     # ---- static trajectory image (asset-free, generated on every run) ----
+    # Output dir is overridable via FCP_FIG_DIR so a run can write its figures
+    # straight into the paper folder (e.g. FCP_FIG_DIR=T_RO2026/figures/2d).
     try:
         from viz_traj import save_traj_image_2d
-        img_path = os.path.join(os.path.dirname(__file__), f'traj/{args.dataset}_{args.controller}.png')
+        fig_dir = os.environ.get('FCP_FIG_DIR', os.path.join(os.path.dirname(__file__), 'traj'))
+        os.makedirs(fig_dir, exist_ok=True)
+        img_path = os.path.join(fig_dir, f'{args.dataset}_{args.controller}.png')
         save_traj_image_2d(
             trajectories=trajectories,
             goal=task_kwargs.get('goal_pos'),

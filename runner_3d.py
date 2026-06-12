@@ -529,6 +529,8 @@ def main():
     ap.add_argument("--fail-on", type=str, default="loop", choices=["loop", "ctrl"])
     ap.add_argument("--dump-json", action="store_true", default=True)
     ap.add_argument("--n-obs", type=int, default=280, help="Number of dynamic obstacles")
+    ap.add_argument("--max-steps", type=int, default=500,
+                    help="Cap episode length; timing-only sweeps (e.g. scalability) can use a small value")
     ap.add_argument("--save-traj-img", action="store_true", default=False,
                     help="Dump a static 3D trajectory PNG per (method, seed)")
     ap.add_argument("--traj-img-dir", type=str, default="traj_3d",
@@ -559,7 +561,7 @@ def main():
         time_horizon=12,
         n_skip=4,
         n_paths=2000,
-        max_steps=500,
+        max_steps=args.max_steps,
         backend="loky",
         visualize=False,
         save_rrd=False,

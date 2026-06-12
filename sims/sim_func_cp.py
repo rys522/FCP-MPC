@@ -10,7 +10,7 @@ import time
 from utils import build_grid, distance_field_points
 from sims.sim_utils import min_dist_robot_to_peds, unicycle_step
 from cp.functional_cp import CPStepParameters, get_envelopes_value_and_function
-from controllers.func_cp_mpc import FunctionalCPMPC
+from controllers.func_cp_mpc import FunctionalCPMPC, FuncMPCWeights
 
 
 # -------------------------
@@ -258,6 +258,7 @@ def run_fcp_mpc(
     step_size: float = 10.0,                # -> eta (safety weight update)
     adaptive: bool = True,                  # True = ACP online update; False = fixed offline coeffs
     safety_mode: str = "hard",              # "hard" = filter paths; "soft" = penalty in cost
+    w_safety: float = 50.0,                 # soft-mode safety-shaping weight (declared hyperparameter)
 ):
     # ----- fixed controller settings -----
     time_horizon = 17            
@@ -342,6 +343,7 @@ def run_fcp_mpc(
             CP=True,
             adaptive=bool(adaptive),
             safety_mode=str(safety_mode),
+            weights=FuncMPCWeights(w_safety=float(w_safety)),
         )
 
         robot_xy = np.asarray(init_robot_pose[:2], dtype=np.float32).copy()

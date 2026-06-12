@@ -20,6 +20,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  (registers 3d projection)
 
+# Publication (paper) style shared across the trajectory figures.
+plt.rcParams.update({
+    "font.family": "serif",
+    "font.serif": ["Times New Roman", "Nimbus Roman", "DejaVu Serif"],
+    "mathtext.fontset": "stix",
+})
+
 
 def _ensure_dir(path: str) -> None:
     d = os.path.dirname(path)
@@ -52,7 +59,7 @@ def save_traj_image_3d(
             return None
 
         _ensure_dir(out_path)
-        fig = plt.figure(figsize=(7, 6))
+        fig = plt.figure(figsize=(8, 7))
         ax = fig.add_subplot(111, projection="3d")
 
         if obstacles is not None:
@@ -78,12 +85,13 @@ def save_traj_image_3d(
             ax.set_ylim(y0, y1)
             ax.set_zlim(z0, z1)
 
-        ax.set_xlabel("x [m]")
-        ax.set_ylabel("y [m]")
-        ax.set_zlabel("z [m]")
+        ax.set_xlabel("x [m]", fontsize=14, labelpad=6)
+        ax.set_ylabel("y [m]", fontsize=14, labelpad=6)
+        ax.set_zlabel("z [m]", fontsize=14, labelpad=4)
+        ax.tick_params(labelsize=11)
         if title:
-            ax.set_title(title, fontsize=11)
-        ax.legend(loc="upper right", fontsize=8)
+            ax.set_title(title, fontsize=13)
+        ax.legend(loc="upper right", fontsize=12)
         fig.tight_layout()
         fig.savefig(out_path, dpi=dpi, bbox_inches="tight")
         plt.close(fig)
