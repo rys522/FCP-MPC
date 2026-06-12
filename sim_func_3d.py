@@ -470,25 +470,27 @@ def run_one_episode_visual_3d(
         [cov_min, cov_max, cov_min, cov_max, z_max, z_max + margin],
     ]
 
-    residuals, _ = build_training_residuals_from_env_3d(
-        env,
-        n_samples=n_calib_samples,
-        X=X,
-        Y=Y,
-        Z=Z,
-        time_horizon=time_horizon,
-        episode_len=1000,
-        group_by_episode=False,
-        v_lim=(-MAX_LINEAR_VEL, MAX_LINEAR_VEL),
-        yaw_rate_lim=(MIN_ANGULAR_Z, MAX_ANGULAR_Z),
-        vz_lim=(-MAX_VZ, MAX_VZ),
-    )
-
+    if n_calib_samples > 0:
+        residuals, _ = build_training_residuals_from_env_3d(
+            env,
+            n_samples=n_calib_samples,
+            X=X,
+            Y=Y,
+            Z=Z,
+            time_horizon=time_horizon,
+            episode_len=1000,
+            group_by_episode=False,
+            v_lim=(-MAX_LINEAR_VEL, MAX_LINEAR_VEL),
+            yaw_rate_lim=(MIN_ANGULAR_Z, MAX_ANGULAR_Z),
+            vz_lim=(-MAX_VZ, MAX_VZ),
+        )
+    else:
+        residuals = np.zeros((0, time_horizon, X.shape[0], X.shape[1], X.shape[2]), dtype=np.float32)
 
     g_upper_grid = None
     cp_params = None
 
-    if CP:
+    if CP and residuals.shape[0] > 0:
         g_upper_grid, cp_params = get_envelopes_value_and_function(
             residuals_train=residuals,
             p_base=p_base,

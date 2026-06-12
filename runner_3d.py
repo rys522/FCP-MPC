@@ -417,9 +417,10 @@ RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
 }
 
 METHOD_PRESETS: Dict[str, Dict[str, Any]] = {
-    "nocp": {"runner": "func", "over": {"CP": False}},
+    # nocp: skip SDF calibration entirely (CP=False, so residuals are never used)
+    "nocp": {"runner": "func", "over": {"CP": False, "n_calib_samples": 0}},
     "cc":   {"runner": "cp",   "over": {"CP": False}},
-    "fcp":  {"runner": "func", "over": {"CP": True, "alpha": 0.10}},
+    "fcp":  {"runner": "func", "over": {"CP": True, "alpha": 0.10, "n_calib_samples": 20}},
     "ecp":  {"runner": "ecp",  "over": {}},
     "acp":  {"runner": "acp",  "over": {"target_miscoverage_level": 0.10, "step_size": 0.05}},
 }
