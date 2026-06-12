@@ -17,6 +17,7 @@ from quad_env import QuadWorldEnv3D
 from sim_func_3d import run_one_episode_visual_3d as run_one_episode_func_3d
 from sim_cp_3d import run_one_episode_rerun_simple as run_one_episode_cp_3d
 from sim_ecp_3d import run_one_episode_ecp_3d_rerun as run_one_episode_ecp_3d
+from sim_acp_3d import run_one_episode_acp_3d
 
 
 # ------------------------------------------------------------
@@ -412,6 +413,7 @@ RUNNERS: Dict[str, Callable[..., Dict[str, Any]]] = {
     "func": run_one_episode_func_3d,  # from sim_func_3d
     "cp": run_one_episode_cp_3d,      # from sim_cp_3d
     "ecp": run_one_episode_ecp_3d,    # from sim_ecp_3d
+    "acp": run_one_episode_acp_3d,    # from sim_acp_3d
 }
 
 METHOD_PRESETS: Dict[str, Dict[str, Any]] = {
@@ -419,6 +421,7 @@ METHOD_PRESETS: Dict[str, Dict[str, Any]] = {
     "cc":   {"runner": "cp",   "over": {"CP": False}},
     "fcp":  {"runner": "func", "over": {"CP": True, "alpha": 0.10}},
     "ecp":  {"runner": "ecp",  "over": {}},
+    "acp":  {"runner": "acp",  "over": {"target_miscoverage_level": 0.10, "step_size": 0.05}},
 }
 
 

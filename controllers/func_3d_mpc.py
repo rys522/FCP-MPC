@@ -226,6 +226,7 @@ class FunctionalCPMPC3D:
         seed: int = 0,
         weights: Optional[MPC3DWeights] = None,
         CP: bool = True,
+        adaptive: bool = False,   # 3D uses a fully offline (hard) envelope; ample free space makes online adaptation unnecessary
         default_U: float = 1.0,
         endpoint_sigma: float = 1.0,
     ):
@@ -252,6 +253,7 @@ class FunctionalCPMPC3D:
         self.weights = weights or MPC3DWeights()
         self.last_best_vels: Optional[np.ndarray] = None
         self.CP = bool(CP)
+        self.adaptive = bool(adaptive)
 
         self.default_U = float(default_U)
         self.endpoint_sigma = float(endpoint_sigma)
@@ -273,7 +275,7 @@ class FunctionalCPMPC3D:
         self.last_cmd_vel_env = np.zeros(4, dtype=np.float32)
         self._frame_idx = 0
         self._cp_adapter: Optional[CPOnlineAdapter3D] = None
-        if self.CP and cp_params:
+        if self.CP and self.adaptive and cp_params:
             self._cp_adapter = CPOnlineAdapter3D(
                 self.get_cp_params(),
                 xs=self.xs,

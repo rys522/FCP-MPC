@@ -1,0 +1,1579 @@
+\documentclass[lettersize,journal]{IEEEtran}
+
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,backgrounds,arrows.meta}
+% Colors for the inlined pipeline overview diagram (Fig.~\ref{fig:overview}).
+\definecolor{snunavy}{HTML}{1F4E79}
+\definecolor{snunavy2}{HTML}{2F6690}
+\definecolor{snulight}{HTML}{EAF2F8}
+\definecolor{snulight2}{HTML}{F4F8FB}
+\definecolor{accentred2}{HTML}{B94A48}
+\definecolor{accentredlight}{HTML}{FBEAEA}
+\definecolor{textgray}{HTML}{444444}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{cite}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+
+% Extra vertical breathing room between stacked double-column floats (Tables I--III).
+\setlength{\dblfloatsep}{18pt plus 2pt minus 2pt}
+\setlength{\dbltextfloatsep}{22pt plus 2pt minus 4pt}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
+\newtheorem{lemma}{Lemma}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newtheorem{corollary}{Corollary}
+\newtheorem{property}{Property}
+
+\begin{document}
+
+\title{Planning Meets Functional Calibration: Function Conformal Prediction for Safe Motion Planning in Uncertain Environments}
+
+\author{First~A.~Author,~\IEEEmembership{Student Member,~IEEE},
+        Second~B.~Author,~and~Third~C.~Author,~\IEEEmembership{Member,~IEEE}%
+\thanks{Manuscript received Month~DD, 2026; revised Month~DD, 2026.}%
+\thanks{The authors are with the Department of XXX, University XXX, City, Country
+(e-mail: author@example.edu).}}
+
+\markboth{IEEE Transactions on Robotics,~Vol.~XX, No.~X, Month~2026}%
+{Author \MakeLowercase{\textit{et al.}}: Planning Meets Functional Calibration}
+
+\maketitle
+
+\begin{abstract}
+Safe motion planning in dynamic environments requires reasoning about the
+uncertainty of predicted obstacle motion without sacrificing real-time
+performance. We introduce a functional conformal prediction (FCP) framework that
+calibrates a high-confidence lower bound of the predicted signed distance field
+(SDF) at the level of the spatial \emph{field} rather than at individual points or
+trajectories. The residual SDF is represented in a data-driven functional basis
+via functional principal component analysis, and a Gaussian-mixture inductive
+conformal procedure yields a distribution-free upper envelope of the calibration
+error. A key feature is an offline--online decomposition in coefficient space: an
+accurate envelope is fitted offline, while online it is refined by a lightweight
+adaptive functional conformal (AFCP) update acting only on a low-dimensional
+coefficient vector. We embed the conformalized lower-bound SDF as a tightened
+safety constraint in a sampling-based model predictive controller and establish
+asymptotic closed-loop safety, both under exchangeability and, via the online
+adaptation, under distribution shift. Experiments on the ETH--UCY pedestrian
+benchmarks and a dense 3D quadrotor navigation task with hundreds of dynamic
+obstacles show that FCP-MPC attains a favorable balance of safety, feasibility,
+and efficiency, while keeping per-step computation far below online
+uncertainty-reasoning baselines.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Conformal prediction, motion planning, model predictive control, collision
+avoidance, signed distance fields, uncertainty quantification, safe navigation.
+\end{IEEEkeywords}
+
+\section{Introduction}
+% motivation
+efficient motion planning in uncertain environments with safety \& efficiency guarantees
+
+
+% related works; to to be classified according to our contribution
+conformal prediction for safe motion planning~\cite{lindemann2023safeplanning, dixit2023adaptive,lekeufack2024decision,mei2025perceive,shin2025egocentric,contreras2025safe,sundarsingh2026safe}
+
+
+% what makes functional CP beneficial in motion planning?
+\begin{itemize}
+    \item representation perspective (environmental geometries often admit low-dimensional representations)
+
+    \item recent worst-case definition of score functions for motion planning are intractable, thus requiring severe approximation in practice, e.g.~\cite{mei2025perceive,sundarsingh2026safe}.
+\end{itemize}
+
+\section{Related Works}
+\begin{itemize}
+    \item robust control: DRO~\cite{long2026sensor}
+\end{itemize}
+
+
+\section{Related Works}
+\begin{itemize}
+    \item navigation in dynamic environments
+    \begin{itemize}
+        \item perception (localization, mapping, detection, tracking, $\cdots$) \& prediction in dynamic environments
+        \begin{itemize}
+            \item SLAM $+$ MOT~\cite{wang2007simultaneous,coue2006bayesian}
+
+            \item particle-based~\cite{danescu2011modeling,tanzmeister2014grid}
+            
+            \item random finite sets~\cite{nuss2018random,chen2023continuous}; based on~\cite{mahler2007statistical}
+
+            \item SDF learning~\cite{park2019deepsdf,ortiz2022isdf}; mostly in 3d; may be irrelevant to ours
+        \end{itemize}
+    \end{itemize}
+
+    
+\end{itemize}
+
+
+\section{Preliminaries: Conformal Prediction}
+\label{sec:preliminaries}
+
+Our calibration machinery builds on conformal prediction (CP), a distribution-free
+framework that turns a heuristic uncertainty score into sets with finite-sample
+coverage. We recall the two ingredients we rely on; the functional extension
+specific to signed-distance fields is developed in
+Section~\ref{sec:functional_projection}.
+
+\paragraph{Split conformal prediction.}
+Given exchangeable samples $\{z_n\}_{n=1}^N$ and a nonconformity score
+$s(\cdot)\in\mathbb{R}$ (larger meaning a worse fit), fix a target miscoverage
+level $\alpha\in(0,1)$ and set
+$\hat q = \mathrm{Quantile}_{1-\alpha}\bigl(\{s(z_n)\}_{n=1}^N\cup\{+\infty\}\bigr)$.
+For a fresh exchangeable sample $z_{N+1}$,
+\begin{equation}
+\mathbb{P}\bigl[s(z_{N+1})\le \hat q\bigr]\ge 1-\alpha,
+\label{eq:split_cp}
+\end{equation}
+with no assumption on the data distribution beyond exchangeability~\cite{lei2015conformal}.
+We use this, offline, to calibrate a high-confidence upper bound on the
+signed-distance prediction error.
+
+\paragraph{Adaptive conformal inference.}
+When the stream is non-exchangeable (e.g.\ under distribution shift), the marginal
+guarantee~\eqref{eq:split_cp} may fail. Adaptive conformal inference
+(ACI)~\cite{gibbs2021adaptiveconformalinferencedistribution} instead enforces a
+\emph{long-run} guarantee by updating the threshold online from the observed
+miscoverage: with step size $\gamma>0$ and
+$\mathrm{err}_t=\mathbb{I}[\,s_t> \hat q_t\,]$,
+\begin{equation}
+\hat q_{t+1}=\hat q_t+\gamma\,(\mathrm{err}_t-\alpha),
+\label{eq:aci}
+\end{equation}
+which drives the empirical miscoverage $\tfrac1T\sum_{t}\mathrm{err}_t$ to $\alpha$
+for an arbitrary, even adversarial, sequence. Our online envelope
+update~\eqref{eq:acp_update} is a coefficient-space, functional instance
+of~\eqref{eq:aci}, and underlies the robust safety guarantee of
+Theorem~\ref{thm:asymptotic_safety_afcp}.
+
+
+\section{Problem Formulation}
+
+
+
+
+Let $\mathcal{Q}$ be the configuration space of a robot, and  $x = x(q) \in \mathcal{X} \subseteq \mathbb{R}^d$ the position in the world corresponding to $q\in \mathcal{Q}$ (i.e., the forward kinematics of the robot), where $d = 2$ or $d=3$. Let $\mathcal{O}_t \subseteq \mathcal{X}$ be the union of \emph{dynamic} obstacles (which is often represented as an occupancy map in practice).
+To model a limited perception range, we follow the formulation of~\cite{janson2018safe} and introduce a perception map $P : \mathcal{X} \times \mathscr{C}(\mathcal{X}) \to \mathscr{M}_{\text{partial}}(\mathcal{X})$, where $\mathscr{C}(\mathcal{X})$ is the collection of all closed subsets of $\mathcal{X}$ (each $\mathcal{C} \in \mathscr{C}(\mathcal{X})$ being a union of obstacles, i.e.\ the \emph{unknown} occupancy of the world), and $\mathscr{M}_{\text{partial}}(\mathcal{X})$ is the set of all measurable \emph{partial} functions on $\mathcal{X}$,
+\begin{equation*}
+\mathscr{M}_{\text{partial}}(\mathcal{X}) \coloneqq \bigl\{ D : \mathcal{Y} \to \mathbb{R} \;\big|\; \mathcal{Y}\subseteq\mathcal{X},\ D\ \text{measurable} \bigr\}.
+\end{equation*}
+Intuitively, $P(x, \mathcal{C})$ is the signed distance field (SDF) sensed from configuration $x$ when the true geometry is $\mathcal{C}$; in practice it is realized as a truncated SDF~\cite{newcombe2011kinectfusion}, which we prefer to a binary occupancy map for its smooth, distance-aware structure. The use of \emph{partial} functions accounts for the finite sensing range.
+
+Let $\mathcal{C}_t$, $t \geq 0$, denote the time-varying occupancy, whose dynamics reflect the motion of the environment. At time $t$ the robot at $x_t = x(q_t)$ receives the observation $\widehat{D}_t = P(x_t, \mathcal{C}_t)$ with domain $\mathcal{D}_t$, and the region sensed up to time $t$ is
+\begin{equation*}
+\mathcal{D}_{\leq t} \coloneqq \bigcup_{\tau \leq t}\mathcal{D}_{\tau}.
+\end{equation*}
+On $\mathcal{D}_{\leq t}$ the observations are fused into an SDF estimate $D_{\leq t}: \mathcal{X} \to \mathbb{R}$, which is set to $0$ on the unexplored region $\mathcal{X} \setminus \mathcal{D}_{\leq t}$.
+
+
+
+Since $\mathcal{O}_{t+i}$ for $i > 0$ are inherently unobservable at time $t$, all we can do is estimate them from historical or contextual data, as modern prediction models do. Let us denote the $i$-step ahead prediction of the occupancy made at $t$ by $\mathcal{O}_{t+i|t}$ 
+For safe motion planning, we are interested in correctly estimating the (signed) distance function at $t+i$:
+\begin{equation*}
+D_{t+i}(x) \coloneqq d(x, \mathcal{O}_{t+i}), \quad x \in \mathcal{X}
+\end{equation*}
+and its $i$-step ahead prediction be:
+\begin{equation*}
+D_{t+i|t}(x) \coloneqq d(x, \mathcal{O}_{t+i|t}), \quad x \in \mathcal{X}
+\end{equation*}
+
+
+To avoid the overestimation of $D_{t+i}$ (which may cause catastrophic events), we consider the following form of score function:
+\begin{equation}\label{eq:functional-score}
+S_{t+i|t} (x) \coloneqq D_{t+i|t}(x) - D_{t+i}(x), \quad x\in \mathcal{X}.
+\end{equation}
+Note that each $S_{t+i|t}$ is in a Hilbert space $\mathscr{H}$, e.g., $\mathscr{H}= L^2(\mathcal{X})$. Since we aim to obtain a high-confidence lower bound of $D_{t+i}$, we apply the functional CP to $S_{t+i|t}$ and get its upper bound $U_{t+i|t}$ that satisfies
+\begin{equation}
+\mathbb{P}\!\left[
+S_{t+i\mid t}(x) \le U_{t+i\mid t}(x)\ \ \forall x\in\mathcal{X}
+\right] \ge 1-\alpha,
+\label{eq:functional_band_coverage}
+\end{equation}
+or its asymptotic version:
+\begin{equation*}
+\lim_{T}\frac{1}{T}\sum_{t=1}^T \mathbb{I}\left[ S_{t+i|t}(x) \leq U_{t+i|t}(x) \; \forall x\in \mathcal{X}   \right] = 1 - \alpha.
+\end{equation*}
+This leads to
+\begin{equation*}
+\mathbb{P}\left[ D_{t+i}(x) \geq D_{t+i|t}(x) - U_{t+i|t}(x) \; \forall x\in \mathcal{X}   \right] \geq 1 - \alpha,
+\end{equation*}
+or its asymptotic version
+\begin{equation*}
+\lim_{T}\frac{1}{T}\sum_{t=1}^T \mathbb{I}\left[ D_{t+i}(x) \geq D_{t+i|t}(x) - U_{t+i|t}(x) \; \forall x\in \mathcal{X}   \right] = 1 - \alpha.
+\end{equation*}
+
+
+\subsection{Functional Conformal Prediction of a Score Function}
+\label{sec:functional_projection}
+
+Our goal is to construct an upper bound $U_{t+i\mid t}(x)$ for the score function.
+However, directly computing such a bound in the infinite-dimensional function
+space $\mathscr{H}$ is generally intractable and often unnecessary.
+Instead, we follow the functional conformal prediction framework
+\cite{lei2015conformal} and compute a bound on a finite-dimensional projection
+of the score function $S_{t+i\mid t}$.
+
+Specifically, we seek a distribution-free projected coverage guarantee of the form
+\begin{equation}
+\mathbb{P}\!\left(
+\pi_{\mathscr{V}}\!\left(S_{t+i\mid t}\right) \in \mathscr{C}_{t+i\mid t}
+\right) \ge 1 - \alpha,
+\label{eq:functional_projected_coverage}
+\end{equation}
+where $\mathscr{V} \subset \mathscr{H}$ is a $p$-dimensional subspace and
+$\pi_{\mathscr{V}} : \mathscr{H} \to \mathscr{V}$ denotes the projection operator
+constructed via functional principal component analysis (FPCA).
+Here, $\mathscr{C}_{t+i\mid t} \subset \mathscr{V}$ is a conformal prediction set
+defined on the projected space.
+The detailed construction of this set follows Algorithm~2 in
+\cite{lei2015conformal}.
+
+
+
+The set $\mathscr{C}_{t+i\mid t}$ certifies only the finite-dimensional projection $\pi_{\mathscr{V}}(S_{t+i\mid t})$ and need not cover the full score $S_{t+i\mid t}$; in general $\mathbb{P}[S_{t+i\mid t} \in \mathscr{C}_{t+i\mid t}] \neq 1 - \alpha$. To recover a guarantee on $S_{t+i\mid t}$ itself, we inflate $\mathscr{C}_{t+i\mid t}$ by the projection residual $S_{t+i\mid t} - \pi_{\mathscr{V}}(S_{t+i\mid t})$, which yields the valid set $S_{t+i\mid t} \in (\pi_{\mathscr{V}})^{-1}\mathscr{C}_{t+i\mid t} \subseteq \mathscr{H}$; the corresponding projection slack is calibrated conformally in~\eqref{eq:epsilon_quantile}.
+
+\paragraph{Data-driven basis (FPCA).}
+In our setting, the projection subspace $\mathscr{V}_{p_i}\subset\mathscr{H}$
+is learned from data at each horizon index $i$ via functional principal components.
+Concretely, let $\{S^{(n)}_{t+i\mid t}\}_{n=1}^N$ denote a collection of residual functions
+at step $i$.
+We choose an orthonormal basis
+$\{\varphi_{i,j}\}_{j=1}^{p_i}$ spanning $\mathscr{V}_{p_i}$ as the leading principal components
+of this residual sample, in the standard $L^2$ sense.
+
+For any $S\in\mathscr{H}$, define its coefficient vector in this basis by
+\begin{equation*}
+\xi_{i}(S)
+\;\coloneqq\;
+\bigl(\langle S,\varphi_{i,1}\rangle,\ldots,\langle S,\varphi_{i,p_i}\rangle\bigr)^\top
+\in\mathbb{R}^{p_i},
+\end{equation*}
+so that the projection admits the expansion
+\begin{equation*}
+(\pi_{\mathscr{V}} S)(x) \;=\; \sum_{j=1}^{p_i} \xi_{i,j}(S)\,\varphi_{i,j}(x).
+\end{equation*}
+The dimension $p_i$ may be fixed or selected as a function of the sample size and approximation accuracy;
+we treat this choice as a modeling parameter.
+
+\paragraph{Computational note.}
+The projection coefficients $\xi_{i,j}(S)=\langle S,\varphi_{i,j}\rangle$ generally require
+integration over $\mathcal X$, which is expensive when $S$ is only available through costly
+distance-transform evaluations on a fine grid.
+Therefore, in implementation we approximate the projection (or its pointwise evaluations)
+using only finitely many anchor points $\bar{\mathcal X}\subset\mathcal X$, as described in
+Section~\ref{sec:approximation}.
+
+\paragraph{Inductive conformal calibration in coefficient space}
+\label{sec:icp_coeff}
+
+We adopt the inductive conformal predictor (ICP) framework
+\cite{lei2015conformal} to calibrate a high-density region in coefficient space.
+We split the coefficient samples $\{\xi^{(n)}\}_{n=1}^N$
+into a training subset and a calibration subset.
+A parametric conformity score $g(\xi)$ is fitted on the training subset,
+and a threshold is chosen using the empirical quantile on the calibration subset.
+
+\paragraph{Gaussian mixture model and ellipsoidal coefficient regions}
+\label{sec:gmm_ellipsoids}
+
+We model the distribution of the projected coefficients $\xi \in \mathbb{R}^p$
+using a $K$-component Gaussian mixture model (GMM).
+Specifically, we fit the mixture weights $\widehat{\pi}_k$, means
+$\widehat{\mu}_k$, and covariance matrices $\widehat{\Sigma}_k$
+to the training coefficients and obtain the estimated density
+\begin{equation*}
+\widehat f(\xi)
+\;=\;
+\sum_{k=1}^K \widehat{\pi}_k\,
+\varphi\!\left(\xi;\widehat{\mu}_k,\widehat{\Sigma}_k\right),
+\end{equation*}
+where $\varphi(\cdot;\mu,\Sigma)$ denotes the multivariate Gaussian density.
+
+\paragraph{Conformity score.}
+Following the construction in Eqs.~(8)--(9) of \cite{lei2015conformal},
+we define a max-component pseudo-density conformity score
+based on the fitted GMM parameters:
+\begin{equation*}
+g(\xi)
+\;\coloneqq\;
+\max_{1 \le k \le K}
+\widehat{\pi}_k\,
+\varphi\!\left(\xi;\widehat{\mu}_k,\widehat{\Sigma}_k\right).
+\end{equation*}
+This score assigns higher conformity to coefficients lying in high-density
+regions of at least one mixture component, thereby yielding
+ellipsoidal conformal regions in the coefficient space.
+
+Let $\{\xi^{(n)}\}_{n\in\mathrm{cal}}$ be the calibration coefficients and define
+\begin{equation*}
+\lambda_i \;\coloneqq\; \mathrm{Quantile}_{\alpha}\Bigl(\{ g(\xi^{(n)}) \}_{n\in\mathrm{cal}} \Bigr).
+\end{equation*}
+Then the ICP prediction set in coefficient space is
+\begin{equation*}
+\begin{gathered}
+\mathcal{T}_{t+i\mid t} \coloneqq \{\xi\in\mathbb{R}^{p_i}: g(\xi)\ge \lambda_i\}, \\
+\mathbb{P}\bigl(\xi_{t+i\mid t}\in\mathcal{T}_{t+i\mid t}\bigr)\ge 1-\alpha.
+\end{gathered}
+\end{equation*}
+
+\paragraph{Exact union-of-ellipsoids representation.}
+Because $g$ is a maximum over mixture components,
+$\mathcal{T}_{t+i\mid t}$ decomposes exactly as a union of component-wise ellipsoids
+(cf.\ Eq.\ (9) in \cite{lei2015conformal}):
+\begin{equation}
+\begin{aligned}
+\mathcal{T}_{t+i\mid t} &= \bigcup_{k=1}^K \mathcal{T}^{(k)}_{t+i\mid t}, \\
+\mathcal{T}^{(k)}_{t+i\mid t} &\coloneqq \left\{\xi:\ \varphi(\xi;\widehat\mu_k,\widehat\Sigma_k)\ge \tfrac{\lambda_i}{\widehat\pi_k}\right\}.
+\end{aligned}
+\label{eq:exact_union}
+\end{equation}
+Each $\mathcal{T}^{(k)}_{t+i\mid t}$ is an ellipsoid
+\begin{equation}
+\mathcal{T}^{(k)}_{t+i\mid t}
+=
+\left\{\xi:\ (\xi-\widehat\mu_k)^\top \widehat\Sigma_k^{-1}(\xi-\widehat\mu_k)\le r_{k,i}^2\right\},
+\label{eq:ellipsoid_def}
+\end{equation}
+where the radius is
+\begin{equation*}
+r_{k,i}^2
+=
+\max\!\left\{
+0,\,
+-2\log\!\left(
+\frac{\lambda_i}{\widehat\pi_k}\,(2\pi)^{p_i/2}\sqrt{\det(\widehat\Sigma_k)}
+\right)
+\right\}.
+\end{equation*}
+In implementation, we add a small diagonal jitter to $\widehat\Sigma_k$
+for numerical stability.
+
+\paragraph{From coefficient regions to a functional upper envelope}
+\label{sec:upper_envelope}
+
+Let the discretized basis vector at coordinate $x$ be
+$\varphi_i(x)\in\mathbb{R}^{p_i}$ (in code, $\varphi_i(\cdot)$ is represented implicitly
+by the PCA components $\phi_i$ over the discretized domain).
+For coefficients $\xi\in\mathbb{R}^{p_i}$, the projected value is $\xi^\top \varphi_i(x)$.
+Using~\eqref{eq:exact_union}, a projected upper envelope satisfies
+\begin{equation*}
+\sup_{\xi\in\mathcal{T}_{t+i\mid t}} \xi^\top \varphi_i(x)
+=
+\max_{1\le k\le K}\ \sup_{\xi\in\mathcal{T}^{(k)}_{t+i\mid t}} \xi^\top \varphi_i(x).
+\end{equation*}
+For an ellipsoid~\eqref{eq:ellipsoid_def}, the support function is available in closed form:
+\begin{equation}
+\sup_{\xi\in\mathcal{T}^{(k)}_{t+i\mid t}} \xi^\top \varphi_i(x)
+=
+\widehat\mu_k^\top \varphi_i(x)
++
+r_{k,i}\bigl(\varphi_i(x)^\top \widehat\Sigma_k\, \varphi_i(x)\bigr)^{1/2}.
+\label{eq:ellipsoid_support_function}
+\end{equation}
+
+\paragraph{Projection slack calibration.}
+To translate coefficient-space uncertainty back to the original discretized function,
+we account for the projection residual in sup norm.
+Define the reconstruction error for sample $y^{(n)}$ by
+\begin{equation*}
+e^{(n)} \;\coloneqq\; \|y^{(n)} - \phi_i^\top \phi_i y^{(n)}\|_\infty.
+\end{equation*}
+Using the calibration split, we set the projection slack to the conformal quantile
+\begin{equation}
+\varepsilon_i \;\coloneqq\; \mathrm{Quantile}_{1-\alpha}( \{e^{(n)}\}_{n\in\mathrm{cal}} ),
+\label{eq:epsilon_quantile}
+\end{equation}
+so that with probability at least $1-\alpha$, the projection residual is bounded by $\varepsilon_i$
+under exchangeability assumptions (ICP validity).
+
+\paragraph{Final envelope with projection slack.}
+Combining ~\eqref{eq:ellipsoid_support_function} and ~\eqref{eq:epsilon_quantile},
+we define the functional upper envelope used in our controller:
+\begin{equation}
+\begin{aligned}
+U_{t+i\mid t}(x) \coloneqq{}& \varepsilon_i + \max_{1\le k\le K} \Bigl\{ \widehat\mu_k^\top \varphi_i(x) \\
+&{}+ r_{k,i}\bigl(\varphi_i(x)^\top \widehat\Sigma_k\, \varphi_i(x)\bigr)^{1/2} \Bigr\}.
+\end{aligned}
+\label{eq:functional_upper_envelope}
+\end{equation}
+
+
+\subsection{Computation of Score Function}
+
+Evaluating $S_{t+i|t}$~\eqref{eq:functional-score} for all $x\in \mathcal{X}$ induces a substantial amount of computational overhead in practice, especially when $\mathcal{X}$ is large. While computing the distance $d(x, \mathcal{O}_{t+i})$ is costly per se, computing $S_{t+i|t}$ for all $x$ essentially requires the fine discretization of $\mathcal{X}$ and the computation of $S_{t+i|t}$ on the discretization mesh. In such a case, the complexity of the evaluation would be $O(r^{-d})$, where $r > 0$ is the resolution of the discretization, i.e., distance between adjacent points. A compromise we can take would be to take a modest size of $r$ at the cost of the discretization accuracy, and add a correction term considering the accuracy. To make this rigorous, let $\bar{\mathcal{X}} \subseteq \mathcal{X}$ be the finite subset of $\mathcal{X}$ (i.e., a discretization grid), and define its resolution as
+\begin{equation*}
+r = \sup_{x \in \mathcal{X}} \min_{x' \in \bar{\mathcal{X}}} \| x - x' \|_{\mathcal{\mathcal{X}}}.
+\end{equation*}
+Intuitively, $\mathcal{X}$ would be covered by the closed balls of radius $r$ whose centers are $\bar{\mathcal{X}}$. Then, the original score function $S_{t+i|t}$ is bounded from above as
+\begin{equation*}
+S_{t+i|t}(x) \leq \min_{x' \in \bar{\mathcal{X}}} \left\{ S_{t+i|t}(x') + 2\|x - x' \|_{\mathcal{X}} \right\} \leq , \quad x\in \mathcal{X},
+\end{equation*}
+ which is clear from the fact that $S_{t+i|t}$ is 2-Lipschitz. Therefore, for any $x\in \mathcal{X}$, there always exists $x' \in \bar{\mathcal{X}}$ such that
+ \begin{equation*}
+ S_{t+i|t}(x) \leq S_{t+i|t}(x') + 2r.
+ \end{equation*}
+
+
+\subsection{Quasi-Monte Carlo Approximation of FPCA Projection Coefficients}
+\label{sec:approximation}
+
+We adapt the quasi-Monte Carlo (QMC) framework \cite{dick2013qmc} to approximate the FPCA projection coefficients $\xi_{i,j}(S_{t+i|t}) = \langle S_{t+i|t}, \varphi_{i,j} \rangle = \int_{\mathcal{X}} S_{t+i|t}(x)\,\varphi_{i,j}(x)\,dx$, where $\mathcal{X} \subset \mathbb{R}^d$, $d \in \{2,3\}$.
+
+\paragraph{Approximation.}
+Since standard QMC theory is developed on $[0,1]^d$, we first map $\mathcal{X} \subseteq [a_1,b_1]\times\cdots\times[a_d,b_d]$ to $[0,1]^d$ via the affine bijection $T(u)_\ell = a_\ell + (b_\ell-a_\ell)u_\ell$, with Jacobian $|\mathcal{B}| =
+\prod_{\ell=1}^d(b_\ell-a_\ell)$, giving
+\begin{equation*}
+\begin{gathered}
+    \xi_{i,j}(S_{t+i|t}) \;=\; |\mathcal{B}|\int_{[0,1]^d} g_{i,j}(u)\,du, \\
+    g_{i,j}(u) := S_{t+i|t}(T(u))\,\varphi_{i,j}(T(u)).
+\end{gathered}
+\end{equation*}
+
+Given $M$ anchor points $\{x^{(k)}\}_{k=1}^M \subset \mathcal{X}$, we approximate this integral by
+\begin{equation}\label{eq:qmc-coeff}
+    \hat{\xi}_{i,j}(S_{t+i|t}) \;:=\; \frac{|\mathcal{B}|}{M}\sum_{k=1}^{M} S_{t+i|t}(x^{(k)})\,\varphi_{i,j}(x^{(k)}).
+\end{equation}
+
+Stacking over $j=1,\ldots,p_i$, the full coefficient vector is
+\begin{equation*}
+    \hat{\xi}_i(S_{t+i|t}) \;=\; \frac{|\mathcal{B}|}{M}\,\Phi_i\,\mathbf{s}_i,
+\end{equation*}
+where $\Phi_i \in \mathbb{R}^{p_i \times M}$ with $[\Phi_i]_{j,k} = \varphi_{i,j}(x^{(k)})$ depends only on the learned basis and the fixed anchor points and is therefore computed once during training, and $\mathbf{s}_i \in \mathbb{R}^M$ with $[\mathbf{s}_i]_k = S_{t+i|t}(x^{(k)})$ is evaluated at each time step $t$. The per-step cost reduces to a single matrix, vector multiply $O(p_i M)$.
+
+\paragraph{Choice of anchor points.}
+We take $\{x^{(k)}\} = \{T(u^{(k)})\}$ where $\{u^{(k)}\}_{k=0}^{M-1} \subset [0,1]^d$ is a randomly shifted rank-1 lattice rule,
+\begin{equation*}
+    u^{(k)} = \Bigl\{\frac{k\,\mathbf{z}}{M} + \Delta\Bigr\},
+    \quad k = 0,\ldots,M-1,
+\end{equation*}
+where $\{\cdot\}$ denotes the fractional part componentwise, $\Delta \sim \mathrm{Uniform}([0,1]^d)$ is a single random shift drawn once and fixed, and $\mathbf{z} \in \mathbb{Z}^d$ is a generating vector chosen by the CBC construction of
+\cite{dick2013qmc}, which selects $\mathbf{z}$ to minimise the shift-averaged worst-case integration error over $W^{\alpha,2}([0,1]^d)$, the Sobolev space of functions whose weak derivatives up to order $\alpha$ are square-integrable. For $d \in \{2,3\}$ the CBC construction is computationally cheap and the same anchor set is reused across all horizon indices $i$ and basis indices $j$.
+
+\paragraph{Error bound and convergence.}
+We assume $g_{i,j}$ belongs to the weighted Sobolev space considered
+in \cite{kuo2003cbc}, where $W^{1,2}([0,1]^d)$ denotes the space of
+functions whose weak first-order derivatives are square-integrable,
+with norm $\|g_{i,j}\|_{W^{1,2}} < \infty$. This holds under the
+piecewise-smooth boundary assumption on $\mathcal{O}_{t+i}$, which
+ensures $S_{t+i|t} \in W^{1,2}(\mathcal{X})$, and since
+$\varphi_{i,j}$ are the leading $L^2$ principal components of a
+smooth residual sample.
+
+By \cite{kuo2003cbc}, the CBC-constructed randomly shifted rank-1
+lattice rule with $M$ points achieves the optimal rate of convergence
+for QMC rules in weighted Sobolev spaces,
+\begin{equation}\label{eq:qmc-error}
+    \mathbb{E}_\Delta\bigl|\xi_{i,j}(S_{t+i|t}) - \hat{\xi}_{i,j}(S_{t+i|t})\bigr| \;=\; O(M^{-1+\delta}) \quad \text{for any } \delta > 0,
+\end{equation}
+where the expectation is over the random shift $\Delta$ and the
+implied constant is independent of $d$. This converges to the true
+coefficient $\xi_{i,j}(S_{t+i|t})$ as $M \to \infty$, and strictly
+dominates the Monte Carlo rate $O(M^{-1/2})$. Compared to direct
+numerical integration on a fine grid of $\mathcal{X}$, which requires
+$O(N_{\mathrm{grid}})$ distance-transform evaluations with
+$N_{\mathrm{grid}} \gg M$ to achieve comparable accuracy, the QMC
+approximation \eqref{eq:qmc-coeff} attains the same limit with
+substantially fewer evaluations. Propagating \eqref{eq:qmc-error}
+via orthonormality of $\{\varphi_{i,j}\}$,
+\begin{equation}\label{eq:proj-error}
+    \mathbb{E}_\Delta\bigl\|\pi_{\mathscr{V}_i} S_{t+i|t} - \hat{\pi}_{\mathscr{V}_i} S_{t+i|t} \bigr\|_{L^2(\mathcal{X})} = O\bigl(\sqrt{p_i}\,M^{-1+\delta}\bigr)
+\end{equation}
+for any $\delta > 0$, so the approximation error in the projected score function vanishes
+as $M \to \infty$, while the per-step computational cost remains
+$O(p_i M)$, substantially lower than direct numerical integration
+over a fine grid of $\mathcal{X}$.
+
+
+%%%%%% yoonseok edit
+
+\section{Functional CP-informed MPC}
+\label{sec:cp_mpc}
+
+We now incorporate the conformalized signed-distance lower bound into a receding-horizon motion planner.
+Our controller follows the general safe-planning template of~\cite{lindemann2023safeplanning}, but is adapted to the present \emph{fieldwise} uncertainty representation.
+The key feature is an \emph{offline--online decomposition in coefficient space}: offline, we use a large calibration dataset and a GMM-based functional conformal procedure to construct an accurate \emph{initial} coefficient upper bound; online, once the robot starts moving, the GMM model is no longer used, and the coefficient upper bound is updated directly using only online residual observations and a target violation level.
+Figure~\ref{fig:overview} summarizes the resulting offline--online pipeline.
+
+\begin{figure}[t]
+  \centering
+  \resizebox{\columnwidth}{!}{%
+  \begin{tikzpicture}[
+    node distance=2.7mm and 3.7mm,
+    every node/.style={font=\scriptsize},
+    blockA/.style={rectangle,rounded corners=3pt,draw=snunavy2,thick,
+      fill=snulight,align=center,minimum width=34mm,minimum height=12mm,inner sep=1.8pt},
+    blockB/.style={rectangle,rounded corners=3pt,draw=accentred2,thick,
+      fill=accentredlight,align=center,minimum width=34mm,minimum height=12mm,inner sep=1.8pt},
+    arrow/.style={-Latex,very thick,snunavy2},
+    label/.style={font=\scriptsize\itshape,text=textgray},
+  ]
+  \node[blockA] (cal) {\textbf{Data}\\$D_{t+i\mid t},D_{t+i}$};
+  \node[blockA,right=of cal] (fpca) {\textbf{FPCA}\\basis};
+  \node[blockA,right=of fpca] (gmm) {\textbf{GMM + ICP}\\cache};
+  \node[label,above=1.3mm of fpca] {\textcolor{snunavy}{\bfseries OFFLINE}};
+  \draw[arrow] (cal) -- (fpca);
+  \draw[arrow] (fpca) -- (gmm);
+  \node[blockA,below=10mm of cal,fill=snulight2] (cache) {\textbf{Cache}\\$\Pi_i$};
+  \draw[arrow] (gmm.south) -- ++(0,-2.5mm) -| (cache.north);
+  \node[blockB,right=of cache] (proj) {\textbf{Project}\\$\xi^{\mathrm{on}}_{i,t}$};
+  \node[blockB,right=of proj] (afcp) {\textbf{AFCP}\\update};
+  \draw[arrow] (cache) -- (proj);
+  \draw[arrow] (proj) -- (afcp);
+  \node[blockB,below=10mm of proj] (env) {\textbf{Envelope}\\$\widetilde U_{i,t}$};
+  \node[blockB,right=of env] (mpc) {\textbf{MPC}\\safe filter};
+  \draw[arrow] (afcp.south) -- ++(0,-2.5mm) -| (env.north);
+  \draw[arrow] (env) -- (mpc);
+  \node[label,above=1.3mm of proj] {\textcolor{accentred2}{\bfseries ONLINE}};
+  \begin{pgfonlayer}{background}
+    \node[fit=(cal)(gmm),fill=snulight2,rounded corners,inner sep=3mm,draw=snunavy2,dashed] {};
+    \node[fit=(proj)(afcp)(env)(mpc),fill=accentredlight,rounded corners,inner sep=3mm,draw=accentred2,dashed] {};
+  \end{pgfonlayer}
+  \end{tikzpicture}}
+  \caption{Overview of the proposed functional CP-informed MPC.
+  \textbf{Offline} (blue): predicted and realized signed-distance fields are reduced by
+  FPCA and a GMM-based inductive conformal procedure into a cached coefficient-envelope
+  tuple $\Pi_i$.
+  \textbf{Online} (red): the realized residual is projected onto the cached basis, the
+  coefficient upper bound is adapted by the AFCP rule~\eqref{eq:acp_update}, and the
+  resulting envelope $\widetilde U_{i,t}$ tightens the sampled-MPC safety filter.
+  In the open 3D setting the online branch is unnecessary---ample free space makes the
+  offline hard envelope sufficient---whereas the dense 2D benchmarks additionally exploit
+  the online adaptation.}
+  \label{fig:overview}
+\end{figure}
+
+\paragraph{Geometric property and tracking assumption.}
+We first state the geometric regularity and tracking hypothesis used to transfer the conformal field bound into a robust safety constraint.
+
+\begin{property}[Lipschitz continuity of the signed distance field]
+\label{prop:sdf_lipschitz}
+For any closed obstacle set $\mathcal O \subset \mathcal X$, the signed distance function
+\[
+D(x,\mathcal O) \coloneqq d(x,\mathcal O)
+\]
+is $1$-Lipschitz on $\mathcal X$, i.e.,
+\[
+|D(x,\mathcal O)-D(y,\mathcal O)| \le \|x-y\|,
+\qquad \forall x,y\in\mathcal X.
+\]
+\end{property}
+
+\begin{assumption}[Bounded tracking error]
+\label{ass:tracking_error}
+The low-level tracking controller follows the planned position $p^*_{t+i|t}$ with a uniform error bound $\epsilon > 0$:
+\[
+\|p_{t+i}-p^*_{t+i|t}\| \le \epsilon,
+\qquad \forall i\in\{1,\dots,N\}.
+\]
+\end{assumption}
+
+\paragraph{Robot dynamics.}
+Let the robot state be $z_t=(x_t,y_t,\theta_t)\in\mathbb R^2\times\mathbb S^1$ and the control input be
+$u_t=(v_t,\omega_t)\in\mathcal U$.
+We use the discrete-time unicycle model
+\[
+z_{t+1}=f_r(z_t,u_t)
+=
+\begin{bmatrix}
+x_t+\Delta t\,v_t\cos\theta_t\\
+y_t+\Delta t\,v_t\sin\theta_t\\
+\theta_t+\Delta t\,\omega_t
+\end{bmatrix}.
+\]
+
+\paragraph{Nominal predicted distance and conformal lower bound.}
+At planning time $t$, let $\widehat{\mathcal O}_{t+i|t}$ denote the predicted obstacle set at horizon step $i\in\{1,\dots,N\}$.
+The corresponding nominal signed-distance prediction is
+\begin{equation}
+D_{t+i|t}(x)
+\coloneqq
+d\!\left(x,\widehat{\mathcal O}_{t+i|t}\right)
+=
+\min_{o\in\widehat{\mathcal O}_{t+i|t}}\|x-o\|,
+\qquad x\in\mathcal X .
+\label{eq:D_nominal_mpc}
+\end{equation}
+Recall from \eqref{eq:functional-score} that the residual score field is
+\[
+S_{t+i|t}(x)=D_{t+i|t}(x)-D_{t+i}(x).
+\]
+The offline calibration procedure in Section~\ref{sec:gmm_ellipsoids} yields an initial upper envelope, which is then updated online through a coefficient-space adaptive rule.
+Accordingly, we define the online envelope at horizon index $i$ and planning time $t$ by $\widetilde U_{i,t}(x)$, and the corresponding conformalized lower-bound field by
+\begin{equation}
+\underline D_{t+i|t}(x)
+\coloneqq
+\max\!\left\{D_{t+i|t}(x)-\widetilde U_{i,t}(x),\,0\right\},
+\qquad x\in\mathcal X.
+\label{eq:lower_field_def}
+\end{equation}
+
+\paragraph{Robust CP-safe set via constraint tightening.}
+Let
+\[
+r_{\mathrm{safe}} = r_{\mathrm{robot}} + r_{\mathrm{obs}}
+\]
+denote the nominal safety radius.
+The conformal envelope $\widetilde U_{i,t}$ grows with the horizon index $i$ as prediction errors compound, so enforcing the full clearance $r_{\mathrm{safe}}$ against \emph{every} far-horizon step makes the conformal constraint increasingly conservative and can shrink the feasible set to the point of emptiness. To curb this long-horizon conservativeness---without weakening the near-term constraint that governs the control actually applied---we relax the required clearance with the time-to-go, following an inevitable-collision-state (ICS) argument~\cite{fraichard2004inevitable}: under bounded controls the robot retains the maneuverability to evade an obstacle that is still several steps away. Concretely, we introduce a horizon-dependent evasion budget
+\begin{equation}
+\Delta_i \coloneqq \tfrac{1}{2}\, a_{\mathrm{lat}}^{\max}\,\bigl((i-1)\Delta t\bigr)^2,
+\qquad a_{\mathrm{lat}}^{\max} = v_{\max}\,\omega_{\max},
+\label{eq:ics_budget}
+\end{equation}
+which lower-bounds the lateral displacement the controller can realize over the $i-1$ steps remaining before horizon index $i$.
+Combining Property~\ref{prop:sdf_lipschitz}, Assumption~\ref{ass:tracking_error}, and the budget~\eqref{eq:ics_budget}, we define the robustly tightened, ICS-relaxed conformal safe set
+\begin{equation}
+\mathcal S^{\mathrm{cp}}_{t+i|t}
+\coloneqq
+\left\{x\in\mathcal X:\ \underline D_{t+i|t}(x)\ge \max\!\bigl(r_{\mathrm{safe}}+\epsilon-\Delta_i,\,0\bigr)\right\}
+\label{eq:cp_safe_set_mpc}
+\end{equation}
+for $i=1,\dots,N$.
+Because $\Delta_1=0$, the first (immediately applied) step retains the full tightened clearance $r_{\mathrm{safe}}+\epsilon$, and the relaxation loosens only the later, repeatedly re-planned steps.
+Consequently the closed-loop guarantees of Theorems~\ref{thm:asymptotic_safety} and~\ref{thm:asymptotic_safety_afcp}, whose proofs invoke the constraint only at the applied $i=1$ step, continue to hold verbatim; the same effective radius $\max(r_{\mathrm{safe}}+\epsilon-\Delta_i,0)$ is reused inside the soft safety-shaping penalty.
+
+\paragraph{Sampled candidate trajectories.}
+Rather than solving a nonlinear program exactly, we use a sampled MPC implementation.
+At each planning step, we draw $K_p$ candidate input sequences
+\[
+\mathcal U_{\mathrm{cand}}
+=
+\{\mathbf u^{(1)},\dots,\mathbf u^{(K_p)}\},
+\qquad
+\mathbf u^{(k)}
+=
+\langle
+u^{(k)}_{t|t},\dots,u^{(k)}_{t+N-1|t}
+\rangle,
+\]
+where $u^{(k)}_{t+i|t}=(v^{(k)}_{t+i|t},\omega^{(k)}_{t+i|t})\in\mathcal U$ is sampled from
+\[
+\mathcal U=[v_{\min},v_{\max}]\times[\omega_{\min},\omega_{\max}].
+\]
+
+\paragraph{Rollout and feasibility filtering.}
+For each sampled plan $\mathbf u^{(k)}$, the predicted state trajectory is generated by forward simulation:
+\begin{equation}
+z^{(k)}_{t|t}=z_t,
+\quad
+z^{(k)}_{t+i+1|t}
+=
+f_r\!\left(z^{(k)}_{t+i|t},u^{(k)}_{t+i|t}\right),
+\label{eq:rollout_sampled_mpc}
+\end{equation}
+for $i=0,\dots,N-1$.
+Let $p^{(k)}_{t+i|t}\in\mathbb R^2$ denote the planar position corresponding to $z^{(k)}_{t+i|t}$.
+A candidate trajectory is feasible if
+\begin{equation}
+p^{(k)}_{t+i|t}\in \mathcal S^{\mathrm{cp}}_{t+i|t},
+\qquad \forall i\in\{1,\dots,N\}.
+\label{eq:sampled_feasible_mpc}
+\end{equation}
+
+\paragraph{Monte Carlo CP-MPC objective.}
+Among the feasible candidates, the planner selects the control sequence minimizing the finite-horizon objective
+\begin{align}
+\min_{k\in\{1,\dots,K_p\}}
+\ \ &
+\sum_{i=0}^{N-1}
+\ell\!\left(z^{(k)}_{t+i|t},u^{(k)}_{t+i|t};p_{\mathrm{goal}}\right)
+\nonumber\\
+&\quad +
+\ell_f\!\left(z^{(k)}_{t+N|t};p_{\mathrm{goal}}\right)
+\label{eq:mc_cp_mpc_obj}
+\\
+\text{s.t.}\quad
+&
+z^{(k)}_{t+i+1|t}
+=
+f_r\!\left(z^{(k)}_{t+i|t},u^{(k)}_{t+i|t}\right),
+\quad i=0,\dots,N-1, \nonumber\\
+&
+p^{(k)}_{t+i|t}\in \mathcal S^{\mathrm{cp}}_{t+i|t},
+\quad i=1,\dots,N . \nonumber
+\end{align}
+In implementation, the conformal lower bound can be incorporated in one of two ways: as a \emph{hard} feasibility filter that rejects any candidate violating~\eqref{eq:sampled_feasible_mpc} outright---the setting to which the guarantees of Theorems~\ref{thm:asymptotic_safety} and~\ref{thm:asymptotic_safety_afcp} apply---or as a \emph{soft} safety-shaping penalty added to the objective, which leaves the feasible set otherwise unconstrained by the dynamic conformal bound. We compare both choices in our 2D pedestrian experiments.
+
+\subsection{Offline GMM Initialization}
+\label{subsec:offline_online_cp}
+
+The key design principle is to separate \emph{statistical initialization} from \emph{online adaptation}.
+Offline, we exploit a large calibration dataset and a flexible GMM model to construct the most accurate initial coefficient upper bound possible.
+Online, once the robot starts moving, the GMM is no longer evaluated; the coefficient upper bound is updated directly from streaming residual observations and a prescribed target violation level.
+
+\paragraph{Time-to-go indexing.}
+For each horizon index $i\in\{1,\dots,N\}$, we define the residual field
+\begin{equation}
+S_i(x)\equiv S_{t+i|t}(x)=D_{t+i|t}(x)-D_{t+i}(x),
+\qquad x\in\mathcal X.
+\label{eq:Si_def}
+\end{equation}
+We assume that the distribution of residual fields depends primarily on the time-to-go index $i$, which allows the offline initialization to be performed once per horizon step and reused online.
+
+\paragraph{Offline calibration via FPCA and GMM.}
+For each $i$, we collect a calibration dataset
+\[
+\mathcal D_{\mathrm{cal},i}
+=
+\{S_i^{(1)},\dots,S_i^{(n_{\mathrm{cal}})}\}.
+\]
+We then apply FPCA to obtain an orthonormal basis
+\[
+\{\varphi_{i,1},\dots,\varphi_{i,p_i}\},
+\]
+and represent each residual field by its coefficient vector
+\begin{equation}
+\xi_i(S)
+=
+\Bigl(
+\langle S,\varphi_{i,1}\rangle,\dots,\langle S,\varphi_{i,p_i}\rangle
+\Bigr)^\top
+\in\mathbb R^{p_i}.
+\label{eq:coeff_def_mpc}
+\end{equation}
+Using the coefficient dataset
+$
+\{\xi_i(S_i^{(j)})\}_{j=1}^{n_{\mathrm{cal}}},
+$
+we fit a Gaussian mixture model and apply the coefficient-space conformal construction of Section~\ref{sec:gmm_ellipsoids}.
+This produces an accurate \emph{initial} coefficient upper bound
+$
+\hat{\xi}^{(0)}_i \in \mathbb R^{p_i}_{\ge 0},
+$
+together with the projection slack $\varepsilon_i$.
+Equivalently, the initial offline envelope can be written as
+\begin{equation}
+U_i^{(0)}(x)
+=
+\varepsilon_i+\hat{\xi}^{(0)\top}_i \varphi_i(x),
+\label{eq:Ui_init}
+\end{equation}
+where $\varphi_i(x)\in\mathbb R^{p_i}$ denotes the vector of basis evaluations at $x$.
+The role of the offline GMM is therefore to provide the most accurate initialization $\hat{\xi}^{(0)}_i$ before deployment.
+
+\paragraph{Cached offline tuple.}
+For each horizon index $i$, we cache the offline calibration tuple
+\begin{equation}
+\Pi_i
+\;\coloneqq\;
+\Bigl(
+\{\varphi_{i,m}\}_{m=1}^{p_i},\,
+\hat{\xi}^{(0)}_i,\,
+\varepsilon_i
+\Bigr),
+\label{eq:Pi_i_tuple}
+\end{equation}
+and denote by
+\begin{equation}
+\boldsymbol{\Pi}\coloneqq\{\Pi_i\}_{i=1}^N
+\label{eq:Pi_collection}
+\end{equation}
+the full collection of horizon-indexed tuples cached by the controller.
+Crucially, after deployment, the online controller uses only $\boldsymbol{\Pi}$ and no longer requires the fitted GMM itself.
+
+\subsection{Online adaptive update}
+Once the robot starts moving, the GMM is used only for the initialization above and is not evaluated online.
+At time $t$, if a realized residual field becomes available for horizon index $i$, we project it onto the cached basis:
+\begin{equation}
+\xi^{\mathrm{on}}_{i,t}
+=
+\Bigl(
+\langle S^{\mathrm{on}}_{i,t},\varphi_{i,1}\rangle,\dots,
+\langle S^{\mathrm{on}}_{i,t},\varphi_{i,p_i}\rangle
+\Bigr)^\top .
+\label{eq:online_coeff}
+\end{equation}
+As in the offline stage, this projection is evaluated with the QMC anchor approximation of Section~\ref{sec:approximation}: it uses only the realized signed-distance residual at the $M$ anchor points and costs $O(p_i M)$ per horizon index, so the dense workspace grid is never reconstructed online.
+We then compare the magnitude of each component of $\xi^{\mathrm{on}}_{i,t}$ against the current online upper bound
+$\hat{\xi}^{(t)}_i$.
+If the empirical violation frequency is above the target level $\alpha_{\mathrm{target}}$, the upper bound is inflated; if it is below the target level, the upper bound is contracted.
+Hence the online update operates directly on the coefficient upper bound\cite{gibbs2021adaptiveconformalinferencedistribution},
+\begin{equation}
+\hat{\xi}_{i}^{(t+1)} = \hat{\xi}_{i}^{(t)} + \gamma \cdot \left( \mathbb{I}(|\xi_{i,t}^{\text{on}}| > \hat{\xi}_{i}^{(t)}) - \alpha_{\text{target}} \right).
+\label{eq:acp_update}
+\end{equation}
+The corresponding online envelope is then
+\begin{equation}
+\widetilde U_{i,t}(x)
+=
+\varepsilon_i+\hat{\xi}^{(t)\top}_i \varphi_i(x).
+\label{eq:Ui_online}
+\end{equation}
+Thus, offline GMM fitting is used only to initialize $\hat{\xi}^{(0)}_i$, while online adaptation operates entirely on the cached coefficients $\hat{\xi}^{(t)}_i$, without re-evaluating the GMM.
+
+\paragraph{Optional grid realization for fast online evaluation.}
+Although the primary cached objects are the tuples in~\eqref{eq:Pi_collection}, the envelope~\eqref{eq:Ui_online} may also be evaluated on a fixed workspace grid $\mathcal G$ and stored as a tensor for fast pointwise lookup.
+This grid realization is purely an implementation-level acceleration.
+
+\paragraph{Pointwise online evaluation along rollouts.}
+For each candidate trajectory and each horizon step, the controller evaluates
+\[
+\underline D_{t+i|t}\!\left(p^{(k)}_{t+i|t}\right)
+=
+\max\!\left\{
+D_{t+i|t}\!\left(p^{(k)}_{t+i|t}\right)
+-
+\widetilde U_{i,t}\!\left(p^{(k)}_{t+i|t}\right),
+\,0
+\right\},
+\]
+and accepts the trajectory only if the tightened safety condition~\eqref{eq:sampled_feasible_mpc} holds at every step.
+
+\paragraph{Computational implications.}
+This decomposition has two important consequences.
+First, the computationally expensive statistical modeling is performed only once offline, where large-scale data and a flexible GMM can be used to obtain an accurate initialization.
+Second, the online controller avoids all GMM computations and updates only the low-dimensional coefficient upper bound $\hat{\xi}^{(t)}_i$, which substantially reduces online overhead and better matches real-time operation.
+
+Algorithm~\ref{alg:fcp_mpc_acp} summarizes the resulting procedure.
+
+\begin{algorithm}[t]
+\caption{Functional CP-informed MPC with offline GMM initialization and online coefficient-space adaptive update}
+\label{alg:fcp_mpc_acp}
+\begin{algorithmic}[1]
+\STATE \textbf{Input:} Calibration dataset $\{\mathcal D_{\mathrm{cal},i}\}_{i=1}^N$, safety radius $r_{\mathrm{safe}}$, tracking margin $\epsilon$, target violation level $\alpha_{\mathrm{target}}$, workspace grid $\mathcal G$.
+\STATE \textbf{Offline initialization:}
+\FOR{each horizon index $i=1,\dots,N$}
+    \STATE Compute residual-field samples $S_i^{(j)}(x)=D_{t+i|t}^{(j)}(x)-D_{t+i}^{(j)}(x)$;
+    \STATE Apply FPCA and extract basis $\{\varphi_{i,m}\}_{m=1}^{p_i}$;
+    \STATE Project all residual fields to obtain coefficient vectors $\xi_i^{(j)}$;
+    \STATE Fit a GMM in coefficient space and compute the initial coefficient upper bound $\hat{\xi}^{(0)}_i$;
+    \STATE Compute the projection slack $\varepsilon_i$;
+    \STATE Cache the tuple $\Pi_i=(\{\varphi_{i,m}\}_{m=1}^{p_i},\hat{\xi}^{(0)}_i,\varepsilon_i)$;
+\ENDFOR
+\STATE Retain only the cached tuples $\{\Pi_i\}_{i=1}^N$; the GMM is not used online.
+\STATE \textbf{Online MPC loop:}
+\FOR{$t=0,1,2,\dots$}
+    \STATE Observe current robot state $z_t$ and obtain obstacle predictions $\{\widehat{\mathcal O}_{t+i|t}\}_{i=1}^N$;
+    \FOR{each horizon index $i$ for which an online residual field $S^{\mathrm{on}}_{i,t}$ becomes available}
+        \STATE Project $S^{\mathrm{on}}_{i,t}$ onto the cached basis and compute $\xi^{\mathrm{on}}_{i,t}$;
+        \STATE Update the coefficient upper bound $\hat{\xi}^{(t+1)}_i$ \eqref{eq:acp_update};
+        
+    \ENDFOR
+    \STATE Sample candidate input sequences and roll out candidate trajectories;
+    \STATE Evaluate $\widetilde U_{i,t}(x)=\varepsilon_i+\hat{\xi}^{(t)\top}_i\varphi_i(x)$ along rollouts;
+    \STATE Filter infeasible trajectories using $\underline D_{t+i|t}(x)\ge r_{\mathrm{safe}}+\epsilon$;
+    \STATE Select the feasible candidate minimizing~\eqref{eq:mc_cp_mpc_obj};
+    \STATE Apply the first control input and advance to the next planning step;
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\section{Safety Analysis and Asymptotic Guarantees}
+
+In this section, we establish the safety guarantees of the proposed framework.
+A key advantage of our functional formulation is that the pointwise safety of the robot is mathematically guaranteed for any planned trajectory that satisfies the tightened conformal constraint, regardless of how the control space is explored. 
+
+We first provide the base safety theorem under the assumption that the functional envelope successfully covers the true score. Subsequently, we extend this to a robust guarantee for dynamic environments using our online adaptive update rule.
+
+\subsection{Base Safety Guarantee via Functional Coverage}
+
+The following theorem demonstrates that if the spatial envelope asymptotically covers the true score function, the MPC framework guarantees the safety of the closed-loop system.
+
+\begin{theorem}[Asymptotic Safety Guarantee]
+\label{thm:asymptotic_safety}
+Suppose that the Monte Carlo CP-MPC problem~\eqref{eq:mc_cp_mpc_obj} is feasible for all $t \ge 0$.
+Let $p_{t+1}$ be the actual robot position at time $t+1$, and suppose the tracking error satisfies
+\[
+\|p_{t+1}-p^*_{t+1|t}\| \le \epsilon.
+\]
+Further suppose that the online envelope $\widetilde U_{1,t}$ satisfies the asymptotic coverage property
+\[
+\lim_{T\to\infty}\frac{1}{T}\sum_{t=0}^{T-1}
+\mathbb I\!\left[
+S_{t+1|t}(x)\le \widetilde U_{1,t}(x)\ \ \forall x\in\mathcal X
+\right]
+=
+1-\alpha
+\qquad \text{w.p. 1.}
+\]
+Then the closed-loop system is asymptotically $(1-\alpha)$-safe:
+\begin{equation}
+\liminf_{T \to \infty}
+\frac{1}{T}\sum_{t=0}^{T-1}
+\mathbb{I}\!\left[ D_{t+1}(p_{t+1}) \ge r_{\mathrm{safe}} \right]
+\ge 1-\alpha,
+\qquad \text{w.p. 1.}
+\label{eq:asymptotic_safety_guarantee}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For each $t$, define the event
+\[
+\mathcal E_{t+1}
+\coloneqq
+\left\{
+S_{t+1|t}(x)\le \widetilde U_{1,t}(x)\ \ \forall x\in\mathcal X
+\right\}.
+\]
+By construction of the lower-bound field in~\eqref{eq:lower_field_def}, on the event $\mathcal E_{t+1}$ we have
+\[
+D_{t+1}(x)\ge D_{t+1|t}(x)-\widetilde U_{1,t}(x)\ge \underline D_{t+1|t}(x),
+\qquad \forall x\in\mathcal X.
+\]
+
+Since the MPC problem is feasible, the selected optimal plan satisfies the tightened safety constraint~\eqref{eq:sampled_feasible_mpc}. In particular,
+\begin{equation}
+\underline D_{t+1|t}(p^*_{t+1|t}) \ge r_{\mathrm{safe}}+\epsilon.
+\label{eq:proof_feas_tight}
+\end{equation}
+Therefore, on $\mathcal E_{t+1}$,
+\begin{equation}
+D_{t+1}(p^*_{t+1|t})
+\ge
+\underline D_{t+1|t}(p^*_{t+1|t})
+\ge
+r_{\mathrm{safe}}+\epsilon.
+\label{eq:proof_nominal_safe}
+\end{equation}
+
+Next, by Property~\ref{prop:sdf_lipschitz} and the tracking assumption,
+\begin{equation}
+\begin{aligned}
+D_{t+1}(p_{t+1})
+&\ge
+D_{t+1}(p^*_{t+1|t})-\|p_{t+1}-p^*_{t+1|t}\| \\
+&\ge
+D_{t+1}(p^*_{t+1|t})-\epsilon.
+\end{aligned}
+\label{eq:proof_lipschitz}
+\end{equation}
+Combining \eqref{eq:proof_nominal_safe} and \eqref{eq:proof_lipschitz}, we obtain, on $\mathcal E_{t+1}$,
+\[
+D_{t+1}(p_{t+1}) \ge (r_{\mathrm{safe}}+\epsilon)-\epsilon = r_{\mathrm{safe}}.
+\]
+Hence,
+\[
+\mathbb I\!\left[D_{t+1}(p_{t+1})\ge r_{\mathrm{safe}}\right]
+\ge
+\mathbb I[\mathcal E_{t+1}].
+\]
+Averaging over $t=0,\dots,T-1$ and taking $\liminf$ yields
+\[
+\begin{aligned}
+\liminf_{T\to\infty}
+\frac{1}{T}\sum_{t=0}^{T-1}
+\mathbb I\!\left[D_{t+1}(p_{t+1})\ge r_{\mathrm{safe}}\right]
+&\ge
+\lim_{T\to\infty}
+\frac{1}{T}\sum_{t=0}^{T-1}\mathbb I[\mathcal E_{t+1}] \\
+&=
+1-\alpha
+\end{aligned}
+\]
+with probability one, which proves~\eqref{eq:asymptotic_safety_guarantee}.
+\end{proof}
+
+\subsection{Robust Guarantee under Online Adaptation}
+
+Theorem~\ref{thm:asymptotic_safety} establishes the foundational logic mapping functional coverage to pointwise safety. In offline calibration settings, guaranteeing the exact equality of the coverage (i.e., $\lim_{T\to\infty} \dots = 1-\alpha$) heavily relies on the exchangeability of the calibration and test data. However, in dynamic environments, unpredicted distribution shifts can invalidate this assumption.
+
+To robustify our framework against such shifts, we drop the exchangeability assumption and employ the online Adaptive Functional Conformal Prediction (AFCP) method. By utilizing online learning and regret minimization in the coefficient space (as established in Section X.X), the AFCP update rule mathematically guarantees a robust lower bound on the functional coverage:
+\begin{equation}
+\liminf_{T\to\infty}\frac{1}{T}\sum_{t=0}^{T-1}
+\mathbb I\!\left[
+S_{t+1|t}(x)\le \widetilde U_{1,t}(x)\ \forall x\in\mathcal X
+\right]
+\ge
+1-\alpha
+\label{eq:afcp_coverage_prop}
+\end{equation}
+with probability one.
+
+Based on this robust property, the following theorem extends the safety guarantee to dynamic, non-exchangeable environments.
+
+\begin{theorem}[Asymptotic Safety with AFCP]
+\label{thm:asymptotic_safety_afcp}
+Consider a dynamic environment where data exchangeability does not hold. Suppose the feasibility and tracking conditions of Theorem~\ref{thm:asymptotic_safety} are satisfied. If the functional envelope $\widetilde U_{1,t}$ is updated online via the AFCP rule satisfying \eqref{eq:afcp_coverage_prop}, then the closed-loop system robustly maintains the asymptotic $(1-\alpha)$-safety:
+\begin{equation}
+\liminf_{T \to \infty}
+\frac{1}{T}\sum_{t=0}^{T-1}
+\mathbb{I}\!\left[ D_{t+1}(p_{t+1}) \ge r_{\mathrm{safe}} \right]
+\ge 1-\alpha,
+\qquad \text{w.p. 1.}
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Let $\mathcal E_{t+1} \coloneqq \{ S_{t+1|t}(x)\le \widetilde U_{1,t}(x)\ \forall x\in\mathcal X \}$ be the functional coverage event.
+Following the exact same derivations as in the proof of Theorem~\ref{thm:asymptotic_safety}—specifically regarding the tightened MPC constraint \eqref{eq:proof_feas_tight} and the Lipschitz continuity of the SDF \eqref{eq:proof_lipschitz}—we establish that for any step $t$, the functional coverage directly implies point-wise safety:
+$\mathbb I\!\left[D_{t+1}(p_{t+1})\ge r_{\mathrm{safe}}\right] \ge \mathbb I[\mathcal E_{t+1}]$.
+
+Taking the average over $T$ steps and applying the limit infimum on both sides, we obtain:
+\[
+\liminf_{T\to\infty} \frac{1}{T}\sum_{t=0}^{T-1} \mathbb I\!\left[D_{t+1}(p_{t+1})\ge r_{\mathrm{safe}}\right] \ge \liminf_{T\to\infty} \frac{1}{T}\sum_{t=0}^{T-1}\mathbb I[\mathcal E_{t+1}].
+\]
+By substituting the AFCP coverage guarantee \eqref{eq:afcp_coverage_prop} into the right-hand side, we immediately conclude:
+\[
+\liminf_{T\to\infty} \frac{1}{T}\sum_{t=0}^{T-1} \mathbb I\!\left[D_{t+1}(p_{t+1})\ge r_{\mathrm{safe}}\right] \ge 1-\alpha.
+\]
+This completes the proof, verifying that the point-wise safety of the robot is inherently guaranteed by the online adaptation of the functional envelope.
+\end{proof}
+
+
+\section{Experimental Setup}
+We evaluate the proposed \emph{Conformal SDF} framework and its integration into a
+CP-informed model predictive controller (CP-MPC).
+Our experiments are designed to assess how functional conformal calibration of
+the signed distance field affects safety, feasibility, and efficiency in
+closed-loop motion planning under prediction uncertainty.
+
+To this end, we conduct experiments at increasing levels of complexity:
+a 2D toy setting for visualizing conformalized distance fields,
+standard 2D pedestrian navigation benchmarks for quantitative evaluation, and
+a challenging 3D quadrotor navigation task for assessing closed-loop performance
+under dense, uncertain dynamics.
+
+Across all settings, conformal prediction is applied to calibrate a lower bound
+of the predicted signed distance field, which is then enforced as a hard safety
+constraint within MPC.
+
+\paragraph{CP Calibration}
+We collect a calibration dataset of length $T_{\mathrm{cal}}$ and compute
+residual SDF fields $R_{t+i\mid t}(x) = D_{t+i\mid t}(x) - D_{t+i}(x)$ over a
+3D grid for each horizon step $i \in \{1,\dots,H\}$.
+The residual fields are projected onto a $p$-dimensional subspace using PCA and
+modeled via a $K$-component Gaussian mixture model (GMM) in coefficient space.
+We set the target miscoverage level to $\alpha$ and compute horizon-dependent
+upper envelopes $U_{t+i\mid t}(x)$, yielding the conformal lower-bound SDF
+ defined as ~\eqref{eq:lower_field_def}
+
+\subsection{Conformal SDF Visualization at 2D}
+Figure~\ref{fig:sdf_visualization_2d} shows an illustrative 2D example where the
+conformal lower bound expands the unsafe region in areas of high uncertainty.
+
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{multi_obs_H2.png}
+    \caption{2D conformal SDF visualization at a representative time.
+    \textbf{Left:} ground-truth signed distance field.
+    \textbf{Right:} conformal lower-bound field.
+    Dashed contours indicate the safety threshold $r_{\mathrm{safe}}$.}
+    \label{fig:sdf_visualization_2d}
+\end{figure}
+
+\subsection{CP-Informed MPC in 2D Pedestrian Environments}
+
+Before evaluating the proposed framework in complex 3D scenarios, we first
+validate its effectiveness in standard 2D pedestrian navigation benchmarks.
+These experiments serve as a controlled testbed to examine how spatial
+conformal calibration affects safety, feasibility, and efficiency in a
+well-studied setting.
+
+\paragraph{2D Simulation Setup}
+We evaluate all methods on the ETH--UCY pedestrian datasets, including
+\texttt{zara1}, \texttt{zara2}, \texttt{eth}, and \texttt{univ}.
+Pedestrian trajectories are taken from real-world recordings, and a mobile robot
+is tasked with navigating toward a fixed goal while avoiding dynamic pedestrians.
+
+At each planning step, the robot observes recent pedestrian state histories and
+receives predicted future trajectories over a fixed planning horizon.
+A Trajectron++~\cite{salzmann2020trajectron}
+predictor is used as the base prediction model.
+This setup allows us to isolate the effect of \emph{offline error calibration}
+independently of the prediction model itself.
+
+The robot is modeled as a unicycle system with bounded linear and angular velocities.
+For a fair comparison, all methods share the same trajectory sampler, planning
+horizon, and cost structure, including goal-tracking and control-effort terms.
+
+We compare four controllers spanning how prediction uncertainty is handled:
+\begin{itemize}
+\item \emph{CC-MPC}: safety through soft penalty terms, without explicit uncertainty calibration;
+\item \emph{ECP-MPC}: explicit online reasoning about prediction uncertainty;
+\item \emph{ACP-MPC}: online adaptation of conformal bounds; and
+\item \emph{FCP-MPC} (ours): offline functional conformal calibration of the signed-distance field.
+\end{itemize}
+For FCP-MPC we evaluate both a hard- and a soft-constraint formulation, ablating in
+each case the online coefficient adaptation of~\eqref{eq:acp_update} to assess its
+effect on overconservatism at long horizons.
+
+
+
+\paragraph{Evaluation Metrics}
+We report four closed-loop metrics (lower is better), averaged over the scenes of
+each dataset:
+\begin{itemize}
+\item \emph{collision rate}: fraction of planning steps that violate the safety threshold;
+\item \emph{infeasible rate}: fraction of steps for which no feasible trajectory is found;
+\item \emph{time-to-goal}: number of planning steps to reach the goal; and
+\item \emph{control time}: average per-step computation (ms).
+\end{itemize}
+
+
+\paragraph{Hard vs.\ soft use of the conformal bound in 2D}
+In the 2D pedestrian benchmarks, we evaluate two variants of CP-MPC that differ
+in how the conformal lower-bound signed distance field is incorporated.
+
+\emph{Hard-CP} enforces the conformal bound strictly as a hard feasibility
+constraint over the entire planning horizon.
+In dense 2D scenes, the offline functional envelope can become overly conservative
+as the horizon increases due to compounding prediction errors, which significantly
+shrinks the feasible set and leads to a high infeasible rate.
+
+\emph{Soft-CP} instead incorporates the conformal lower bound only as a soft
+safety-shaping penalty in the MPC objective: it keeps a hard feasibility filter for
+static obstacles but not for the predicted dynamic obstacles, ranking candidates by
+their conformal safety margin.
+Because the dynamic conformal bound no longer constrains the feasible set, the planner
+rarely exhausts its feasible candidates, trading the worst-case feasibility guarantee
+for consistently low infeasibility and shorter paths.
+Table~\ref{tab:2d_results} reports the main comparison against the baselines, while
+Table~\ref{tab:2d_ablation} isolates the effect of the online envelope adaptation
+within each variant.
+
+
+\subsection{CP-Informed MPC in 3D}
+We embed the conformal SDF into MPC by replacing the nominal distance constraint
+with the conformal lower bound:
+\begin{equation}
+\underline{D}_{t+i\mid t}(x_{t+i}) \ge r_{\mathrm{safe}}, \qquad i=1,\dots,H.
+\end{equation}
+We compare CP-MPC against a nominal MPC baseline that uses the predicted distances
+without conformal tightening, while keeping the same trajectory sampler, cost
+function, and planning horizon.
+\paragraph{3D Experimental Setup}
+We evaluate CP-MPC in a challenging physics-based quadrotor navigation task
+implemented in PyBullet.
+The robot is modeled as a quadrotor with a low-level PID controller running at
+240\,Hz, while the high-level CP-MPC planner operates at a slower planning period
+$\Delta t = 0.1\,\mathrm{s}$.
+
+The environment contains $M = 280$ dynamic obstacles, modeled as kinematic agents
+with stochastic mode switching among multiple motion patterns, including
+constant-velocity, turning, wandering, and stop-and-go behaviors.
+Additive process noise is applied to obstacle dynamics, inducing increasing
+prediction uncertainty over the planning horizon.
+Obstacles are rendered as spheres within a bounded 3D workspace
+$x,y \in [-3,7]$, $z \in [0,8]$.
+
+At each planning step the controller receives recent obstacle state histories and
+predicted obstacle trajectories over a horizon $H = 12$; oracle future trajectories
+are provided solely for evaluation and metric computation.
+A constant-velocity predictor is used as the base prediction model, and prediction
+noise is injected to emulate model mismatch.
+
+Due to the higher-dimensional workspace and the availability of sufficient
+free space in 3D, we employ a \emph{fully offline} functional conformal
+calibration in this setting.
+Unlike the 2D case, excessive conservativeness does not immediately block
+progress, allowing the calibrated worst-case safety envelopes to be enforced
+directly without additional online adaptation.
+
+The planner samples endpoint candidates and generates smooth quintic polynomial
+trajectories in $\mathbb{R}^3$.
+Unsafe trajectories are filtered using the conformal lower-bound SDF constraint,
+and the minimum-cost feasible trajectory is selected.
+Each episode terminates once the robot reaches the goal within
+$0.25\,\mathrm{m}$ or a maximum step limit is reached.
+
+
+\paragraph{Evaluation Metrics}
+We use the same closed-loop metrics as in the 2D study---collision rate, infeasible
+rate, time-to-goal, and per-step runtime---with collision now defined by the minimum
+robot--obstacle distance violating $r_{\mathrm{safe}}$. For spatial evaluation we
+additionally report the \emph{containment} of the unsafe set (whether the true unsafe
+region lies inside the conformal unsafe region) and a voxel-wise \emph{recall} of the
+true unsafe set. All metrics are averaged over five scenes per dataset.
+
+
+
+\section{Results and Analysis}
+Qualitative rollouts indicate that FCP-MPC adapts conservativeness to spatially
+varying uncertainty: it becomes more conservative in crowded or uncertain regions
+while remaining less restrictive in open areas.
+
+\subsection{2D Pedestrian Navigation}
+Table~\ref{tab:2d_results} reports quantitative results on the ETH--UCY pedestrian
+datasets, and Figure~\ref{fig:traj_2d} shows representative closed-loop trajectories
+of FCP-MPC and the baselines.
+Several consistent trends emerge across all environments.
+
+CC-MPC exhibits consistently zero infeasible rates due to its soft safety
+penalty formulation.
+However, this robustness comes at the cost of conservative behavior, leading to
+slow progress toward the goal and frequent timeouts in complex scenes such as
+\texttt{univ}.
+Moreover, while collisions are reduced compared to nominal planning, they remain
+non-negligible in dense pedestrian scenarios, indicating limited ability to
+anticipate worst-case interactions.
+
+ECP-MPC achieves strong nominal safety, often attaining among the lowest collision
+rates and the shortest steps-to-goal when successful.
+Nevertheless, its explicit online reasoning over uncertainty incurs substantial
+computational overhead.
+In all datasets, the control computation time exceeds tens of milliseconds and
+approaches or surpasses the planning period, which leads to degraded closed-loop
+performance, increased infeasible rates, and occasional failures to reach the
+goal.
+
+ACP-MPC reduces computational cost by simplifying uncertainty handling and
+achieves fast control updates.
+However, the online adaptation of conformal bounds remains insufficient to
+robustly handle dense and highly dynamic environments, resulting in elevated
+infeasible rates and frequent timeouts despite relatively low collision rates in
+some datasets.
+
+FCP-MPC reveals a clear safety--efficiency trade-off between its hard and soft
+variants.
+The hard variant enforces the conformal lower bound as a strict feasibility
+constraint, attaining the lowest collision rates (e.g., $0.000$ on \texttt{eth})
+but a non-zero infeasible rate, since the worst-case envelope can become
+overconservative at long horizons.
+The soft variant instead enforces the bound only as a penalty, eliminating
+infeasibility across all datasets and substantially reducing steps-to-goal
+relative to CC-MPC, at the cost of a higher collision rate in the densest scenes
+(e.g., \texttt{zara2}, \texttt{univ}).
+Importantly, both variants keep the control computation time far below ECP-MPC---often
+by close to an order of magnitude---because uncertainty calibration is performed
+offline and only a low-dimensional coefficient update runs online.
+
+Overall, these results demonstrate that offline functional conformal calibration
+enables FCP-MPC to reason over global uncertainty distributions without expensive
+online computation.
+By decoupling uncertainty calibration from real-time control, FCP-MPC achieves a
+favorable balance between safety, feasibility, and efficiency in crowded dynamic
+environments.
+
+\begin{table*}[!t]
+\centering
+\small
+\caption{2D navigation results on ETH--UCY pedestrian datasets.
+All metrics are averaged across scenes; lower is better.
+The FCP-MPC (hard) and FCP-MPC (soft) rows use our full method with the
+\emph{online-adapted} (AFCP) envelope of~\eqref{eq:acp_update};
+Table~\ref{tab:2d_ablation} ablates the fixed offline (FCP) versus
+online-adapted (AFCP) choice for each constraint mode.}
+\label{tab:2d_results}
+\input{table_2d_results.tex}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Ablation of the online envelope adaptation~\eqref{eq:acp_update} in 2D.
+Within each constraint mode (Hard / Soft), the better value per metric is in bold.
+Lower values indicate better performance.}
+\label{tab:2d_ablation}
+\input{table_2d_ablation.tex}
+\end{table*}
+
+\begin{figure*}[!t]
+  \centering
+  \includegraphics[width=\linewidth]{traj_2d.png}
+  \caption{Representative closed-loop trajectories on one scene per ETH--UCY dataset
+  (green squares: start; black stars: goal).
+  FCP-MPC (soft, ours; thick blue) reaches the goal along direct paths, whereas the
+  baselines tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC
+  (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense
+  scenes such as \texttt{univ}.}
+  \label{fig:traj_2d}
+\end{figure*}
+
+
+
+
+\paragraph{Effect of online envelope adaptation}
+
+The offline functional envelope is calibrated on held-out data and can become
+overly conservative under the distribution shift of dense, dynamic scenes,
+occasionally eliminating all feasible trajectories after hard filtering.
+The online update~\eqref{eq:acp_update} addresses this by adapting the coefficient
+upper bound $\hat{\xi}^{(t)}_i$ directly from realized residuals, without
+re-invoking the GMM.
+Table~\ref{tab:2d_ablation} isolates this effect.
+For the hard variant, online adaptation markedly reduces the infeasible
+rate---from $0.887$ to $0.226$ on \texttt{eth}, from $0.640$ to $0.383$ on
+\texttt{univ}, and from $0.454$ to $0.262$ on \texttt{zara1}---by relaxing the
+envelope where the offline bound was unnecessarily tight, while leaving collision
+rates essentially unchanged.
+For the soft variant, which is already feasible by construction, adaptation yields
+only marginal changes.
+Because the update operates on the low-dimensional coefficients via the anchor
+approximation of Section~\ref{sec:approximation}, it adds only a few milliseconds
+of online computation and stays well below the cost of ECP-MPC.
+
+\begin{figure}[!t]
+  \centering
+  \includegraphics[width=\columnwidth]{Func_cp_3d.png}\\[3pt]
+  \includegraphics[width=\columnwidth]{Func_cp_3d_zoom.png}
+  \caption{Qualitative behavior of FCP-MPC in a dense 3D environment.
+  \textbf{Top:} Global view of the environment, where green spheres denote dynamic
+  obstacles and the magenta curve shows the executed robot trajectory.
+  \textbf{Bottom:} Close-up view near the safety boundary.
+  Blue regions indicate the true danger (unsafe) field induced by obstacle
+  dynamics (used only for evaluation), while red translucent regions correspond
+  to the conformal unsafe region obtained via functional conformal calibration.
+  The trajectory progresses through regions certified as safe by the
+  fieldwise-calibrated conformal bound, avoiding unnecessary detours while
+  respecting worst-case safety constraints.}
+  \label{fig:fcp_3d}
+\end{figure}
+
+
+
+\subsection{3D Quadrotor Navigation}
+Table~\ref{tab:pybullet_results} reports averaged closed-loop results in a
+challenging scenario with $M=280$ dynamic obstacles and noisy
+predictions (prediction noise $0.20$, obstacle process noise $0.22$, oracle
+future noise $0.20$), evaluated over multiple random seeds.
+
+The nominal MPC baseline exhibits poor robustness in this setting, with a
+collision rate of $0.087$ and an infeasible rate of $0.126$.
+Although it reaches the goal in $83.3$ steps on average when successful, safety
+violations and feasibility losses remain frequent.
+
+CC-MPC exhibits a zero infeasible rate by construction due to its purely soft
+safety formulation. It also incurs a low collision rate of $0.031$ while
+this conservative penalty-based strategy substantially slows progress toward
+the goal, resulting in an increased time-to-goal of $381.3$ steps.
+
+
+ECP-MPC achieves very low collision and infeasible rates ($0.016$ and $0.027$,
+respectively), indicating strong nominal safety.
+However, its extremely high online computation cost (over $11{,}000$ ms per
+planning step) prevents real-time execution, leading to timeouts and
+control-time-induced crashes before reaching the goal. 
+
+In contrast, FCP-MPC attains a favorable balance between safety, feasibility, and
+efficiency.
+It reduces the collision rate to $0.051$ and the infeasible rate to $0.102$,
+while reaching the goal in $89.4$ steps on average with moderate online
+computation time.
+Figure~\ref{fig:fcp_3d} provides a qualitative illustration of this
+behavior in a dense 3D environment, showing that the controller progresses
+smoothly toward the goal without unnecessary detours, even in the presence of
+many nearby obstacles.
+Figure~\ref{fig:traj_3d} further shows executed FCP-MPC trajectories across three
+random seeds in the same $M{=}280$-obstacle environment: in every seed the
+quadrotor weaves from start to goal collision-free.
+
+\begin{figure*}[!t]
+  \centering
+  \includegraphics[width=\linewidth]{traj_3d_seeds.png}
+  \caption{Closed-loop FCP-MPC trajectories in the dense 3D quadrotor task across
+  three random seeds (blue: start; black star: goal; gray points: dynamic obstacles,
+  $M{=}280$). The quadrotor reaches the goal collision-free in all three seeds.}
+  \label{fig:traj_3d}
+\end{figure*}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{control_time_3d.png}
+  \caption{Scalability comparison of MPC methods in dense 3D environments.
+  The figure reports the mean control computation time per planning step as a
+  function of the number of dynamic obstacles.}
+  \label{fig:scalability_3d}
+\end{figure}
+
+
+\begin{table*}[!t]
+\centering
+\small
+\caption{3D quadrotor navigation results with 280 dynamic obstacles.}
+\label{tab:pybullet_results}
+\begin{tabular}{lcccc}
+\hline
+Method &
+Collision rate $\downarrow$ &
+Infeasible rate $\downarrow$ &
+Steps to goal $\downarrow$ &
+Ctrl.\ time (ms) $\downarrow$ \\
+\hline
+Nominal MPC
+& 0.087
+& 0.126
+& 83.3
+& 64.66 \\
+
+CC-MPC~\cite{lekeufack2024decision}
+& 0.031
+& \textbf{0.000}
+& 381.3
+& \textbf{20.65} \\
+
+ECP-MPC~\cite{shin2025egocentric}
+& \textbf{0.016}
+& 0.027
+& timeout (crashed)
+& 11979.80 \\
+
+FCP-MPC (ours)
+& 0.051
+& 0.102
+& \textbf{89.4}
+& 48.17 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\paragraph{Scalability Analysis in Dense 3D Environments}
+To assess computational scalability, we compare the average planning-time
+runtime of ACP-MPC, CC-MPC, ECP-MPC, and the proposed FCP-MPC as the number of
+dynamic obstacles increases.
+Figure~\ref{fig:scalability_3d} reports the mean control time per planning step
+under increasingly dense 3D environments, with the number of obstacles ranging
+from $N_{\mathrm{obs}} = 10$ to $280$.
+
+ECP-MPC exhibits a sharp growth in runtime as obstacle density increases,
+reflecting the need for repeated pointwise conformal evaluations and online
+aggregation of safety constraints across obstacles and horizon steps.
+In contrast, FCP-MPC scales significantly more favorably, maintaining
+near-linear growth in computation time despite the high-dimensional workspace
+and dense obstacle configuration.
+This improvement stems from the fully offline functional calibration, which
+allows safety evaluation to be reduced to efficient fieldwise SDF queries at
+runtime.
+
+CC-MPC remains the cheapest---it performs no uncertainty calibration---but offers
+no probabilistic guarantee and incurs elevated collision rates in dense scenarios
+(Table~\ref{tab:pybullet_results}). The scalar-radius ACP-MPC scales comparably to
+FCP-MPC, yet it conformalizes only a single pointwise radius rather than the full
+spatial field; FCP-MPC thus matches the inexpensive baselines in per-step cost
+while retaining a calibrated safety \emph{field}.
+Overall, the results demonstrate that FCP-MPC achieves a practical balance
+between safety and computational efficiency, remaining real-time feasible even
+in highly cluttered 3D environments with hundreds of dynamic obstacles.
+
+
+
+
+
+\subsection{Discussion}
+\paragraph{Enforcing the calibrated bound in 2D.}
+The 2D benchmarks isolate how the conformal lower bound should be \emph{used}
+once it has been calibrated.
+The hard variant attains the lowest collision rates but, because the worst-case
+envelope compounds over the horizon, can become overconservative and leave a
+non-zero infeasible rate; the soft variant removes this infeasibility by treating
+the bound as a penalty rather than a hard constraint, at the price of a higher
+collision rate in the densest scenes (Table~\ref{tab:2d_results}).
+The online coefficient adaptation of~\eqref{eq:acp_update} directly counteracts the
+overconservatism of the hard variant, substantially lowering its infeasible rate
+while leaving collisions essentially unchanged (Table~\ref{tab:2d_ablation}).
+Both effects reuse the offline calibration, so the added online cost is only a few
+milliseconds---far below the tens of milliseconds required by ECP-MPC's explicit
+online uncertainty reasoning.
+These pedestrian experiments thus stress-test the fieldwise calibration in a regime
+where free space is scarce, complementing the open 3D study below.
+
+
+
+\paragraph{Separating calibration from real-time planning in 3D.}
+The contrasting behaviors in Table~\ref{tab:pybullet_results} follow directly from
+how each controller injects uncertainty and safety into the MPC formulation.
+
+CC-MPC enforces safety through soft constraints embedded in a mixed cost
+function.
+This formulation allows the controller to locally maneuver around obstacles
+rather than strictly avoiding worst-case configurations, which can be effective
+in moderately cluttered scenes.
+However, the reliance on soft penalties induces conservative trade-offs between
+goal progress and safety, often prioritizing risk reduction over forward motion.
+As a result, CC-MPC tends to exhibit slower trajectories and significantly
+increased time-to-goal, despite eliminating infeasible planning steps.
+
+ECP-MPC explicitly reasons about the surrounding environment and achieves the
+lowest collision rates among all methods.
+Nevertheless, this strong situational awareness comes at the cost of excessive
+online computation.
+Accounting for detailed, step-wise uncertainty during planning leads to control
+latency that exceeds real-time limits, causing timeouts and
+control-time-induced crashes.
+This highlights a critical limitation: accurately modeling all contingencies
+online can undermine closed-loop feasibility, even when nominal safety is
+achieved.
+
+FCP-MPC represents a deliberate trade-off between these two extremes.
+Rather than reasoning about all uncertainty online, it leverages offline
+functional conformal prediction to account for the full distribution of
+uncertainty in a global and principled manner.
+At runtime, safety is enforced via hard constraints derived from worst-case
+obstacle configurations, enabling efficient and predictable online planning.
+Unlike the dense 2D benchmarks, the open 3D workspace offers ample free space, so the
+overconservatism of the worst-case envelope rarely removes all feasible motions; we
+therefore deploy only the \emph{offline hard} variant in 3D, omitting the online
+adaptation and soft shaping of the 2D study without sacrificing goal-reaching.
+This design allows FCP-MPC to maintain higher execution speed than ECP-MPC while
+retaining awareness of environmental uncertainty beyond local interactions.
+Moreover, the observed collision rate of FCP-MPC is close to the target
+miscoverage level $\alpha = 0.05$, which is consistent with the intended
+calibration behavior of the conformal lower-bound SDF.
+
+The use of worst-case conformal bounds inevitably introduces conservativeness,
+which leads to a non-zero infeasible rate when enforced as a hard constraint.
+In contrast, CC-MPC employs purely soft safety penalties and therefore
+exhibits near-zero infeasibility by construction.
+However, because uncertainty calibration in FCP-MPC is performed offline,
+the resulting online computation remains efficient, yielding a favorable
+balance between safety, feasibility, and real-time performance.
+
+Importantly, FCP-MPC also reaches the goal in fewer steps than baseline methods
+in 3D.
+We attribute this improvement to the spatially coherent nature of the functional
+conformal calibration.
+While point-wise or trajectory-wise calibration methods tend to induce locally
+conservative behavior due to worst-case reasoning at individual states or
+timesteps, the calibrated signed distance field provides a global view of
+where safety margins are tight and where sufficient free space exists.
+This allows the controller to progress more decisively through regions that are
+globally safe, reducing unnecessary detours and hesitation while still
+respecting worst-case safety constraints.
+
+Overall, the results suggest that separating uncertainty modeling from online
+planning, and calibrating uncertainty at the level of the spatial field rather
+than individual points, is key to achieving reliable safety--performance
+trade-offs in dense 3D navigation.
+
+\section{Conclusion}
+
+We presented FCP-MPC, a functional conformal prediction framework that calibrates
+a high-confidence lower bound of the predicted signed distance field and enforces
+it as a tightened safety constraint within a sampling-based model predictive
+controller. By calibrating uncertainty at the level of the spatial \emph{field}---
+rather than at individual states or trajectories---the method reasons about safety
+globally and coherently, and its offline--online decomposition keeps the per-step
+computation low: a GMM-based envelope is fitted offline, while online only a
+low-dimensional coefficient vector is refined by a lightweight adaptive update. We
+established asymptotic closed-loop safety both under exchangeability and, through
+the online adaptation, under distribution shift.
+
+Across the ETH--UCY pedestrian benchmarks and a dense 3D quadrotor task with up to
+$280$ moving obstacles, FCP-MPC attained a favorable balance of safety,
+feasibility, and efficiency, scaling far more gracefully than online
+uncertainty-reasoning baselines while remaining real-time feasible.
+
+\paragraph{Limitations and future work.}
+Because the calibrated envelope bounds the worst case, the hard-constrained variant
+remains conservative and can still report a non-zero infeasible rate in the densest
+2D scenes; the soft and online-adapted variants mitigate, but do not eliminate, this
+trade-off. Our guarantees further assume a bounded low-level tracking error and a
+\emph{fixed} functional basis. Relaxing these assumptions---learning the basis
+online, folding perception and state-estimation error into the same conformal
+pipeline, and extending the fieldwise calibration to richer robot and obstacle
+dynamics---are promising directions, as are tighter integration with full-stack
+perception and validation on physical hardware.
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{reference}
+
+\end{document}

@@ -24,18 +24,24 @@ def main():
     plt.figure(figsize=(3.6, 2.8))
 
     method_mapping = {
+        'acp': 'ACP-MPC',
         'cc': 'CC-MPC',
         'ecp': 'ECP-MPC',
         'fcp': 'Proposed (FCP-MPC)'
     }
     df['method_display'] = df['method'].map(method_mapping).fillna(df['method'])
+    # Ordered by development year: ACP, CC, ECP, FCP (ours).
+    order = [m for m in ['ACP-MPC', 'CC-MPC', 'ECP-MPC', 'Proposed (FCP-MPC)']
+             if m in set(df['method_display'])]
 
     sns.lineplot(
-        data=df, 
-        x='n_obs', 
-        y='ctrl_mean_ms',  
-        hue='method_display', 
+        data=df,
+        x='n_obs',
+        y='ctrl_mean_ms',
+        hue='method_display',
         style='method_display',
+        hue_order=order,
+        style_order=order,
         markers=True,
         dashes=False,
         linewidth=2.0,
