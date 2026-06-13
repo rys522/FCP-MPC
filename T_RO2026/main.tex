@@ -656,9 +656,9 @@ In implementation, the conformal lower bound can be incorporated in one of two w
 \subsection{Offline GMM Initialization}
 \label{subsec:offline_online_cp}
 
-The key design principle is to separate \emph{statistical initialization} from \emph{online adaptation}.
-Offline, we exploit a large calibration dataset and a flexible GMM model to construct the most accurate initial coefficient upper bound possible.
-Online, once the robot starts moving, the GMM is no longer evaluated; the coefficient upper bound is updated directly from streaming residual observations and a prescribed target violation level.
+The key design principle is to separate the field-level \emph{statistical initialization}, computed once offline, from the \emph{lightweight adaptation} performed online.
+Offline, we exploit a large calibration dataset and a flexible GMM to construct the most accurate initial coefficient upper bound possible; this cost is paid only once, before deployment.
+Online, the GMM is no longer evaluated---the controller adapts the cached upper bound directly from streaming residual observations and a prescribed target violation level, so the per-step cost stays small.
 
 \paragraph{Time-to-go indexing.}
 For each horizon index $i\in\{1,\dots,N\}$, we define the residual field
@@ -819,10 +819,10 @@ Algorithm~\ref{alg:fcp_mpc_acp} summarizes the resulting procedure.
 
 \section{Safety Analysis and Asymptotic Guarantees}
 
-In this section, we establish the safety guarantees of the proposed framework.
-A key advantage of our functional formulation is that the pointwise safety of the robot is mathematically guaranteed for any planned trajectory that satisfies the tightened conformal constraint, regardless of how the control space is explored. 
+This section establishes the safety guarantees of the proposed framework.
+A key advantage of the functional formulation is that pointwise safety holds for \emph{any} planned trajectory satisfying the tightened conformal constraint, independent of how the control space is sampled---precisely because the bound is certified over the entire field rather than along a single path.
 
-We first provide the base safety theorem under the assumption that the functional envelope successfully covers the true score. Subsequently, we extend this to a robust guarantee for dynamic environments using our online adaptive update rule.
+We first present the base safety theorem, assuming the functional envelope covers the true score; we then extend it to a robust guarantee for dynamic environments through the online adaptive update.
 
 \subsection{Base Safety Guarantee via Functional Coverage}
 
@@ -995,7 +995,7 @@ The residual fields are projected onto a $p$-dimensional subspace using PCA and
 modeled via a $K$-component Gaussian mixture model (GMM) in coefficient space.
 We set the target miscoverage level to $\alpha$ and compute horizon-dependent
 upper envelopes $U_{t+i\mid t}(x)$, yielding the conformal lower-bound SDF
- defined as ~\eqref{eq:lower_field_def}
+defined in~\eqref{eq:lower_field_def}.
 
 \subsection{Conformal SDF Visualization at 2D}
 Figure~\ref{fig:sdf_visualization_2d} shows an illustrative 2D example where the

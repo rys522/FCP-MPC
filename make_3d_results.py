@@ -280,10 +280,14 @@ def main():
                     help="reuse cached outcomes AND timing; re-render figures/table only")
     ap.add_argument("--fix-timing", action="store_true",
                     help="reuse cached outcomes; re-measure control timing sequentially")
+    ap.add_argument("--reuse-timing", action="store_true",
+                    help="run outcomes fresh but reuse cached timing (skip re-measuring)")
     ap.add_argument("--smoke", action="store_true")
     args = ap.parse_args()
 
+    global CACHE
     if args.smoke:
+        CACHE = CACHE.replace(".pkl", "_smoke.pkl")
         args.seeds = [25]; args.traj_seeds = [25]
         args.n_obs_main = 20; args.n_obs_sweep = [10, 20]
         args.max_steps = 20; args.timing_seeds = [25]; args.timing_steps = 12
@@ -294,7 +298,7 @@ def main():
     n_obs_all = sorted(set(args.n_obs_sweep) | {args.n_obs_main})
 
     cache = {}
-    if (args.replot or args.fix_timing) and os.path.isfile(CACHE):
+    if (args.replot or args.fix_timing or args.reuse_timing) and os.path.isfile(CACHE):
         cache = pickle.load(open(CACHE, "rb"))
 
     # --- outcomes + trajectories (PARALLEL; deterministic, so contention is harmless) ---
@@ -312,7 +316,7 @@ def main():
         print(f"[outcomes] done in {time.perf_counter() - t0:.0f}s", flush=True)
 
     # --- control timing (SEQUENTIAL, contention-free; this is what the paper reports) ---
-    if args.replot and "timing" in cache:
+    if (args.replot or args.reuse_timing) and "timing" in cache:
         timing_rows = cache["timing"]
         print(f"[timing] reused {len(timing_rows)} cached timing episodes")
     else:
