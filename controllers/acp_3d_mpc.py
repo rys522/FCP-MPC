@@ -105,14 +105,15 @@ class AdaptiveCPMPC3D:
         if pred_xyz is not None and np.size(pred_xyz):
             pred = np.asarray(pred_xyz, np.float32)          # (H, M, 3)
             mask = np.asarray(pred_mask, bool) if pred_mask is not None else np.ones(pred.shape[:2], bool)
-            for i in range(min(T, pred.shape[0])):
-                mi = mask[i]
-                if not np.any(mi):
-                    continue
-                obs_i = pred[i][mi]                          # (m, 3)
-                x_i = paths[:, i + 1, :]                     # (P, 3)
-                d = np.linalg.norm(x_i[:, None, :] - obs_i[None, :, :], axis=-1).min(axis=1)
-                alive &= d >= (self.safe_rad + r[i])
+            Tu = min(T, pred.shape[0])
+            if pred.shape[1] > 0 and Tu > 0:
+                # Vectorized over the horizon (exact same per-element norm/min as the
+                # per-step loop): masked obstacles -> inf so they never set the min.
+                X = paths[:, 1:Tu + 1, :]                              # (P, Tu, 3)
+                d = np.linalg.norm(X[:, :, None, :] - pred[None, :Tu, :, :], axis=-1)  # (P,Tu,M)
+                d = np.where(mask[None, :Tu, :], d, np.inf)
+                min_d = d.min(axis=-1)                                 # (P, Tu)
+                alive = np.all(min_d >= (self.safe_rad + r[:Tu])[None, :], axis=1)
 
         if not np.any(alive):
             return None, {"feasible": False, "cost": None}

@@ -359,7 +359,9 @@ def run_one_episode_wrapper(
     elif reached_goal:
         status = "success"
     else:
-        status = "timeout" if steps >= max_steps else "timeout"
+        # ended without reaching: either hit the step budget (timeout) or
+        # terminated early via break-on-floor-crash (crash)
+        status = "timeout" if steps >= max_steps else "crash"
 
     return EpisodeResult(
         method=method,

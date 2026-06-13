@@ -247,18 +247,21 @@ class ConformalController3D:
         if self.use_dynamic and (pred_xyz is not None) and (pred_mask is not None):
             Tp = min(paths.shape[1] - 1, pred_xyz.shape[0])
             Pn = paths.shape[0]
-            min_distances = np.zeros((Pn, Tp), dtype=np.float32)
+            pred = np.asarray(pred_xyz[:Tp], dtype=np.float32)      # (Tp, M, 3)
 
-            for t in range(Tp):
-                mask_t = np.asarray(pred_mask[t], dtype=bool)
-                if not np.any(mask_t):
-                    continue
-                obs = np.asarray(pred_xyz[t], dtype=np.float32)[mask_t]  # (M,3)
-                dist = np.linalg.norm(paths[:, t + 1, None, :] - obs[None, :, :], axis=-1)
-                min_distances[:, t] = np.min(dist, axis=1).astype(np.float32)
-
-            # lambda-scaled avoidance shaping (reward being far)
-            avoidance = -self._lambda * np.sum(min_distances, axis=1)
+            if Tp > 0 and pred.shape[1] > 0:
+                # Vectorized over the horizon; masked obstacles -> inf so they are
+                # excluded from the min. Steps with no valid obstacle yield an
+                # all-inf column, which we reset to 0 to match the original
+                # zeros-init + skip behavior exactly.
+                mask = np.asarray(pred_mask[:Tp], dtype=bool)       # (Tp, M)
+                dist = np.linalg.norm(paths[:, 1:Tp + 1, None, :] - pred[None, :, :, :], axis=-1)  # (Pn,Tp,M)
+                dist = np.where(mask[None, :, :], dist, np.inf)
+                min_distances = dist.min(axis=-1)                   # (Pn, Tp)
+                min_distances = np.where(np.isinf(min_distances), 0.0,
+                                         min_distances).astype(np.float32)
+                # lambda-scaled avoidance shaping (reward being far)
+                avoidance = -self._lambda * np.sum(min_distances, axis=1)
 
         score = total_cost + avoidance
         best = int(np.argmin(score))

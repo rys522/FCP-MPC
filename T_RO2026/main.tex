@@ -1370,27 +1370,10 @@ Figure~\ref{fig:fcp_3d} provides a qualitative illustration of this
 behavior in a dense 3D environment, showing that the controller progresses
 smoothly toward the goal without unnecessary detours, even in the presence of
 many nearby obstacles.
-Figure~\ref{fig:traj_3d_overlay} overlays the closed-loop trajectories of
-CC-MPC, ACP-MPC, and FCP-MPC in the same test scene ($M{=}280$, seed~25),
-illustrating that FCP-MPC navigates efficiently while CC-MPC takes a markedly
-longer detour and ACP-MPC times out before reaching the goal.
-Figure~\ref{fig:traj_3d} extends this comparison across three random seeds
-(panels~(a)--(c)) in the same $M{=}280$-obstacle environment, overlaying all
-four controllers per panel and showing that FCP-MPC consistently makes
-progress toward the goal through the dense obstacle field.
-
-\begin{figure}[!t]
-  \centering
-  \includegraphics[width=\columnwidth]{traj_3d_overlay.png}
-  \caption{Closed-loop trajectory comparison in a dense 3D quadrotor task
-  ($M{=}280$ dynamic obstacles, seed~25). CC-MPC (red), ACP-MPC (cyan), and
-  FCP-MPC (green) are overlaid on the same environment; colored circles mark
-  starts, the black star marks the goal, and gray points are dynamic-obstacle
-  positions at episode end. FCP-MPC reaches the goal most directly; CC-MPC
-  follows a much longer path due to its conservative soft-penalty formulation;
-  ACP-MPC times out before reaching the goal.}
-  \label{fig:traj_3d_overlay}
-\end{figure}
+Figure~\ref{fig:traj_3d} compares the closed-loop trajectories of all four
+controllers across three random seeds (panels~(a)--(c)) in the same
+$M{=}280$-obstacle environment, illustrating how FCP-MPC progresses toward the
+goal through the dense obstacle field.
 
 \begin{figure*}[!t]
   \centering

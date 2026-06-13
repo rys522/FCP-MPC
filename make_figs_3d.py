@@ -75,7 +75,7 @@ EXP_BASE = dict(
 # Colours/labels mirror make_figs_2d.py; FCP (ours) is emphasised and drawn on top.
 METHODS = [
     ("CC-MPC",      run_cc,  {"break_on_collision": True},                       "#7f7f7f", 1.6, 2),
-    ("ECP-MPC",     run_ecp, {"miscoverage_level": 0.10, "step_size": 0.05, "max_steps": 100, "break_on_collision": True}, "#ff7f0e", 1.6, 2),
+    ("ECP-MPC",     run_ecp, {"miscoverage_level": 0.10, "step_size": 0.05, "break_on_collision": True}, "#ff7f0e", 1.6, 2),
     ("ACP-MPC",     run_acp, {"target_miscoverage_level": 0.10, "step_size": 0.05, "break_on_collision": True}, "#9467bd", 1.6, 2),
     ("FCP-MPC (ours)", run_fcp, {"CP": True, "alpha": 0.10, "break_on_collision": True}, "#1f77b4", 2.6, 4),
 ]
@@ -167,8 +167,18 @@ def make_figure(data: dict, out_path: str) -> None:
             ax.plot(traj[:, 0], traj[:, 1], traj[:, 2],
                     color=color, lw=lw, alpha=0.95, zorder=z)
 
-        if d.get("start") is not None:
-            ax.scatter(*d["start"], c="#2ca02c", s=45, marker="s",
+        # start marker at where the trajectories actually begin (matches the former
+        # overlay figure), not the env's nominal start pose which can differ slightly
+        start_pt = None
+        for _name, *_rest in METHODS:
+            tr = d["trajs"].get(_name)
+            if tr is not None and len(tr) >= 1:
+                start_pt = tr[0]
+                break
+        if start_pt is None:
+            start_pt = d.get("start")
+        if start_pt is not None:
+            ax.scatter(*start_pt, c="#2ca02c", s=45, marker="s",
                        depthshade=False, zorder=6)
         if d.get("goal") is not None:
             ax.scatter(*d["goal"], c="#111111", s=90, marker="*",

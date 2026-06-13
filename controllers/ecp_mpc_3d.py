@@ -71,15 +71,21 @@ def compute_min_dist_paths_to_predxyz(paths_xyz: np.ndarray, pred_xyz: np.ndarra
     T_use = min(T, T_pred)
     out = np.full((P, T_use), np.inf, dtype=np.float32)
 
-    for t in range(T_use):
-        obs_t = pred_xyz[t]
-        if pred_mask is not None:
-            m = pred_mask[t]
-            obs_t = obs_t[m] if m is not None else obs_t
-        if obs_t.size == 0:
-            continue
-        D = compute_pairwise_distances_3d(paths_xyz[:, t, :], obs_t)  # (P, M_t)
-        out[:, t] = np.min(D, axis=-1)
+    pred = np.asarray(pred_xyz[:T_use], dtype=np.float32)            # (T_use, M, 3)
+    if pred.shape[1] == 0:
+        return out
+    mask = None if pred_mask is None else np.asarray(pred_mask[:T_use], dtype=bool)  # (T_use, M)
+
+    # Vectorized over t (exact same per-element norm as the original loop), with a
+    # path-axis chunk to bound peak memory for the large lattice (P up to ~2e4).
+    chunk_P = 4096
+    for s in range(0, P, chunk_P):
+        e = min(P, s + chunk_P)
+        diff = paths_xyz[s:e, :T_use, None, :] - pred[None, :, :, :]  # (c, T_use, M, 3)
+        d = np.linalg.norm(diff, axis=-1)                            # (c, T_use, M)
+        if mask is not None:
+            d = np.where(mask[None, :, :], d, np.inf)
+        out[s:e] = d.min(axis=-1)
     return out
 
 
