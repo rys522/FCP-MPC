@@ -448,6 +448,11 @@ S_{t+i|t}(x) \leq \min_{x' \in \bar{\mathcal{X}}} \left\{ S_{t+i|t}(x') + 2\|x -
 \section{Functional CP-informed MPC}
 \label{sec:cp_mpc}
 
+
+\subsection{Why FCP for Safe Planning?}
+A central motivation that inspires the use of FCP for safe motion planning is that these maps are inherently low-dimensional.
+In Figure~\ref{fig:}, 
+
 We now incorporate the conformalized signed-distance lower bound into a receding-horizon motion planner, following the general safe-planning template of~\cite{lindemann2023safeplanning} but adapting it to our \emph{fieldwise} uncertainty representation.
 The central idea is to conformalize the safety bound over the \emph{entire field} offline, rather than point by point online.
 Since the calibrated bound lives in a compact functional (coefficient) form, the expensive computation---fitting the basis and an accurate \emph{initial} bound from a large calibration dataset through a GMM-based functional conformal procedure---is carried out once, offline, and cached.
