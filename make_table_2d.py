@@ -154,11 +154,18 @@ def load_results(dataset, controller_keys):
     return present, results
 
 
+# Soft/penalty methods have no hard safety constraint, so infeasibility cannot occur
+# by construction -> reported as N/A and excluded from the best-infeasible comparison.
+SOFT_NA_KEYS = {"cc", "fcp-soft-adaptive", "fcp-soft-nonadaptive"}
+
+
 def best_values(dataset, results, keys):
     """Best (min) value per column over `keys`; steps ignores timeouts."""
-    def best(metric, ignore_timeout=False):
+    def best(metric, ignore_timeout=False, exclude=()):
         vals = []
         for k in keys:
+            if k in exclude:
+                continue
             v = results[k][metric]
             if not math.isfinite(v):
                 continue
@@ -169,24 +176,25 @@ def best_values(dataset, results, keys):
 
     return {
         "collision": best("collision"),
-        "infeasible": best("infeasible"),
+        "infeasible": best("infeasible", exclude=SOFT_NA_KEYS),
         "steps": best("steps", ignore_timeout=True),
         "ctrl_ms": best("ctrl_ms"),
     }
 
 
-def render_metric_cells(dataset, r, best):
-    """Format the four metric cells for one row, bolding column-best values."""
+def render_metric_cells(dataset, r, best, infeas_na=False):
+    """Format the four metric cells for one row, bolding column-best values.
+    ``infeas_na`` marks soft/penalty methods whose infeasibility is N/A by construction."""
     c, i, s, t = r["collision"], r["infeasible"], r["steps"], r["ctrl_ms"]
 
     c_str = fmt(c, 3)
-    i_str = fmt(i, 3)
+    i_str = "N/A" if infeas_na else fmt(i, 3)
     s_str = format_steps(s, MAX_N_STEPS[dataset])
     t_str = fmt(t, 2)
 
     if math.isfinite(c) and abs(c - best["collision"]) < 1e-9:
         c_str = bold(c_str)
-    if math.isfinite(i) and abs(i - best["infeasible"]) < 1e-9:
+    if (not infeas_na) and math.isfinite(i) and abs(i - best["infeasible"]) < 1e-9:
         i_str = bold(i_str)
     if s_str not in (NA, "timeout") and math.isfinite(s) and abs(s - best["steps"]) < 1e-9:
         s_str = bold(s_str)
@@ -221,7 +229,8 @@ def build_main_table():
         best = best_values(dataset, results, present)
 
         for j, key in enumerate(present):
-            c_str, i_str, s_str, t_str = render_metric_cells(dataset, results[key], best)
+            c_str, i_str, s_str, t_str = render_metric_cells(
+                dataset, results[key], best, infeas_na=key in SOFT_NA_KEYS)
             dataset_str = dataset if j == 0 else ""
             lines.append(
                 f"{dataset_str} & {names[key]} & {c_str} & {i_str} & {s_str} & {t_str} \\\\"
@@ -260,7 +269,8 @@ def build_ablation_table():
                 continue
             pair = [k for k, m, _ in ABLATION_ROWS if m == mode and k in present_set]
             best = best_values(dataset, results, pair)
-            c_str, i_str, s_str, t_str = render_metric_cells(dataset, results[key], best)
+            c_str, i_str, s_str, t_str = render_metric_cells(
+                dataset, results[key], best, infeas_na=key in SOFT_NA_KEYS)
             dataset_str = dataset if j == 0 else ""
             lines.append(
                 f"{dataset_str} & {mode} & {adapt} & {c_str} & {i_str} & {s_str} & {t_str} \\\\"

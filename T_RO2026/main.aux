@@ -55,45 +55,48 @@
 \newlabel{sec:score-comp}{{\mbox  {IV-B}}{3}{Computation of Score Function}{subsection.4.2}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {V}Functional CP-informed MPC}{3}{section.5}\protected@file@percent }
 \newlabel{sec:cp_mpc}{{V}{3}{Functional CP-informed MPC}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Why FCP for Safe Planning?}{3}{subsection.5.1}\protected@file@percent }
 \citation{fraichard2004inevitable}
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Overview of the proposed functional CP-informed MPC. \textbf  {Offline} (blue): predicted and realized signed-distance fields are reduced by FPCA and a GMM-based inductive conformal procedure into a cached coefficient-envelope tuple $\Pi _i$. \textbf  {Online} (red): the realized residual is projected onto the cached basis, the coefficient upper bound is adapted by the AFCP rule~\eqref  {eq:acp_update}, and the resulting envelope $\setbox \z@ \hbox {\mathsurround \z@ $\textstyle U$}\mathaccent "0365{U}_{i,t}$ tightens the sampled-MPC safety filter. In the open 3D setting the online branch is unnecessary---ample free space makes the offline hard envelope sufficient---whereas the dense 2D benchmarks additionally exploit the online adaptation.}}{4}{figure.1}\protected@file@percent }
 \newlabel{fig:overview}{{1}{4}{Overview of the proposed functional CP-informed MPC. \textbf {Offline} (blue): predicted and realized signed-distance fields are reduced by FPCA and a GMM-based inductive conformal procedure into a cached coefficient-envelope tuple $\Pi _i$. \textbf {Online} (red): the realized residual is projected onto the cached basis, the coefficient upper bound is adapted by the AFCP rule~\eqref {eq:acp_update}, and the resulting envelope $\widetilde U_{i,t}$ tightens the sampled-MPC safety filter. In the open 3D setting the online branch is unnecessary---ample free space makes the offline hard envelope sufficient---whereas the dense 2D benchmarks additionally exploit the online adaptation}{figure.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Mathematical Setup}{4}{subsection.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-A}1}Geometric property and tracking assumption.}{4}{subsubsection.5.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Mathematical Setup}{4}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}1}Geometric property and tracking assumption.}{4}{subsubsection.5.2.1}\protected@file@percent }
 \newlabel{prop:sdf_lipschitz}{{1}{4}{Lipschitz continuity of the signed distance field}{property.1}{}}
 \newlabel{ass:tracking_error}{{1}{4}{Bounded tracking error}{assumption.1}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-A}2}Robot dynamics.}{4}{subsubsection.5.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-A}3}Nominal predicted distance and conformal lower bound.}{4}{subsubsection.5.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}2}Robot dynamics.}{4}{subsubsection.5.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}3}Nominal predicted distance and conformal lower bound.}{4}{subsubsection.5.2.3}\protected@file@percent }
 \newlabel{eq:D_nominal_mpc}{{11}{4}{Nominal predicted distance and conformal lower bound}{equation.11}{}}
 \newlabel{eq:lower_field_def}{{12}{4}{Nominal predicted distance and conformal lower bound}{equation.12}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-A}4}Robust CP-safe set via constraint tightening.}{4}{subsubsection.5.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}4}Robust CP-safe set via constraint tightening.}{4}{subsubsection.5.2.4}\protected@file@percent }
 \newlabel{eq:ics_budget}{{13}{4}{Robust CP-safe set via constraint tightening}{equation.13}{}}
 \newlabel{eq:cp_safe_set_mpc}{{14}{4}{Robust CP-safe set via constraint tightening}{equation.14}{}}
 \citation{gibbs2021adaptiveconformalinferencedistribution}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-A}5}Sampled candidate trajectories.}{5}{subsubsection.5.1.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-A}6}Rollout and feasibility filtering.}{5}{subsubsection.5.1.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}5}Sampled candidate trajectories.}{5}{subsubsection.5.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}6}Rollout and feasibility filtering.}{5}{subsubsection.5.2.6}\protected@file@percent }
 \newlabel{eq:rollout_sampled_mpc}{{15}{5}{Rollout and feasibility filtering}{equation.15}{}}
 \newlabel{eq:sampled_feasible_mpc}{{16}{5}{Rollout and feasibility filtering}{equation.16}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-A}7}Monte Carlo CP-MPC objective.}{5}{subsubsection.5.1.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}7}Monte Carlo CP-MPC objective.}{5}{subsubsection.5.2.7}\protected@file@percent }
 \newlabel{eq:mc_cp_mpc_obj}{{17}{5}{Monte Carlo CP-MPC objective}{equation.17}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Offline GMM Initialization}{5}{subsection.5.2}\protected@file@percent }
-\newlabel{subsec:offline_online_cp}{{\mbox  {V-B}}{5}{Offline GMM Initialization}{subsection.5.2}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-B}0a}Time-to-go indexing.}{5}{paragraph.5.2.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Notes on Computational Complexity}{5}{subsection.5.3}\protected@file@percent }
+\newlabel{subsec:complexity}{{\mbox  {V-C}}{5}{Notes on Computational Complexity}{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Offline GMM Initialization}{5}{subsection.5.4}\protected@file@percent }
+\newlabel{subsec:offline_online_cp}{{\mbox  {V-D}}{5}{Offline GMM Initialization}{subsection.5.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0a}Time-to-go indexing.}{5}{paragraph.5.4.0.1}\protected@file@percent }
 \newlabel{eq:Si_def}{{18}{5}{Time-to-go indexing}{equation.18}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-B}0b}Offline calibration via FPCA and GMM.}{5}{paragraph.5.2.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0b}Offline calibration via FPCA and GMM.}{5}{paragraph.5.4.0.2}\protected@file@percent }
 \newlabel{eq:coeff_def_mpc}{{19}{5}{Offline calibration via FPCA and GMM}{equation.19}{}}
 \newlabel{eq:Ui_init}{{20}{5}{Offline calibration via FPCA and GMM}{equation.20}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-B}0c}Cached offline tuple.}{5}{paragraph.5.2.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0c}Cached offline tuple.}{5}{paragraph.5.4.0.3}\protected@file@percent }
 \newlabel{eq:Pi_i_tuple}{{21}{5}{Cached offline tuple}{equation.21}{}}
 \newlabel{eq:Pi_collection}{{22}{5}{Cached offline tuple}{equation.22}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Online adaptive update}{5}{subsection.5.3}\protected@file@percent }
-\newlabel{subsec:online_update}{{\mbox  {V-C}}{5}{Online adaptive update}{subsection.5.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Online adaptive update}{5}{subsection.5.5}\protected@file@percent }
+\newlabel{subsec:online_update}{{\mbox  {V-E}}{5}{Online adaptive update}{subsection.5.5}{}}
 \newlabel{eq:online_coeff}{{23}{5}{Online adaptive update}{equation.23}{}}
 \newlabel{eq:acp_update}{{24}{6}{Online adaptive update}{equation.24}{}}
 \newlabel{eq:Ui_online}{{25}{6}{Online adaptive update}{equation.25}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-C}0a}Optional grid realization for fast online evaluation.}{6}{paragraph.5.3.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-C}0b}Pointwise online evaluation along rollouts.}{6}{paragraph.5.3.0.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-C}0c}Computational implications.}{6}{paragraph.5.3.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-E}0a}Optional grid realization for fast online evaluation.}{6}{paragraph.5.5.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-E}0b}Pointwise online evaluation along rollouts.}{6}{paragraph.5.5.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-E}0c}Computational implications.}{6}{paragraph.5.5.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Safety Analysis and Asymptotic Guarantees}{6}{section.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Base Safety Guarantee via Functional Coverage}{6}{subsection.6.1}\protected@file@percent }
 \newlabel{thm:asymptotic_safety}{{1}{6}{Asymptotic Safety Guarantee}{theorem.1}{}}

@@ -255,12 +255,17 @@ def _steps_cell(rs, max_steps):
     return ("timeout" if n_timeout * 2 >= len(rs) else "crashed"), None
 
 
+# Methods whose formulation has no hard safety constraint, so an infeasible step
+# cannot occur by construction -> the infeasible rate is reported as N/A (not 0.0).
+SOFT_INFEAS_NA = {"CC-MPC", "FCP-MPC (soft)", "Nominal MPC"}
+
+
 def write_latex_table(outcome_results, clean_ctrl):
-    """Emit T_RO2026/table_3d_results.tex (the tabular body \\input by main.tex), so
-    the paper table is generated from the same run as the figures rather than typed
-    by hand. Bold marks the best (min) infeasible rate, steps-to-goal and control
-    time; collision rate is left unbolded (a low rate paired with a crash/timeout is
-    not a success)."""
+    """Emit the tabular body \\input by main.tex. Bold marks the best value per metric:
+    collision among methods that actually reach the goal (a low rate paired with a
+    crash/timeout is not a real success); infeasible rate among methods that can be
+    infeasible (soft/penalty methods report N/A); plus best steps-to-goal and control
+    time."""
     # the timeout cap = the largest step count any episode reached
     max_steps = max((r["metrics"]["steps"] for r in outcome_results), default=0)
     rows = {}
@@ -272,18 +277,22 @@ def write_latex_table(outcome_results, clean_ctrl):
         steps_str, steps_val = _steps_cell(rs, max_steps)
         rows[label] = dict(
             coll=float(np.mean([m["collision_rate"] for m in rs])),
-            infeas=float(np.mean([m["infeas_rate"] for m in rs])),
+            infeas=(None if label in SOFT_INFEAS_NA
+                    else float(np.mean([m["infeas_rate"] for m in rs]))),
             ctrl=ct.get("ctrl_mean_ms", float("nan")),
             steps_str=steps_str, steps_val=steps_val,
         )
 
     def _best(key):
         vals = {k: v[key] for k, v in rows.items()
-                if v.get(key) is not None and not np.isnan(v[key])}
+                if v.get(key) is not None and not (isinstance(v[key], float) and np.isnan(v[key]))}
         return min(vals, key=vals.get) if vals else None
 
     best_infeas, best_ctrl = _best("infeas"), _best("ctrl")
     best_steps = _best("steps_val")
+    # collision: best only among methods that actually reach the goal
+    _creach = {k: v["coll"] for k, v in rows.items() if v["steps_val"] is not None}
+    best_coll = min(_creach, key=_creach.get) if _creach else None
 
     def _f(label, key, fmt, is_best):
         v = rows[label][key]
@@ -300,10 +309,12 @@ def write_latex_table(outcome_results, clean_ctrl):
         r = rows[label]
         steps = (rf"\textbf{{{r['steps_str']}}}" if label == best_steps
                  else r["steps_str"])
+        infeas_cell = ("N/A" if r["infeas"] is None
+                       else _f(label, "infeas", "{:.3f}", label == best_infeas))
         lines += [
             f"{label}{TABLE_CITE.get(label, '')}",
-            f"& {_f(label, 'coll', '{:.3f}', False)}",
-            f"& {_f(label, 'infeas', '{:.3f}', label == best_infeas)}",
+            f"& {_f(label, 'coll', '{:.3f}', label == best_coll)}",
+            f"& {infeas_cell}",
             f"& {steps}",
             rf"& {_f(label, 'ctrl', '{:.1f}', label == best_ctrl)} \\",
         ]
