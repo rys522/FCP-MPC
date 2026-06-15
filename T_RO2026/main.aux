@@ -131,6 +131,9 @@
 \citation{lekeufack2024decision}
 \citation{shin2025egocentric}
 \citation{dixit2023adaptive}
+\citation{lekeufack2024decision}
+\citation{shin2025egocentric}
+\citation{dixit2023adaptive}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-C}0b}Evaluation Metrics}{9}{paragraph.7.3.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VIII}Results and Analysis}{9}{section.8}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-A}}2D Pedestrian Navigation}{9}{subsection.8.1}\protected@file@percent }
@@ -146,18 +149,18 @@
 \citation{dixit2023adaptive}
 \citation{lekeufack2024decision}
 \citation{shin2025egocentric}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Representative closed-loop trajectories on one scene per ETH--UCY dataset (green squares: start; black stars: goal). Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed blue)---reach the goal along direct paths, whereas the baselines tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense scenes such as \texttt  {univ}.}}{11}{figure.3}\protected@file@percent }
-\newlabel{fig:traj_2d}{{3}{11}{Representative closed-loop trajectories on one scene per ETH--UCY dataset (green squares: start; black stars: goal). Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed blue)---reach the goal along direct paths, whereas the baselines tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense scenes such as \texttt {univ}}{figure.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Representative closed-loop trajectories on one scene of each of the five ETH--UCY datasets (green squares: start; black stars: goal). Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed red)---reach the goal along direct paths, whereas the baselines tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense scenes such as \texttt  {univ}.}}{11}{figure.3}\protected@file@percent }
+\newlabel{fig:traj_2d}{{3}{11}{Representative closed-loop trajectories on one scene of each of the five ETH--UCY datasets (green squares: start; black stars: goal). Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed red)---reach the goal along direct paths, whereas the baselines tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense scenes such as \texttt {univ}}{figure.3}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-B}0a}Scalability Analysis in Dense 3D Environments}{11}{paragraph.8.2.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-C}}Discussion}{11}{subsection.8.3}\protected@file@percent }
+\newlabel{sec:discussion}{{\mbox  {VIII-C}}{11}{Discussion}{subsection.8.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-C}0a}Enforcing the calibrated bound in 2D.}{11}{paragraph.8.3.0.1}\protected@file@percent }
 \@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces 3D quadrotor navigation results with $280$ dynamic obstacles, averaged over $17$ seeds ($\alpha =0.10$). FCP-MPC~(hard) and FCP-MPC~(soft) deploy the \emph  {same} offline-calibrated field as a hard feasibility filter and as a soft penalty, respectively. Steps-to-goal is averaged over successful episodes; ``crashed'' / ``timeout'' mark methods that never reach the goal.}}{12}{table.3}\protected@file@percent }
 \newlabel{tab:pybullet_results}{{III}{12}{3D quadrotor navigation results with $280$ dynamic obstacles, averaged over $17$ seeds ($\alpha =0.10$). FCP-MPC~(hard) and FCP-MPC~(soft) deploy the \emph {same} offline-calibrated field as a hard feasibility filter and as a soft penalty, respectively. Steps-to-goal is averaged over successful episodes; ``crashed'' / ``timeout'' mark methods that never reach the goal}{table.3}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces 3D quadrotor navigation at a lower obstacle count ($N_{\mathrm  {obs}}=50$), averaged over $17$ seeds ($\alpha =0.10$); same setup and columns as Table~\ref {tab:pybullet_results}. Reporting both densities shows how each method behaves as the workspace becomes less cluttered.}}{12}{table.4}\protected@file@percent }
 \newlabel{tab:results_sparse}{{IV}{12}{3D quadrotor navigation at a lower obstacle count ($N_{\mathrm {obs}}=50$), averaged over $17$ seeds ($\alpha =0.10$); same setup and columns as Table~\ref {tab:pybullet_results}. Reporting both densities shows how each method behaves as the workspace becomes less cluttered}{table.4}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces True and conformal safety bounds in 3D, zoomed onto a single obstacle. The solid blue ball is the \emph  {true} safety boundary $D_{t+i}(x)=r_{\mathrm  {safe}}$ around the actual obstacle (used only for evaluation); the translucent red shell is the \emph  {conformal lower-bound} boundary $\underline  {D}_{t+i\mid t}(x)=r_{\mathrm  {safe}}$ obtained from the functional calibration, i.e.\ the nominal safety region around the predicted center inflated by the calibrated margin. The conformal surface encloses the true one, certifying coverage, and the executed FCP-MPC path (green) threads just outside it---progressing efficiently while respecting the worst-case safety constraint. Faint gray spheres are other obstacles in the scene.}}{12}{figure.4}\protected@file@percent }
 \newlabel{fig:fcp_3d}{{4}{12}{True and conformal safety bounds in 3D, zoomed onto a single obstacle. The solid blue ball is the \emph {true} safety boundary $D_{t+i}(x)=r_{\mathrm {safe}}$ around the actual obstacle (used only for evaluation); the translucent red shell is the \emph {conformal lower-bound} boundary $\underline {D}_{t+i\mid t}(x)=r_{\mathrm {safe}}$ obtained from the functional calibration, i.e.\ the nominal safety region around the predicted center inflated by the calibrated margin. The conformal surface encloses the true one, certifying coverage, and the executed FCP-MPC path (green) threads just outside it---progressing efficiently while respecting the worst-case safety constraint. Faint gray spheres are other obstacles in the scene}{figure.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-C}}Discussion}{12}{subsection.8.3}\protected@file@percent }
-\newlabel{sec:discussion}{{\mbox  {VIII-C}}{12}{Discussion}{subsection.8.3}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-C}0a}Enforcing the calibrated bound in 2D.}{12}{paragraph.8.3.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-C}0b}Separating calibration from real-time planning in 3D.}{12}{paragraph.8.3.0.2}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Closed-loop trajectory comparison in the dense 3D quadrotor task ($M{=}280$ dynamic obstacles) across three random seeds, shown in panels~(a)--(c). Each panel overlays all four controllers---CC-MPC (gray), ECP-MPC (orange), ACP-MPC (purple), and FCP-MPC (ours, blue). Green square: start; black star: goal; a red~$\times $ marks where a controller lost control and fell to the floor. FCP-MPC is the only method that makes consistent progress to the goal across seeds, while the baselines stall or crash early in the dense field.}}{13}{figure.5}\protected@file@percent }
 \newlabel{fig:traj_3d}{{5}{13}{Closed-loop trajectory comparison in the dense 3D quadrotor task ($M{=}280$ dynamic obstacles) across three random seeds, shown in panels~(a)--(c). Each panel overlays all four controllers---CC-MPC (gray), ECP-MPC (orange), ACP-MPC (purple), and FCP-MPC (ours, blue). Green square: start; black star: goal; a red~$\times $ marks where a controller lost control and fell to the floor. FCP-MPC is the only method that makes consistent progress to the goal across seeds, while the baselines stall or crash early in the dense field}{figure.5}{}}
@@ -186,9 +189,9 @@
 \bibcite{gibbs2021adaptiveconformalinferencedistribution}{19}
 \bibcite{janson2018safe}{20}
 \bibcite{newcombe2011kinectfusion}{21}
+\bibcite{fraichard2004inevitable}{22}
+\bibcite{salzmann2020trajectron}{23}
 \@writefile{toc}{\contentsline {section}{\numberline {IX}Conclusion}{14}{section.9}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0a}Limitations and future work.}{14}{paragraph.9.0.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{References}{14}{section*.1}\protected@file@percent }
-\bibcite{fraichard2004inevitable}{22}
-\bibcite{salzmann2020trajectron}{23}
-\gdef \@abspage@last{15}
+\gdef \@abspage@last{14}

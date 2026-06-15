@@ -41,7 +41,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PAPER_DIR = os.environ.get("FCP_PAPER_DIR", os.path.join(HERE, "T_RO2026"))
 OUT_PATH = os.path.join(PAPER_DIR, "traj_2d.png")
 
-DATASETS = ["zara1", "zara2", "eth", "univ"]
+DATASETS = ["eth", "hotel", "univ", "zara1", "zara2"]   # standard ETH-UCY order
 SCENE_IDX = 0  # representative scene per dataset (keeps the overlay legible)
 
 # Start / goal per dataset (mirror of runner_2d.py eval_task_configs).
@@ -49,6 +49,7 @@ TASK = {
     "zara1": {"start": (12.0, 5.0), "goal": (3.0, 6.0)},
     "zara2": {"start": (1.0, 6.0), "goal": (14.0, 5.0)},
     "eth":   {"start": (5.0, 1.0), "goal": (3.0, 10.0)},
+    "hotel": {"start": (-1.5, 0.0), "goal": (2.0, -6.0)},
     "univ":  {"start": (3.5, 2.0), "goal": (11.5, 8.5)},
 }
 
@@ -94,8 +95,10 @@ def _load_scene(dataset, key, scene_idx):
 
 def main():
     os.makedirs(PAPER_DIR, exist_ok=True)
-    fig, axes = plt.subplots(2, 2, figsize=(9.5, 8.5))
+    fig, axes = plt.subplots(2, 3, figsize=(14.0, 8.0))
     axes = axes.ravel()
+    for ax in axes[len(DATASETS):]:   # hide unused panels (5 datasets in a 3x2 grid)
+        ax.set_visible(False)
 
     for ax, dataset in zip(axes, DATASETS):
         for key, label, color, lw, ls, z in METHODS:

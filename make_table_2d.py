@@ -14,7 +14,7 @@ OUT_DIR = "tables"
 OUT_MAIN_TEX = "table_2d_results.tex"      # baselines vs FCP-MPC (our full / adaptive method)
 OUT_ABLATION_TEX = "table_2d_ablation.tex" # FCP-MPC internal ablation: online adaptation effect
 
-DATASETS = ["zara1", "zara2", "eth", "univ"]
+DATASETS = ["eth", "hotel", "univ", "zara1", "zara2"]   # standard ETH-UCY order
 
 # ---- Main results table ----
 # Baselines keep their \cite; FCP rows are our full method, i.e. the *adaptive*
@@ -45,6 +45,7 @@ MAX_N_STEPS = {
     "zara1": 100,
     "zara2": 100,
     "eth": 100,
+    "hotel": 100,
     "univ": 300,
 }
 

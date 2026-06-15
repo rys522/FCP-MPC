@@ -2,6 +2,24 @@
 \hline
 Dataset & Method & Collision rate $\downarrow$ & Infeasible rate $\downarrow$ & Steps to goal $\downarrow$ & Ctrl.\ time (ms) $\downarrow$ \\
 \hline
+eth & ACP-MPC~\cite{dixit2023adaptive} & 0.062 & 0.223 & 71.7 & \textbf{0.61} \\
+ & CC-MPC~\cite{lekeufack2024decision} & 0.055 & \textbf{0.000} & 99.0 & 0.66 \\
+ & ECP-MPC~\cite{shin2025egocentric} & 0.042 & 0.226 & 62.0 & 34.91 \\
+ & FCP-MPC (hard) & \textbf{0.023} & 0.265 & 73.7 & 2.56 \\
+ & FCP-MPC (soft) & 0.165 & \textbf{0.000} & \textbf{34.0} & 3.11 \\
+\hline
+hotel & ACP-MPC~\cite{dixit2023adaptive} & \textbf{0.000} & 0.223 & 73.7 & \textbf{0.81} \\
+ & CC-MPC~\cite{lekeufack2024decision} & 0.055 & \textbf{0.000} & timeout & 0.89 \\
+ & ECP-MPC~\cite{shin2025egocentric} & \textbf{0.000} & 0.069 & 68.3 & 44.91 \\
+ & FCP-MPC (hard) & 0.103 & 0.114 & 42.3 & 3.55 \\
+ & FCP-MPC (soft) & 0.089 & \textbf{0.000} & \textbf{29.0} & 3.61 \\
+\hline
+univ & ACP-MPC~\cite{dixit2023adaptive} & \textbf{0.011} & 0.344 & timeout & \textbf{2.78} \\
+ & CC-MPC~\cite{lekeufack2024decision} & 0.077 & \textbf{0.000} & timeout & 3.43 \\
+ & ECP-MPC~\cite{shin2025egocentric} & 0.351 & 0.629 & 263.0 & 62.63 \\
+ & FCP-MPC (hard) & 0.253 & 0.383 & timeout & 7.57 \\
+ & FCP-MPC (soft) & 0.284 & \textbf{0.000} & \textbf{95.0} & 12.75 \\
+\hline
 zara1 & ACP-MPC~\cite{dixit2023adaptive} & 0.135 & 0.491 & 91.3 & \textbf{0.62} \\
  & CC-MPC~\cite{lekeufack2024decision} & 0.076 & \textbf{0.000} & 91.0 & 0.68 \\
  & ECP-MPC~\cite{shin2025egocentric} & \textbf{0.063} & 0.136 & 58.7 & 41.95 \\
@@ -13,17 +31,5 @@ zara2 & ACP-MPC~\cite{dixit2023adaptive} & 0.247 & 0.672 & 93.3 & \textbf{0.74} 
  & ECP-MPC~\cite{shin2025egocentric} & 0.201 & 0.322 & 81.7 & 45.92 \\
  & FCP-MPC (hard) & 0.185 & 0.248 & 84.3 & 2.63 \\
  & FCP-MPC (soft) & 0.272 & \textbf{0.000} & \textbf{61.7} & 3.92 \\
-\hline
-eth & ACP-MPC~\cite{dixit2023adaptive} & 0.093 & 0.359 & 79.0 & \textbf{0.60} \\
- & CC-MPC~\cite{lekeufack2024decision} & 0.118 & \textbf{0.000} & 99.0 & 0.66 \\
- & ECP-MPC~\cite{shin2025egocentric} & 0.103 & 0.241 & 65.0 & 35.04 \\
- & FCP-MPC (hard) & \textbf{0.000} & 0.226 & 62.0 & 2.27 \\
- & FCP-MPC (soft) & \textbf{0.000} & \textbf{0.000} & \textbf{34.0} & 2.17 \\
-\hline
-univ & ACP-MPC~\cite{dixit2023adaptive} & \textbf{0.011} & 0.344 & timeout & \textbf{2.78} \\
- & CC-MPC~\cite{lekeufack2024decision} & 0.077 & \textbf{0.000} & timeout & 3.43 \\
- & ECP-MPC~\cite{shin2025egocentric} & 0.351 & 0.629 & 263.0 & 62.63 \\
- & FCP-MPC (hard) & 0.253 & 0.383 & timeout & 7.57 \\
- & FCP-MPC (soft) & 0.284 & \textbf{0.000} & \textbf{95.0} & 12.75 \\
 \hline
 \end{tabular}

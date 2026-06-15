@@ -1027,8 +1027,8 @@ conformal calibration affects safety, feasibility, and efficiency in a
 well-studied setting.
 
 \paragraph{2D Simulation Setup}
-We evaluate all methods on the ETH--UCY pedestrian datasets, including
-\texttt{zara1}, \texttt{zara2}, \texttt{eth}, and \texttt{univ}.
+We evaluate all methods on all five ETH--UCY pedestrian datasets---
+\texttt{eth}, \texttt{hotel}, \texttt{univ}, \texttt{zara1}, and \texttt{zara2}.
 Pedestrian trajectories are taken from real-world recordings, and a mobile robot
 is tasked with navigating toward a fixed goal while avoiding dynamic pedestrians.
 
@@ -1140,7 +1140,7 @@ rate, time-to-goal, and per-step runtime---with collision now defined by the min
 robot--obstacle distance violating $r_{\mathrm{safe}}$. For spatial evaluation we
 additionally report the \emph{containment} of the unsafe set (whether the true unsafe
 region lies inside the conformal unsafe region) and a voxel-wise \emph{recall} of the
-true unsafe set. All metrics are averaged over five scenes per dataset.
+true unsafe set. All metrics are averaged over the evaluated scenes of each dataset.
 
 
 
@@ -1183,7 +1183,7 @@ some datasets.
 FCP-MPC reveals a clear safety--efficiency trade-off between its hard and soft
 variants.
 The hard variant enforces the conformal lower bound as a strict feasibility
-constraint, attaining the lowest collision rates (e.g., $0.000$ on \texttt{eth})
+constraint, attaining the lowest collision rates (e.g., $0.023$ on \texttt{eth})
 but a non-zero infeasible rate, since the worst-case envelope can become
 overconservative at long horizons.
 The soft variant instead enforces the bound only as a penalty, eliminating
@@ -1231,9 +1231,9 @@ Lower values indicate better performance.}
 \begin{figure*}[!t]
   \centering
   \includegraphics[width=\linewidth]{traj_2d.png}
-  \caption{Representative closed-loop trajectories on one scene per ETH--UCY dataset
-  (green squares: start; black stars: goal).
-  Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed blue)---reach
+  \caption{Representative closed-loop trajectories on one scene of each of the five
+  ETH--UCY datasets (green squares: start; black stars: goal).
+  Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed red)---reach
   the goal along direct paths, whereas the baselines tend to wander or stall: CC-MPC
   (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often
   fails to make steady progress in dense scenes such as \texttt{univ}.}
@@ -1253,7 +1253,7 @@ upper bound $\hat{\xi}^{(t)}_i$ directly from realized residuals, without
 re-invoking the GMM.
 Table~\ref{tab:2d_ablation} isolates this effect.
 For the hard variant, online adaptation markedly reduces the infeasible
-rate---from $0.887$ to $0.226$ on \texttt{eth}, from $0.640$ to $0.383$ on
+rate---from $0.480$ to $0.265$ on \texttt{eth}, from $0.640$ to $0.383$ on
 \texttt{univ}, and from $0.454$ to $0.262$ on \texttt{zara1}---by relaxing the
 envelope where the offline bound was unnecessarily tight, while leaving collision
 rates essentially unchanged.

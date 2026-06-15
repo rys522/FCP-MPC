@@ -110,13 +110,17 @@ if __name__ == "__main__":
         'zara1': {'init_robot_pose': np.array([12., 5., np.pi]), 'goal_pos': np.array([3., 6.])},
         'zara2': {'init_robot_pose': np.array([1., 6., 0.]), 'goal_pos': np.array([14., 5.])},
         'eth': {'init_robot_pose': np.array([5., 1.0, np.pi / 2.]), 'goal_pos': np.array([3., 10.])},
+        'hotel': {'init_robot_pose': np.array([-1.5, 0., -np.pi / 2.]), 'goal_pos': np.array([2., -6.])},
         'univ': {'init_robot_pose': np.array([3.5, 2., np.pi / 4.]), 'goal_pos': np.array([11.5, 8.5])},
     }
 
     scenarios = {
         'zara1': [100, 200, 300],
         'zara2': [100, 200, 300],
-        'eth': [100, 200, 300],
+        # eth's old [100,200,300] landed in short/empty data windows; use scene
+        # starts with long consecutive prediction runs instead.
+        'eth': [732, 339, 653],
+        'hotel': [1001, 1245, 1582],
         'univ': [100]
     }
 
@@ -124,6 +128,7 @@ if __name__ == "__main__":
         'zara1': 0,
         'zara2': 1,
         'eth': 78,
+        'hotel': 0,
         'univ': 0,
     }
 
@@ -131,6 +136,7 @@ if __name__ == "__main__":
         'zara1': 100,
         'zara2': 100,
         'eth': 100,
+        'hotel': 100,
         'univ': 300
     }
 
