@@ -253,13 +253,19 @@ def render(P: dict, sel: dict, out: str, elev: float, azim: float,
                              + [sel["robot"][None]])
     # include background obstacles that are reasonably close, so a couple peek into
     # frame for 3D scene context without zooming too far out
+    # frame tightly on the obstacle spheres plus just the closest stretch of path
+    # (the path may run off-frame -- it only needs to be seen skirting the bound)
+    obst_centers = np.vstack([c for c in (sel["gt"], sel["pred"]) if c.size])
+    c0 = obst_centers.mean(axis=0)
+    _traj = P["robot_traj"]
+    cpt = _traj[np.linalg.norm(_traj - c0[None, :], axis=1).argmin()]
+    view_pts = [obst_centers, cpt[None, :]]
     bg = sel.get("bg", np.zeros((0, 3), np.float32))
     if bg.size:
-        c0 = main_centers.mean(axis=0)
-        bg_close = bg[np.linalg.norm(bg - c0[None, :], axis=1) <= 1.45]
-        view_centers = np.vstack([main_centers, bg_close]) if bg_close.size else main_centers
-    else:
-        view_centers = main_centers
+        bg_close = bg[np.linalg.norm(bg - c0[None, :], axis=1) <= 1.15]
+        if bg_close.size:
+            view_pts.append(bg_close)
+    view_centers = np.vstack(view_pts)
     centers = main_centers  # the envelope grid stays tight on the main obstacle
     pad = safe_rad + 0.55   # zoom tight: just contain the inflated envelope
     lxs, lys, lzs, Xl, Yl, Zl = local_grid(centers, safe_rad, pad, res)
@@ -338,16 +344,14 @@ def render(P: dict, sel: dict, out: str, elev: float, azim: float,
 
     # FCP path segment near the zoom box
     traj = P["robot_traj"]
-    vpad = safe_rad + 0.35
+    vpad = safe_rad + 0.22   # zoomed-in but leaves a little air around the bound
     lo = view_centers.min(axis=0) - vpad; hi = view_centers.max(axis=0) + vpad
     inbox = np.all((traj >= lo[None]) & (traj <= hi[None]), axis=1)
     if inbox.any():
         # contiguous-ish: just plot the in-box points in order
         seg = traj[inbox]
-        ax.plot(seg[:, 0], seg[:, 1], seg[:, 2], c="#2ca02c", lw=2.4,
+        ax.plot(seg[:, 0], seg[:, 1], seg[:, 2], c="#2ca02c", lw=2.6,
                 label="FCP-MPC path")
-        ax.scatter(*sel["robot"], c="#2ca02c", s=36, marker="^",
-                   depthshade=False, zorder=6)
 
     # cosmetics: light 3D "room" -- tinted panes for depth, but no grid/ticks/numbers
     ax.set_xlim(lo[0], hi[0]); ax.set_ylim(lo[1], hi[1]); ax.set_zlim(lo[2], hi[2])
