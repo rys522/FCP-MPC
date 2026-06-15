@@ -1310,22 +1310,26 @@ real-time budget. The quadrotor therefore loses control authority almost immedia
 crashes within a handful of steps (about $16$ on average); its zero collision count merely
 reflects that it never traverses the field.
 
-In contrast, FCP-MPC is the only controller that reaches the goal in this dense regime,
-succeeding on $71\%$ of the $17$ seeds while running comfortably in real time ($31.8$~ms per
-step). Its collision rate of $0.070$ stays within the prescribed target miscoverage level
-$\alpha=0.10$, consistent with the conformal guarantee. The baselines record lower collision
-counts only because they stall or crash before ever traversing the obstacle field---their
-apparent safety is vacuous, since none of them reach the goal---whereas FCP-MPC actively
-threads through the dense field while keeping the realized risk under the calibrated bound.
-The price of enforcing the worst-case envelope as a hard constraint is a non-zero infeasible
-rate ($0.361$), a conservativeness we revisit in the Discussion.
-Figure~\ref{fig:fcp_3d} provides a qualitative illustration of this
-behavior in a dense 3D environment, showing that the controller progresses
-smoothly toward the goal without unnecessary detours, even in the presence of
-many nearby obstacles.
-Figure~\ref{fig:traj_3d} compares the closed-loop trajectories of all four
-controllers across three random seeds (panels~(a)--(c)) in the same
-$M{=}280$-obstacle environment: FCP-MPC threads toward the goal while the
+FCP-MPC is the only method that reaches the goal in this dense regime, and its two
+deployments of the \emph{same} offline-calibrated field expose a clear density effect.
+Enforced as a \emph{hard} feasibility filter, FCP-MPC~(hard) inherits the formal guarantee
+of Theorems~\ref{thm:asymptotic_safety}--\ref{thm:asymptotic_safety_afcp}; at this extreme
+density, however, the worst-case envelope is conservative enough that the planner often has
+no feasible candidate and stalls (infeasible rate $0.361$), so it reaches only $71\%$ of
+seeds and, while stalled, is occasionally struck by a moving obstacle (collision $0.070$).
+Enforced as a \emph{soft} penalty on the same field, FCP-MPC~(soft) never stalls (infeasible
+rate $0.000$): it reaches the goal in \emph{every} seed at the lowest collision rate of any
+method that traverses the field ($0.015$, well within the target $\alpha=0.10$), and runs in
+real time at $80$~ms per step---an order of magnitude below ECP-MPC.
+The same calibrated field thus supports both a certified hard constraint and a robust soft
+penalty; in this densest regime the soft deployment is the better practical choice.
+Table~\ref{tab:results_sparse} repeats the comparison at a lower obstacle count
+($N_{\mathrm{obs}}=50$), so the methods are evaluated across a range of densities; we discuss
+how the hard/soft trade-off shifts with density in Section~\ref{sec:discussion}.
+Figure~\ref{fig:fcp_3d} illustrates the underlying conformal bound in 3D, and
+Figure~\ref{fig:traj_3d} compares the closed-loop trajectories of CC-MPC, ECP-MPC, ACP-MPC,
+and FCP-MPC~(soft) across three random seeds (panels~(a)--(c)) in the same
+$M{=}280$-obstacle environment: FCP-MPC threads to the goal in every panel while the
 baselines stall or fall (marked by a red~$\times$) early in the field.
 
 \begin{figure*}[!t]
@@ -1355,9 +1359,24 @@ baselines stall or fall (marked by a red~$\times$) early in the field.
 \begin{table*}[!t]
 \centering
 \small
-\caption{3D quadrotor navigation results with 280 dynamic obstacles.}
+\caption{3D quadrotor navigation results with $280$ dynamic obstacles, averaged over
+$17$ seeds ($\alpha=0.10$). FCP-MPC~(hard) and FCP-MPC~(soft) deploy the \emph{same}
+offline-calibrated field as a hard feasibility filter and as a soft penalty, respectively.
+Steps-to-goal is averaged over successful episodes; ``crashed'' / ``timeout'' mark methods
+that never reach the goal.}
 \label{tab:pybullet_results}
 \input{table_3d_results.tex}
+\end{table*}
+
+\begin{table*}[!t]
+\centering
+\small
+\caption{3D quadrotor navigation at a lower obstacle count ($N_{\mathrm{obs}}=50$),
+averaged over $17$ seeds ($\alpha=0.10$); same setup and columns as
+Table~\ref{tab:pybullet_results}. Reporting both densities shows how each method behaves
+as the workspace becomes less cluttered.}
+\label{tab:results_sparse}
+\input{table_3d_sparse.tex}
 \end{table*}
 
 \paragraph{Scalability Analysis in Dense 3D Environments}
@@ -1396,6 +1415,7 @@ in highly cluttered 3D environments with hundreds of dynamic obstacles.
 
 
 \subsection{Discussion}
+\label{sec:discussion}
 \paragraph{Enforcing the calibrated bound in 2D.}
 The 2D benchmarks isolate how the conformal lower bound should be \emph{used}
 once it has been calibrated.
@@ -1443,24 +1463,33 @@ achieved.
 FCP-MPC represents a deliberate trade-off between these two extremes.
 Rather than reasoning about all uncertainty online, it leverages offline
 functional conformal prediction to account for the full distribution of
-uncertainty in a global and principled manner.
-At runtime, safety is enforced via hard constraints derived from worst-case
-obstacle configurations, enabling efficient and predictable online planning.
-Unlike the dense 2D pedestrian benchmarks, the open 3D workspace offers ample free space
-and sparser, more predictable obstacles---airborne agents rarely pack a configuration the
-way a crowd of pedestrians does---so the worst-case envelope rarely removes all feasible
-motions. We therefore deploy only the \emph{offline hard} variant in 3D, omitting the
-online adaptation and soft shaping of the 2D study without sacrificing goal-reaching: the
-offline calibration alone keeps per-step computation low while still certifying the
-conformal safety bound.
-This design allows FCP-MPC to maintain higher execution speed than ECP-MPC while
-retaining awareness of environmental uncertainty beyond local interactions.
-Moreover, the observed collision rate of FCP-MPC ($0.070$) stays within the
-target miscoverage level $\alpha = 0.10$, consistent with the intended
-calibration behavior of the conformal lower-bound SDF: the certified lower bound
-keeps the realized risk below the prescribed level even while the planner actively
-traverses the dense field---unlike the baselines, whose lower collision counts simply
-reflect that they never reach the goal.
+uncertainty in a global and principled manner, so that at runtime safety reduces to a
+fieldwise query against the cached bound, enabling efficient and predictable planning.
+
+A practical advantage of the functional formulation is that this single offline-calibrated
+field can be \emph{deployed} in different ways without recomputation: enforced as a hard
+feasibility filter it yields the formal coverage guarantee, while enforced as a soft penalty
+it shapes the planner's cost. Which is preferable is environment-dependent. In the dense 2D
+pedestrian scenes, free space is scarce and the hard variant's worst-case envelope can
+remove all feasible motions, so the soft variant (and the online adaptation) recover
+feasibility. The open 3D workspace is less cluttered overall, yet at the highest obstacle count its fast,
+maneuvering obstacles still make the hard envelope conservative enough to stall the planner
+(infeasible rate $0.361$, reaching only $71\%$ of seeds at $N_{\mathrm{obs}}=280$;
+Table~\ref{tab:pybullet_results}), whereas the soft deployment of the \emph{same} field
+eliminates stalling and reaches every seed. This gap is density-dependent: as the obstacle
+count is reduced to $N_{\mathrm{obs}}=50$ the hard variant is no longer overconservative and
+again reaches reliably with a low collision rate (Table~\ref{tab:results_sparse}), confirming
+that its stalling is specific to the densest, most dynamic regime. Across regimes, then, the
+soft penalty is the more robust practical choice---especially in dense dynamic scenes---while
+the hard filter is preferable wherever the workspace is open enough to keep it feasible and a
+strict per-step guarantee is desired.
+
+Crucially, this safety comes from the conformal field itself: FCP-MPC~(soft) keeps its
+collision rate well within the target miscoverage level $\alpha = 0.10$ \emph{even as it
+actively traverses} the dense field---consistent with the intended calibration behavior of
+the conformal lower-bound SDF---whereas the baselines attain low collision counts only by
+never traversing it. And it does so at $80$~ms per planning step---real-time, and an order
+of magnitude faster than ECP-MPC's explicit online uncertainty reasoning.
 
 The use of worst-case conformal bounds inevitably introduces conservativeness,
 which leads to a non-zero infeasible rate when enforced as a hard constraint.
@@ -1470,17 +1499,16 @@ However, because uncertainty calibration in FCP-MPC is performed offline,
 the resulting online computation remains efficient, yielding a favorable
 balance between safety, feasibility, and real-time performance.
 
-Importantly, FCP-MPC also reaches the goal in fewer steps than baseline methods
-in 3D.
-We attribute this improvement to the spatially coherent nature of the functional
-conformal calibration.
+Importantly, FCP-MPC~(soft) reaches the goal \emph{reliably}---in every seed, versus
+partial or no success for the other methods---which we attribute to the spatially coherent
+nature of the functional conformal calibration.
 While point-wise or trajectory-wise calibration methods tend to induce locally
 conservative behavior due to worst-case reasoning at individual states or
 timesteps, the calibrated signed distance field provides a global view of
 where safety margins are tight and where sufficient free space exists.
-This allows the controller to progress more decisively through regions that are
-globally safe, reducing unnecessary detours and hesitation while still
-respecting worst-case safety constraints.
+This allows the controller to commit to globally safe corridors and make steady progress,
+rather than hesitating or stalling at local bottlenecks while still
+respecting the calibrated safety constraint.
 
 Overall, the results suggest that separating uncertainty modeling from online
 planning, and calibrating uncertainty at the level of the spatial field rather

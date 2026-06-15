@@ -258,8 +258,20 @@ def render(P: dict, sel: dict, out: str, elev: float, azim: float,
     obst_centers = np.vstack([c for c in (sel["gt"], sel["pred"]) if c.size])
     c0 = obst_centers.mean(axis=0)
     _traj = P["robot_traj"]
-    cpt = _traj[np.linalg.norm(_traj - c0[None, :], axis=1).argmin()]
-    view_pts = [obst_centers, cpt[None, :]]
+    # the avoidance arc: the contiguous stretch of path that passes near this
+    # obstacle (approach -> around -> depart), so the figure reads as "skirting it"
+    d_path = np.linalg.norm(_traj - c0[None, :], axis=1)
+    ci = int(d_path.argmin())
+    lo_i = ci
+    while lo_i > 0 and d_path[lo_i - 1] < 1.8:
+        lo_i -= 1
+    hi_i = ci
+    while hi_i < len(d_path) - 1 and d_path[hi_i + 1] < 1.8:
+        hi_i += 1
+    path_arc = _traj[lo_i:hi_i + 1]
+    if path_arc.shape[0] < 2:
+        path_arc = _traj[max(0, ci - 4):ci + 5]
+    view_pts = [obst_centers, path_arc]
     bg = sel.get("bg", np.zeros((0, 3), np.float32))
     if bg.size:
         bg_close = bg[np.linalg.norm(bg - c0[None, :], axis=1) <= 1.15]
@@ -307,7 +319,7 @@ def render(P: dict, sel: dict, out: str, elev: float, azim: float,
     if usetex:
         plt.rcParams["text.usetex"] = True
 
-    fig = plt.figure(figsize=(4.8, 4.4), dpi=300)
+    fig = plt.figure(figsize=(6.4, 3.7), dpi=300)
     ax = fig.add_subplot(111, projection="3d")
 
     if envelope_mode == "field":
@@ -330,27 +342,24 @@ def render(P: dict, sel: dict, out: str, elev: float, azim: float,
             shaded_sphere(ax, c, float(P.get("obstacle_rad", 0.2)),
                           "#9aa3ad", 0.45, ls, n=32)
         for c in sel["pred"]:
-            shaded_sphere(ax, c, safe_rad + U_show, "#e23b3b", 0.22, ls)
+            shaded_sphere(ax, c, safe_rad + U_show, "#e23b3b", 0.18, ls)
         for c in sel["gt"]:
-            shaded_sphere(ax, c, safe_rad, "#1f6fc4", 0.98, ls)
+            # translucent true ball so the predicted center inside stays visible
+            shaded_sphere(ax, c, safe_rad, "#1f6fc4", 0.50, ls)
 
-    # obstacle centers
+    # obstacle centers: true (dot) and predicted (prominent x, drawn on top)
     if sel["gt"].size:
         ax.scatter(sel["gt"][:, 0], sel["gt"][:, 1], sel["gt"][:, 2],
-                   c="#08306b", s=22, marker="o", depthshade=False)
+                   c="#08306b", s=26, marker="o", depthshade=False, zorder=11)
     if sel["pred"].size:
         ax.scatter(sel["pred"][:, 0], sel["pred"][:, 1], sel["pred"][:, 2],
-                   c="k", s=30, marker="x", depthshade=False, linewidths=1.4)
+                   c="k", s=80, marker="x", depthshade=False, linewidths=2.6, zorder=12)
 
-    # FCP path segment near the zoom box
-    traj = P["robot_traj"]
-    vpad = safe_rad + 0.22   # zoomed-in but leaves a little air around the bound
+    # FCP path: the avoidance arc around this obstacle
+    vpad = safe_rad + 0.2
     lo = view_centers.min(axis=0) - vpad; hi = view_centers.max(axis=0) + vpad
-    inbox = np.all((traj >= lo[None]) & (traj <= hi[None]), axis=1)
-    if inbox.any():
-        # contiguous-ish: just plot the in-box points in order
-        seg = traj[inbox]
-        ax.plot(seg[:, 0], seg[:, 1], seg[:, 2], c="#2ca02c", lw=2.6,
+    if path_arc.shape[0] >= 2:
+        ax.plot(path_arc[:, 0], path_arc[:, 1], path_arc[:, 2], c="#2ca02c", lw=2.8,
                 label="FCP-MPC path")
 
     # cosmetics: light 3D "room" -- tinted panes for depth, but no grid/ticks/numbers
@@ -403,8 +412,8 @@ def main():
     ap.add_argument("--min-clearance", type=float, default=0.62,
                     help="pick the obstacle the whole path stays at least this far "
                          "from, so the path visibly skirts (not penetrates) the bound")
-    ap.add_argument("--elev", type=float, default=45.0)
-    ap.add_argument("--azim", type=float, default=235.0,
+    ap.add_argument("--elev", type=float, default=25.0)
+    ap.add_argument("--azim", type=float, default=200.0,
                     help="view ~perpendicular to the path/obstacle plane so the "
                          "clearance is visible in-image, not along the line of sight")
     ap.add_argument("--res", type=int, default=72)
