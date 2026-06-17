@@ -166,9 +166,30 @@ You only need, per scene/video: `annotations.txt` (+ `reference.jpg`). `deathCir
 roundabout; `hyang`/`gates` are intersections — these have the fixed curved geometry that
 open ETH-UCY sidewalks lack.
 
-**Just drop the data in the repo and let the analysis auto-find it.** Expected layout:
-`<repo>/sdd_data/annotations/<scene>/<video>/annotations.txt` (+ `reference.jpg`).
-(any `--data-dir` works; `sdd_data/` is the default suggestion.)
+### Download (recommended: flclain mirror — small, no 69 GB videos)
+Primary: clone the annotations+reference mirror (all 8 scenes incl. `deathCircle`
+roundabout, `hyang`/`gates` intersections; pixel coords; standard SDD format):
+```bash
+git clone https://github.com/flclain/StanfordDroneDataset sdd_data
+```
+Optional upgrade — **constrained-SDD** (explicit per-scene polygon constraints for
+building/obstacle/offroad; lets you correlate uncertainty with *distance-to-constraint*,
+a cleaner geometric feature than turning): `pip install constrained-sdd`
+(`csdd.ConstrainedStanfordDroneDataset`, `get_trajectory_prediction_dataset`). Needs a
+small custom loader (its API differs from annotation.txt). Treat as supplementary.
+
+**Citations** (cold take: don't hang a load-bearing claim on a niche derived set):
+- Original SDD (always cite): Robicquet, Sadeghian, Alahi, Savarese, *Learning Social
+  Etiquette: Human Trajectory Understanding in Crowded Scenes*, ECCV 2016.
+- constrained-SDD (only if used): Kurscheidt, Morettin, Sebastiani, Passerini, Vergari,
+  *A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction*,
+  arXiv:2503.19466 (2025) + the april-tools/constrained-sdd repo.
+Recommendation: use standard SDD (flclain) as primary; constrained-SDD only as extra
+evidence.
+
+**The analysis auto-finds the data.** Point `--data-dir` at the clone; it globs
+`**/annotation*.txt` (works for both `annotation.txt` and `annotations.txt`, any nesting)
+and locates a nearby `reference.jpg/png`.
 
 ### 1) Spatial-uncertainty analysis + control check (already hardened)
 `analyze_spatial_uncertainty_ext.py` already applies the controls ETH-UCY failed
