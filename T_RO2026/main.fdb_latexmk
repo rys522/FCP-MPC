@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1781513869.46207 "main.aux" "main.bbl" "main" 1781513870.73982 0
-  "./reference.bib" 1781450389.75051 10692 c272235919ba0b5f341e291af1bf719f ""
+["bibtex main"] 1781592273.36807 "main.aux" "main.bbl" "main" 1781592274.61658 0
+  "./reference.bib" 1781592266.01987 12085 4af48b3e01f10ad83417b6b1c5aa179d ""
   "/usr/local/texlive/2025/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1781513870.52373 25544 28f9b37b3490f2c2fe262941a8cd6bdf "pdflatex"
+  "main.aux" 1781592274.40042 26379 a0159b2dcf2c066f680668e854c03cee "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1781513869.54502 "main.tex" "main.pdf" "main" 1781513870.73995 0
+["pdflatex"] 1781592273.44337 "main.tex" "main.pdf" "main" 1781592274.61671 0
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -61,6 +61,7 @@
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/rsfs/rsfs5.tfm" 1229303445 684 3a51bd4fd9600428d5264cf25f04bb9a ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/public/rsfs/rsfs7.tfm" 1229303445 692 1b6510779f0f05e9cbf03e0f6c8361e6 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb" 1248133631 34811 78b52f49e893bcba91bd7581cdc144c0 ""
+  "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx7.pfb" 1248133631 32007 e8fa0078355f39467039935974716569 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb" 1248133631 30251 6afa5cb1d0204815a708a080681d4674 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb" 1248133631 36299 5f9df58c2139e7edcf37c8fca4bd384d ""
   "/usr/local/texlive/2025/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb" 1248133631 37912 77d683123f92148345f3fc36a38d9ab1 ""
@@ -232,16 +233,16 @@
   "Func_cp_3d_zoom.png" 1781501600.38824 130908 fea773b836ed35a63b7e081a3b41e10a ""
   "IEEEtran.cls" 1781224172 282108 7379a03af5f3d0dad26db23a43c3a726 ""
   "control_time_3d.png" 1781455751.88845 89220 4b9325fe15f375b3871404ebb3fc212a ""
-  "main.aux" 1781513870.52373 25544 28f9b37b3490f2c2fe262941a8cd6bdf "pdflatex"
-  "main.bbl" 1781513869.54265 7440 8d8e12e56415a0f5841977024b1102ba "bibtex main"
-  "main.out" 1781513870.52481 6411 a741f15369286c72aba2355ef97cf299 "pdflatex"
-  "main.tex" 1781513857.2247 79680 ac0fe9995965095b5e26d23a6323843b ""
+  "main.aux" 1781592274.40042 26379 a0159b2dcf2c066f680668e854c03cee "pdflatex"
+  "main.bbl" 1781592273.44058 8418 753521e5e03edcc4a9bfef60f8d06f2a "bibtex main"
+  "main.out" 1781592274.40149 6199 ceedb4efc7085c125e4092015440fea7 "pdflatex"
+  "main.tex" 1781592250.58897 85735 384742eac893515f399945b4614cfa01 ""
   "multi_obs_H2.png" 1781224172 103040 f5acdbb4d39c21c0518c2e4490786301 ""
   "table_2d_ablation.tex" 1781513608.16301 1494 3717309284135ae18cc487b9ef68350c ""
   "table_2d_results.tex" 1781513608.16112 2003 c6433f29ce9ef47ae6aaea5381f1cc62 ""
   "table_3d_results.tex" 1781513347.43796 532 52cdba0e5f3f1b2b0800b81b6f1d5e65 ""
   "table_3d_sparse.tex" 1781513348.66651 530 aecd531169e1ae9b4711f964ecc6f093 ""
-  "traj_2d.png" 1781512476.62019 228319 2b1e7dc14adf4e2443108862aa5faa0b ""
+  "traj_2d.png" 1781514539.49264 207666 ebb12737161fdc908ca28457d0e434e8 ""
   "traj_3d_seeds.png" 1781513347.62881 171811 3653df4e129270ae7f0fac3bcdfd2534 ""
   (generated)
   "main.aux"

@@ -13,7 +13,6 @@
 \citation{lei2015conformal}
 \citation{gibbs2021adaptiveconformalinferencedistribution}
 \citation{janson2018safe}
-\citation{newcombe2011kinectfusion}
 \@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {II}Related Works}{1}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {III}Preliminaries}{1}{section.3}\protected@file@percent }
@@ -23,40 +22,45 @@
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-}0b}Adaptive conformal inference.}{1}{paragraph.3.0.0.2}\protected@file@percent }
 \newlabel{eq:aci}{{2}{1}{Adaptive conformal inference}{equation.2}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {IV}Problem Formulation}{1}{section.4}\protected@file@percent }
+\citation{newcombe2011kinectfusion}
+\citation{deits2015computing}
+\citation{lei2015conformal}
+\newlabel{problem:general-motion-planning}{{1}{2}{Motion Planning with Probabilistic Safety Guarantee}{problem.1}{}}
+\newlabel{eq:path-collision-constraint-general}{{3}{2}{Motion Planning with Probabilistic Safety Guarantee}{equation.3}{}}
+\newlabel{eq:collision-constraint-general}{{4}{2}{Problem Formulation}{equation.4}{}}
+\newlabel{eq:collision-constraint}{{5}{2}{Problem Formulation}{equation.5}{}}
+\newlabel{eq:path-collision-constraint}{{6}{2}{Problem Formulation}{equation.6}{}}
+\newlabel{eq:functional-score}{{8}{2}{Problem Formulation}{equation.8}{}}
+\newlabel{eq:functional_band_coverage}{{9}{2}{Problem Formulation}{equation.9}{}}
 \citation{lei2015conformal}
 \citation{lei2015conformal}
 \citation{lei2015conformal}
-\newlabel{eq:functional-score}{{3}{2}{Problem Formulation}{equation.3}{}}
-\newlabel{eq:functional_band_coverage}{{4}{2}{Problem Formulation}{equation.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Functional Conformal Prediction of a Score Function}{2}{subsection.4.1}\protected@file@percent }
-\newlabel{sec:functional_projection}{{\mbox  {IV-A}}{2}{Functional Conformal Prediction of a Score Function}{subsection.4.1}{}}
-\newlabel{eq:functional_projected_coverage}{{5}{2}{Functional Conformal Prediction of a Score Function}{equation.5}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0a}Data-driven basis (FPCA).}{2}{paragraph.4.1.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0b}Computational note.}{2}{paragraph.4.1.0.2}\protected@file@percent }
-\newlabel{sec:icp_coeff}{{\mbox  {IV-A}0c}{2}{Inductive conformal calibration in coefficient space}{paragraph.4.1.0.3}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0c}Inductive conformal calibration in coefficient space}{2}{paragraph.4.1.0.3}\protected@file@percent }
 \citation{lei2015conformal}
-\citation{lei2015conformal}
-\citation{lindemann2023safeplanning}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Functional Conformal Prediction of a Score Function}{3}{subsection.4.1}\protected@file@percent }
+\newlabel{sec:score-comp}{{\mbox  {IV-A}}{3}{Functional Conformal Prediction of a Score Function}{subsection.4.1}{}}
+\newlabel{sec:functional_projection}{{\mbox  {IV-A}}{3}{Functional Conformal Prediction of a Score Function}{subsection.4.1}{}}
+\newlabel{eq:functional_projected_coverage}{{10}{3}{Functional Conformal Prediction of a Score Function}{equation.10}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0a}Data-driven basis (FPCA).}{3}{paragraph.4.1.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0b}Computational note.}{3}{paragraph.4.1.0.2}\protected@file@percent }
+\newlabel{sec:icp_coeff}{{\mbox  {IV-A}0c}{3}{Inductive conformal calibration in coefficient space}{paragraph.4.1.0.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0c}Inductive conformal calibration in coefficient space}{3}{paragraph.4.1.0.3}\protected@file@percent }
 \newlabel{sec:gmm_ellipsoids}{{\mbox  {IV-A}0d}{3}{Gaussian mixture model and ellipsoidal coefficient regions}{paragraph.4.1.0.4}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0d}Gaussian mixture model and ellipsoidal coefficient regions}{3}{paragraph.4.1.0.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0e}Conformity score.}{3}{paragraph.4.1.0.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0f}Exact union-of-ellipsoids representation.}{3}{paragraph.4.1.0.6}\protected@file@percent }
-\newlabel{eq:exact_union}{{6}{3}{Exact union-of-ellipsoids representation}{equation.6}{}}
-\newlabel{eq:ellipsoid_def}{{7}{3}{Exact union-of-ellipsoids representation}{equation.7}{}}
+\newlabel{eq:exact_union}{{11}{3}{Exact union-of-ellipsoids representation}{equation.11}{}}
+\newlabel{eq:ellipsoid_def}{{12}{3}{Exact union-of-ellipsoids representation}{equation.12}{}}
 \newlabel{sec:upper_envelope}{{\mbox  {IV-A}0g}{3}{From coefficient regions to a functional upper envelope}{paragraph.4.1.0.7}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0g}From coefficient regions to a functional upper envelope}{3}{paragraph.4.1.0.7}\protected@file@percent }
-\newlabel{eq:ellipsoid_support_function}{{8}{3}{From coefficient regions to a functional upper envelope}{equation.8}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0h}Projection slack calibration.}{3}{paragraph.4.1.0.8}\protected@file@percent }
-\newlabel{eq:epsilon_quantile}{{9}{3}{Projection slack calibration}{equation.9}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0i}Final envelope with projection slack.}{3}{paragraph.4.1.0.9}\protected@file@percent }
-\newlabel{eq:functional_upper_envelope}{{10}{3}{Final envelope with projection slack}{equation.10}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Computation of Score Function}{3}{subsection.4.2}\protected@file@percent }
-\newlabel{sec:score-comp}{{\mbox  {IV-B}}{3}{Computation of Score Function}{subsection.4.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {V}Functional CP-informed MPC}{3}{section.5}\protected@file@percent }
-\newlabel{sec:cp_mpc}{{V}{3}{Functional CP-informed MPC}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Why FCP for Safe Planning?}{3}{subsection.5.1}\protected@file@percent }
-\citation{fraichard2004inevitable}
+\citation{lindemann2023safeplanning}
+\newlabel{eq:ellipsoid_support_function}{{13}{4}{From coefficient regions to a functional upper envelope}{equation.13}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0h}Projection slack calibration.}{4}{paragraph.4.1.0.8}\protected@file@percent }
+\newlabel{eq:epsilon_quantile}{{14}{4}{Projection slack calibration}{equation.14}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0i}Final envelope with projection slack.}{4}{paragraph.4.1.0.9}\protected@file@percent }
+\newlabel{eq:functional_upper_envelope}{{15}{4}{Final envelope with projection slack}{equation.15}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Functional CP-informed MPC}{4}{section.5}\protected@file@percent }
+\newlabel{sec:cp_mpc}{{V}{4}{Functional CP-informed MPC}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Why FCP for Safe Planning?}{4}{subsection.5.1}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Overview of the proposed functional CP-informed MPC. \textbf  {Offline} (blue): predicted and realized signed-distance fields are reduced by FPCA and a GMM-based inductive conformal procedure into a cached coefficient-envelope tuple $\Pi _i$. \textbf  {Online} (red): the realized residual is projected onto the cached basis, the coefficient upper bound is adapted by the AFCP rule~\eqref  {eq:acp_update}, and the resulting envelope $\setbox \z@ \hbox {\mathsurround \z@ $\textstyle U$}\mathaccent "0365{U}_{i,t}$ tightens the sampled-MPC safety filter. In the open 3D setting the online branch is unnecessary---ample free space makes the offline hard envelope sufficient---whereas the dense 2D benchmarks additionally exploit the online adaptation.}}{4}{figure.1}\protected@file@percent }
 \newlabel{fig:overview}{{1}{4}{Overview of the proposed functional CP-informed MPC. \textbf {Offline} (blue): predicted and realized signed-distance fields are reduced by FPCA and a GMM-based inductive conformal procedure into a cached coefficient-envelope tuple $\Pi _i$. \textbf {Online} (red): the realized residual is projected onto the cached basis, the coefficient upper bound is adapted by the AFCP rule~\eqref {eq:acp_update}, and the resulting envelope $\widetilde U_{i,t}$ tightens the sampled-MPC safety filter. In the open 3D setting the online branch is unnecessary---ample free space makes the offline hard envelope sufficient---whereas the dense 2D benchmarks additionally exploit the online adaptation}{figure.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Mathematical Setup}{4}{subsection.5.2}\protected@file@percent }
@@ -65,115 +69,123 @@
 \newlabel{ass:tracking_error}{{1}{4}{Bounded tracking error}{assumption.1}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}2}Robot dynamics.}{4}{subsubsection.5.2.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}3}Nominal predicted distance and conformal lower bound.}{4}{subsubsection.5.2.3}\protected@file@percent }
-\newlabel{eq:D_nominal_mpc}{{11}{4}{Nominal predicted distance and conformal lower bound}{equation.11}{}}
-\newlabel{eq:lower_field_def}{{12}{4}{Nominal predicted distance and conformal lower bound}{equation.12}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}4}Robust CP-safe set via constraint tightening.}{4}{subsubsection.5.2.4}\protected@file@percent }
-\newlabel{eq:ics_budget}{{13}{4}{Robust CP-safe set via constraint tightening}{equation.13}{}}
-\newlabel{eq:cp_safe_set_mpc}{{14}{4}{Robust CP-safe set via constraint tightening}{equation.14}{}}
-\citation{gibbs2021adaptiveconformalinferencedistribution}
+\newlabel{eq:D_nominal_mpc}{{16}{4}{Nominal predicted distance and conformal lower bound}{equation.16}{}}
+\citation{fraichard2004inevitable}
+\citation{scokaert1999feasibility,kerrigan2000soft}
+\citation{nocedal2006numerical}
+\newlabel{eq:lower_field_def}{{17}{5}{Nominal predicted distance and conformal lower bound}{equation.17}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}4}Robust CP-safe set via constraint tightening.}{5}{subsubsection.5.2.4}\protected@file@percent }
+\newlabel{eq:ics_budget}{{18}{5}{Robust CP-safe set via constraint tightening}{equation.18}{}}
+\newlabel{eq:cp_safe_set_mpc}{{19}{5}{Robust CP-safe set via constraint tightening}{equation.19}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}5}Sampled candidate trajectories.}{5}{subsubsection.5.2.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}6}Rollout and feasibility filtering.}{5}{subsubsection.5.2.6}\protected@file@percent }
-\newlabel{eq:rollout_sampled_mpc}{{15}{5}{Rollout and feasibility filtering}{equation.15}{}}
-\newlabel{eq:sampled_feasible_mpc}{{16}{5}{Rollout and feasibility filtering}{equation.16}{}}
+\newlabel{eq:rollout_sampled_mpc}{{20}{5}{Rollout and feasibility filtering}{equation.20}{}}
+\newlabel{eq:sampled_feasible_mpc}{{21}{5}{Rollout and feasibility filtering}{equation.21}{}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {\mbox  {V-B}7}Monte Carlo CP-MPC objective.}{5}{subsubsection.5.2.7}\protected@file@percent }
-\newlabel{eq:mc_cp_mpc_obj}{{17}{5}{Monte Carlo CP-MPC objective}{equation.17}{}}
+\newlabel{eq:soft_margin}{{22}{5}{Monte Carlo CP-MPC objective}{equation.22}{}}
+\newlabel{eq:mc_cp_mpc_obj}{{23}{5}{Monte Carlo CP-MPC objective}{equation.23}{}}
+\newlabel{eq:soft_penalty}{{24}{5}{Monte Carlo CP-MPC objective}{equation.24}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Notes on Computational Complexity}{5}{subsection.5.3}\protected@file@percent }
 \newlabel{subsec:complexity}{{\mbox  {V-C}}{5}{Notes on Computational Complexity}{subsection.5.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Offline GMM Initialization}{5}{subsection.5.4}\protected@file@percent }
 \newlabel{subsec:offline_online_cp}{{\mbox  {V-D}}{5}{Offline GMM Initialization}{subsection.5.4}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0a}Time-to-go indexing.}{5}{paragraph.5.4.0.1}\protected@file@percent }
-\newlabel{eq:Si_def}{{18}{5}{Time-to-go indexing}{equation.18}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0b}Offline calibration via FPCA and GMM.}{5}{paragraph.5.4.0.2}\protected@file@percent }
-\newlabel{eq:coeff_def_mpc}{{19}{5}{Offline calibration via FPCA and GMM}{equation.19}{}}
-\newlabel{eq:Ui_init}{{20}{5}{Offline calibration via FPCA and GMM}{equation.20}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0c}Cached offline tuple.}{5}{paragraph.5.4.0.3}\protected@file@percent }
-\newlabel{eq:Pi_i_tuple}{{21}{5}{Cached offline tuple}{equation.21}{}}
-\newlabel{eq:Pi_collection}{{22}{5}{Cached offline tuple}{equation.22}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Online adaptive update}{5}{subsection.5.5}\protected@file@percent }
-\newlabel{subsec:online_update}{{\mbox  {V-E}}{5}{Online adaptive update}{subsection.5.5}{}}
-\newlabel{eq:online_coeff}{{23}{5}{Online adaptive update}{equation.23}{}}
-\newlabel{eq:acp_update}{{24}{6}{Online adaptive update}{equation.24}{}}
-\newlabel{eq:Ui_online}{{25}{6}{Online adaptive update}{equation.25}{}}
+\citation{gibbs2021adaptiveconformalinferencedistribution}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0a}Time-to-go indexing.}{6}{paragraph.5.4.0.1}\protected@file@percent }
+\newlabel{eq:Si_def}{{25}{6}{Time-to-go indexing}{equation.25}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0b}Offline calibration via FPCA and GMM.}{6}{paragraph.5.4.0.2}\protected@file@percent }
+\newlabel{eq:coeff_def_mpc}{{26}{6}{Offline calibration via FPCA and GMM}{equation.26}{}}
+\newlabel{eq:Ui_init}{{27}{6}{Offline calibration via FPCA and GMM}{equation.27}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0c}Cached offline tuple.}{6}{paragraph.5.4.0.3}\protected@file@percent }
+\newlabel{eq:Pi_i_tuple}{{28}{6}{Cached offline tuple}{equation.28}{}}
+\newlabel{eq:Pi_collection}{{29}{6}{Cached offline tuple}{equation.29}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Online adaptive update}{6}{subsection.5.5}\protected@file@percent }
+\newlabel{subsec:online_update}{{\mbox  {V-E}}{6}{Online adaptive update}{subsection.5.5}{}}
+\newlabel{eq:online_coeff}{{30}{6}{Online adaptive update}{equation.30}{}}
+\newlabel{eq:acp_update}{{31}{6}{Online adaptive update}{equation.31}{}}
+\newlabel{eq:Ui_online}{{32}{6}{Online adaptive update}{equation.32}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-E}0a}Optional grid realization for fast online evaluation.}{6}{paragraph.5.5.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-E}0b}Pointwise online evaluation along rollouts.}{6}{paragraph.5.5.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-E}0c}Computational implications.}{6}{paragraph.5.5.0.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Safety Analysis and Asymptotic Guarantees}{6}{section.6}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Base Safety Guarantee via Functional Coverage}{6}{subsection.6.1}\protected@file@percent }
 \newlabel{thm:asymptotic_safety}{{1}{6}{Asymptotic Safety Guarantee}{theorem.1}{}}
-\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Functional CP-informed MPC with offline GMM initialization and online coefficient-space adaptive update}}{6}{algorithm.1}\protected@file@percent }
-\newlabel{alg:fcp_mpc_acp}{{1}{6}{Computational implications}{algorithm.1}{}}
-\newlabel{eq:asymptotic_safety_guarantee}{{26}{6}{Asymptotic Safety Guarantee}{equation.26}{}}
-\newlabel{eq:proof_feas_tight}{{27}{7}{Base Safety Guarantee via Functional Coverage}{equation.27}{}}
-\newlabel{eq:proof_nominal_safe}{{28}{7}{Base Safety Guarantee via Functional Coverage}{equation.28}{}}
-\newlabel{eq:proof_lipschitz}{{29}{7}{Base Safety Guarantee via Functional Coverage}{equation.29}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Functional CP-informed MPC with offline GMM initialization and online coefficient-space adaptive update}}{7}{algorithm.1}\protected@file@percent }
+\newlabel{alg:fcp_mpc_acp}{{1}{7}{Computational implications}{algorithm.1}{}}
+\newlabel{eq:asymptotic_safety_guarantee}{{33}{7}{Asymptotic Safety Guarantee}{equation.33}{}}
+\newlabel{eq:proof_feas_tight}{{34}{7}{Base Safety Guarantee via Functional Coverage}{equation.34}{}}
+\newlabel{eq:proof_nominal_safe}{{35}{7}{Base Safety Guarantee via Functional Coverage}{equation.35}{}}
+\newlabel{eq:proof_lipschitz}{{36}{7}{Base Safety Guarantee via Functional Coverage}{equation.36}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Robust Guarantee under Online Adaptation}{7}{subsection.6.2}\protected@file@percent }
-\newlabel{eq:afcp_coverage_prop}{{30}{7}{Robust Guarantee under Online Adaptation}{equation.30}{}}
+\newlabel{eq:afcp_coverage_prop}{{37}{7}{Robust Guarantee under Online Adaptation}{equation.37}{}}
 \newlabel{thm:asymptotic_safety_afcp}{{2}{7}{Asymptotic Safety with AFCP}{theorem.2}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VII}Experimental Setup}{7}{section.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-}0a}CP Calibration}{7}{paragraph.7.0.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-A}}Conformal SDF Visualization at 2D}{7}{subsection.7.1}\protected@file@percent }
 \citation{salzmann2020trajectron}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Experimental Setup}{8}{section.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-}0a}CP Calibration}{8}{paragraph.7.0.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-A}}Conformal SDF Visualization at 2D}{8}{subsection.7.1}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces 2D conformal SDF visualization at a representative time. \textbf  {Left:} ground-truth signed distance field. \textbf  {Right:} conformal lower-bound field. Dashed contours indicate the safety threshold $r_{\mathrm  {safe}}$.}}{8}{figure.2}\protected@file@percent }
 \newlabel{fig:sdf_visualization_2d}{{2}{8}{2D conformal SDF visualization at a representative time. \textbf {Left:} ground-truth signed distance field. \textbf {Right:} conformal lower-bound field. Dashed contours indicate the safety threshold $r_{\mathrm {safe}}$}{figure.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-B}}CP-Informed MPC in 2D Pedestrian Environments}{8}{subsection.7.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-B}0a}2D Simulation Setup}{8}{paragraph.7.2.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-B}0b}Evaluation Metrics}{8}{paragraph.7.2.0.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-B}0c}Hard vs.\ soft use of the conformal bound in 2D}{8}{paragraph.7.2.0.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-C}}CP-Informed MPC in 3D}{8}{subsection.7.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-C}0a}3D Experimental Setup}{8}{paragraph.7.3.0.1}\protected@file@percent }
-\citation{dixit2023adaptive}
-\citation{lekeufack2024decision}
-\citation{shin2025egocentric}
-\citation{dixit2023adaptive}
-\citation{lekeufack2024decision}
-\citation{shin2025egocentric}
-\citation{dixit2023adaptive}
-\citation{lekeufack2024decision}
-\citation{shin2025egocentric}
-\citation{dixit2023adaptive}
-\citation{lekeufack2024decision}
-\citation{shin2025egocentric}
-\citation{dixit2023adaptive}
-\citation{lekeufack2024decision}
-\citation{shin2025egocentric}
-\citation{dixit2023adaptive}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-B}0c}Hard vs.\ soft use of the conformal bound in 2D}{9}{paragraph.7.2.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VII-C}}CP-Informed MPC in 3D}{9}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-C}0a}3D Experimental Setup}{9}{paragraph.7.3.0.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-C}0b}Evaluation Metrics}{9}{paragraph.7.3.0.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VIII}Results and Analysis}{9}{section.8}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-A}}2D Pedestrian Navigation}{9}{subsection.8.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-A}0a}Effect of online envelope adaptation}{9}{paragraph.8.1.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-B}}3D Quadrotor Navigation}{9}{subsection.8.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces 2D navigation results on ETH--UCY pedestrian datasets. All metrics are averaged across scenes; lower is better. The FCP-MPC (hard) and FCP-MPC (soft) rows use our full method with the \emph  {online-adapted} (AFCP) envelope of~\eqref  {eq:acp_update}; Table~\ref {tab:2d_ablation} ablates the fixed offline (FCP) versus online-adapted (AFCP) choice for each constraint mode.}}{10}{table.1}\protected@file@percent }
-\newlabel{tab:2d_results}{{I}{10}{2D navigation results on ETH--UCY pedestrian datasets. All metrics are averaged across scenes; lower is better. The FCP-MPC (hard) and FCP-MPC (soft) rows use our full method with the \emph {online-adapted} (AFCP) envelope of~\eqref {eq:acp_update}; Table~\ref {tab:2d_ablation} ablates the fixed offline (FCP) versus online-adapted (AFCP) choice for each constraint mode}{table.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Ablation of the online envelope adaptation~\eqref  {eq:acp_update} in 2D. Within each constraint mode (Hard / Soft), the better value per metric is in bold. Lower values indicate better performance.}}{10}{table.2}\protected@file@percent }
-\newlabel{tab:2d_ablation}{{II}{10}{Ablation of the online envelope adaptation~\eqref {eq:acp_update} in 2D. Within each constraint mode (Hard / Soft), the better value per metric is in bold. Lower values indicate better performance}{table.2}{}}
 \citation{dixit2023adaptive}
 \citation{lekeufack2024decision}
 \citation{shin2025egocentric}
 \citation{dixit2023adaptive}
 \citation{lekeufack2024decision}
 \citation{shin2025egocentric}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Representative closed-loop trajectories on one scene of each of the five ETH--UCY datasets (green squares: start; black stars: goal). Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed red)---reach the goal along direct paths, whereas the baselines tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense scenes such as \texttt  {univ}.}}{11}{figure.3}\protected@file@percent }
-\newlabel{fig:traj_2d}{{3}{11}{Representative closed-loop trajectories on one scene of each of the five ETH--UCY datasets (green squares: start; black stars: goal). Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed red)---reach the goal along direct paths, whereas the baselines tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense scenes such as \texttt {univ}}{figure.3}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-B}0a}Scalability Analysis in Dense 3D Environments}{11}{paragraph.8.2.0.1}\protected@file@percent }
+\citation{dixit2023adaptive}
+\citation{lekeufack2024decision}
+\citation{shin2025egocentric}
+\citation{dixit2023adaptive}
+\citation{lekeufack2024decision}
+\citation{shin2025egocentric}
+\citation{dixit2023adaptive}
+\citation{lekeufack2024decision}
+\citation{shin2025egocentric}
+\citation{dixit2023adaptive}
+\citation{dixit2023adaptive}
+\citation{lekeufack2024decision}
+\citation{shin2025egocentric}
+\citation{dixit2023adaptive}
+\citation{lekeufack2024decision}
+\citation{shin2025egocentric}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-A}0a}Effect of online envelope adaptation}{10}{paragraph.8.1.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-B}}3D Quadrotor Navigation}{10}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-B}0a}Scalability Analysis in Dense 3D Environments}{10}{paragraph.8.2.0.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces 2D navigation results on ETH--UCY pedestrian datasets. All metrics are averaged across scenes; lower is better. The FCP-MPC (hard) and FCP-MPC (soft) rows use our full method with the \emph  {online-adapted} (AFCP) envelope of~\eqref  {eq:acp_update}; Table~\ref {tab:2d_ablation} ablates the fixed offline (FCP) versus online-adapted (AFCP) choice for each constraint mode.}}{11}{table.1}\protected@file@percent }
+\newlabel{tab:2d_results}{{I}{11}{2D navigation results on ETH--UCY pedestrian datasets. All metrics are averaged across scenes; lower is better. The FCP-MPC (hard) and FCP-MPC (soft) rows use our full method with the \emph {online-adapted} (AFCP) envelope of~\eqref {eq:acp_update}; Table~\ref {tab:2d_ablation} ablates the fixed offline (FCP) versus online-adapted (AFCP) choice for each constraint mode}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Ablation of the online envelope adaptation~\eqref  {eq:acp_update} in 2D. Within each constraint mode (Hard / Soft), the better value per metric is in bold. Lower values indicate better performance.}}{11}{table.2}\protected@file@percent }
+\newlabel{tab:2d_ablation}{{II}{11}{Ablation of the online envelope adaptation~\eqref {eq:acp_update} in 2D. Within each constraint mode (Hard / Soft), the better value per metric is in bold. Lower values indicate better performance}{table.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VIII-C}}Discussion}{11}{subsection.8.3}\protected@file@percent }
 \newlabel{sec:discussion}{{\mbox  {VIII-C}}{11}{Discussion}{subsection.8.3}{}}
 \@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-C}0a}Enforcing the calibrated bound in 2D.}{11}{paragraph.8.3.0.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Representative closed-loop trajectories on one scene of each of the five ETH--UCY datasets (green squares: start; black stars: goal). Both variants of FCP-MPC (ours)---soft (thick blue) and hard (thick red)---reach the goal along direct paths, whereas the baselines, drawn in lighter lines, tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense scenes such as \texttt  {univ}.}}{12}{figure.3}\protected@file@percent }
+\newlabel{fig:traj_2d}{{3}{12}{Representative closed-loop trajectories on one scene of each of the five ETH--UCY datasets (green squares: start; black stars: goal). Both variants of FCP-MPC (ours)---soft (thick blue) and hard (thick red)---reach the goal along direct paths, whereas the baselines, drawn in lighter lines, tend to wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often fails to make steady progress in dense scenes such as \texttt {univ}}{figure.3}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces 3D quadrotor navigation results with $280$ dynamic obstacles, averaged over $17$ seeds ($\alpha =0.10$). FCP-MPC~(hard) and FCP-MPC~(soft) deploy the \emph  {same} offline-calibrated field as a hard feasibility filter and as a soft penalty, respectively. Steps-to-goal is averaged over successful episodes; ``crashed'' / ``timeout'' mark methods that never reach the goal.}}{12}{table.3}\protected@file@percent }
 \newlabel{tab:pybullet_results}{{III}{12}{3D quadrotor navigation results with $280$ dynamic obstacles, averaged over $17$ seeds ($\alpha =0.10$). FCP-MPC~(hard) and FCP-MPC~(soft) deploy the \emph {same} offline-calibrated field as a hard feasibility filter and as a soft penalty, respectively. Steps-to-goal is averaged over successful episodes; ``crashed'' / ``timeout'' mark methods that never reach the goal}{table.3}{}}
 \@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces 3D quadrotor navigation at a lower obstacle count ($N_{\mathrm  {obs}}=50$), averaged over $17$ seeds ($\alpha =0.10$); same setup and columns as Table~\ref {tab:pybullet_results}. Reporting both densities shows how each method behaves as the workspace becomes less cluttered.}}{12}{table.4}\protected@file@percent }
 \newlabel{tab:results_sparse}{{IV}{12}{3D quadrotor navigation at a lower obstacle count ($N_{\mathrm {obs}}=50$), averaged over $17$ seeds ($\alpha =0.10$); same setup and columns as Table~\ref {tab:pybullet_results}. Reporting both densities shows how each method behaves as the workspace becomes less cluttered}{table.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces True and conformal safety bounds in 3D, zoomed onto a single obstacle. The solid blue ball is the \emph  {true} safety boundary $D_{t+i}(x)=r_{\mathrm  {safe}}$ around the actual obstacle (used only for evaluation); the translucent red shell is the \emph  {conformal lower-bound} boundary $\underline  {D}_{t+i\mid t}(x)=r_{\mathrm  {safe}}$ obtained from the functional calibration, i.e.\ the nominal safety region around the predicted center inflated by the calibrated margin. The conformal surface encloses the true one, certifying coverage, and the executed FCP-MPC path (green) threads just outside it---progressing efficiently while respecting the worst-case safety constraint. Faint gray spheres are other obstacles in the scene.}}{12}{figure.4}\protected@file@percent }
-\newlabel{fig:fcp_3d}{{4}{12}{True and conformal safety bounds in 3D, zoomed onto a single obstacle. The solid blue ball is the \emph {true} safety boundary $D_{t+i}(x)=r_{\mathrm {safe}}$ around the actual obstacle (used only for evaluation); the translucent red shell is the \emph {conformal lower-bound} boundary $\underline {D}_{t+i\mid t}(x)=r_{\mathrm {safe}}$ obtained from the functional calibration, i.e.\ the nominal safety region around the predicted center inflated by the calibrated margin. The conformal surface encloses the true one, certifying coverage, and the executed FCP-MPC path (green) threads just outside it---progressing efficiently while respecting the worst-case safety constraint. Faint gray spheres are other obstacles in the scene}{figure.4}{}}
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-C}0b}Separating calibration from real-time planning in 3D.}{12}{paragraph.8.3.0.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Closed-loop trajectory comparison in the dense 3D quadrotor task ($M{=}280$ dynamic obstacles) across three random seeds, shown in panels~(a)--(c). Each panel overlays all four controllers---CC-MPC (gray), ECP-MPC (orange), ACP-MPC (purple), and FCP-MPC (ours, blue). Green square: start; black star: goal; a red~$\times $ marks where a controller lost control and fell to the floor. FCP-MPC is the only method that makes consistent progress to the goal across seeds, while the baselines stall or crash early in the dense field.}}{13}{figure.5}\protected@file@percent }
-\newlabel{fig:traj_3d}{{5}{13}{Closed-loop trajectory comparison in the dense 3D quadrotor task ($M{=}280$ dynamic obstacles) across three random seeds, shown in panels~(a)--(c). Each panel overlays all four controllers---CC-MPC (gray), ECP-MPC (orange), ACP-MPC (purple), and FCP-MPC (ours, blue). Green square: start; black star: goal; a red~$\times $ marks where a controller lost control and fell to the floor. FCP-MPC is the only method that makes consistent progress to the goal across seeds, while the baselines stall or crash early in the dense field}{figure.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Scalability comparison of MPC methods in dense 3D environments. The figure reports the mean control computation time per planning step as a function of the number of dynamic obstacles.}}{13}{figure.6}\protected@file@percent }
-\newlabel{fig:scalability_3d}{{6}{13}{Scalability comparison of MPC methods in dense 3D environments. The figure reports the mean control computation time per planning step as a function of the number of dynamic obstacles}{figure.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces True and conformal safety bounds in 3D, zoomed onto a single obstacle. The solid blue ball is the \emph  {true} safety boundary $D_{t+i}(x)=r_{\mathrm  {safe}}$ around the actual obstacle (used only for evaluation); the translucent red shell is the \emph  {conformal lower-bound} boundary $\underline  {D}_{t+i\mid t}(x)=r_{\mathrm  {safe}}$ obtained from the functional calibration, i.e.\ the nominal safety region around the predicted center inflated by the calibrated margin. The conformal surface encloses the true one, certifying coverage, and the executed FCP-MPC path (green) threads just outside it---progressing efficiently while respecting the worst-case safety constraint. Faint gray spheres are other obstacles in the scene.}}{13}{figure.4}\protected@file@percent }
+\newlabel{fig:fcp_3d}{{4}{13}{True and conformal safety bounds in 3D, zoomed onto a single obstacle. The solid blue ball is the \emph {true} safety boundary $D_{t+i}(x)=r_{\mathrm {safe}}$ around the actual obstacle (used only for evaluation); the translucent red shell is the \emph {conformal lower-bound} boundary $\underline {D}_{t+i\mid t}(x)=r_{\mathrm {safe}}$ obtained from the functional calibration, i.e.\ the nominal safety region around the predicted center inflated by the calibrated margin. The conformal surface encloses the true one, certifying coverage, and the executed FCP-MPC path (green) threads just outside it---progressing efficiently while respecting the worst-case safety constraint. Faint gray spheres are other obstacles in the scene}{figure.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VIII-C}0b}Separating calibration from real-time planning in 3D.}{13}{paragraph.8.3.0.2}\protected@file@percent }
 \bibstyle{IEEEtran}
 \bibdata{reference}
 \bibcite{lindemann2023safeplanning}{1}
 \bibcite{dixit2023adaptive}{2}
 \bibcite{lekeufack2024decision}{3}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Closed-loop trajectory comparison in the dense 3D quadrotor task ($M{=}280$ dynamic obstacles) across three random seeds, shown in panels~(a)--(c). Each panel overlays all four controllers---CC-MPC (gray), ECP-MPC (orange), ACP-MPC (purple), and FCP-MPC (ours, blue). Green square: start; black star: goal; a red~$\times $ marks where a controller lost control and fell to the floor. FCP-MPC is the only method that makes consistent progress to the goal across seeds, while the baselines stall or crash early in the dense field.}}{14}{figure.5}\protected@file@percent }
+\newlabel{fig:traj_3d}{{5}{14}{Closed-loop trajectory comparison in the dense 3D quadrotor task ($M{=}280$ dynamic obstacles) across three random seeds, shown in panels~(a)--(c). Each panel overlays all four controllers---CC-MPC (gray), ECP-MPC (orange), ACP-MPC (purple), and FCP-MPC (ours, blue). Green square: start; black star: goal; a red~$\times $ marks where a controller lost control and fell to the floor. FCP-MPC is the only method that makes consistent progress to the goal across seeds, while the baselines stall or crash early in the dense field}{figure.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Scalability comparison of MPC methods in dense 3D environments. The figure reports the mean control computation time per planning step as a function of the number of dynamic obstacles.}}{14}{figure.6}\protected@file@percent }
+\newlabel{fig:scalability_3d}{{6}{14}{Scalability comparison of MPC methods in dense 3D environments. The figure reports the mean control computation time per planning step as a function of the number of dynamic obstacles}{figure.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {IX}Conclusion}{14}{section.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0a}Limitations and future work.}{14}{paragraph.9.0.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{14}{section*.1}\protected@file@percent }
 \bibcite{mei2025perceive}{4}
 \bibcite{shin2025egocentric}{5}
 \bibcite{contreras2025safe}{6}
@@ -192,9 +204,10 @@
 \bibcite{gibbs2021adaptiveconformalinferencedistribution}{19}
 \bibcite{janson2018safe}{20}
 \bibcite{newcombe2011kinectfusion}{21}
-\bibcite{fraichard2004inevitable}{22}
-\bibcite{salzmann2020trajectron}{23}
-\@writefile{toc}{\contentsline {section}{\numberline {IX}Conclusion}{14}{section.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IX-}0a}Limitations and future work.}{14}{paragraph.9.0.0.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{References}{14}{section*.1}\protected@file@percent }
-\gdef \@abspage@last{14}
+\bibcite{deits2015computing}{22}
+\bibcite{fraichard2004inevitable}{23}
+\bibcite{scokaert1999feasibility}{24}
+\bibcite{kerrigan2000soft}{25}
+\bibcite{nocedal2006numerical}{26}
+\bibcite{salzmann2020trajectron}{27}
+\gdef \@abspage@last{15}

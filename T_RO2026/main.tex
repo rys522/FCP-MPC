@@ -22,6 +22,9 @@
 \usepackage{cite}
 \usepackage[colorlinks=true,allcolors=blue]{hyperref}
 
+\usepackage{accents}
+\newcommand{\ubar}[1]{\underaccent{\bar}{#1}}
+
 % Extra vertical breathing room between stacked double-column floats (Tables I--III).
 \setlength{\dblfloatsep}{18pt plus 2pt minus 2pt}
 \setlength{\dbltextfloatsep}{22pt plus 2pt minus 4pt}
@@ -99,6 +102,11 @@ conformal prediction for safe motion planning~\cite{lindemann2023safeplanning, d
     \item recent worst-case definition of score functions for motion planning are intractable, thus requiring severe approximation in practice, e.g.~\cite{mei2025perceive,sundarsingh2026safe}.
 \end{itemize}
 
+\subsection{Notation}
+For $f, g \in L^2(\mathcal{X}, d\mathbf{x})$, we denote their inner product by $\langle f, g \rangle = \int_{\mathcal{X}} f(\mathbf{x})g(\mathbf{x}) d\mathbf{x}$.
+
+
+
 \section{Related Works}
 % risk-aware motion planning
 
@@ -139,7 +147,7 @@ Section~\ref{sec:functional_projection}.
 Given exchangeable samples $\{z_n\}_{n=1}^N$ and a nonconformity score
 $s(\cdot)\in\mathbb{R}$ (larger meaning a worse fit), fix a target miscoverage
 level $\alpha\in(0,1)$ and set
-$\hat q = \mathrm{Quantile}_{1-\alpha}\bigl(\{s(z_n)\}_{n=1}^N\cup\{+\infty\}\bigr)$.
+$\hat q = \mathsf{Quantile}_{1-\alpha}\bigl(\{s(z_n)\}_{n=1}^N\cup\{+\infty\}\bigr)$.
 For a fresh exchangeable sample $z_{N+1}$,
 \begin{equation}
 \mathbb{P}\bigl[s(z_{N+1})\le \hat q\bigr]\ge 1-\alpha,
@@ -172,19 +180,26 @@ Theorem~\ref{thm:asymptotic_safety_afcp}.
 
 
 
-Let $\mathcal{Q}$ be the configuration space of a robot, and  $x = x(q) \in \mathcal{X} \subseteq \mathbb{R}^d$ the position in the world corresponding to $q\in \mathcal{Q}$ (i.e., the forward kinematics of the robot), where $d = 2$ or $d=3$. Let $\mathcal{O}_t \subseteq \mathcal{X}$ be the union of \emph{dynamic} obstacles (which is often represented as an occupancy map in practice).
-To model a limited perception range, we follow the formulation of~\cite{janson2018safe} and introduce a perception map $P : \mathcal{X} \times \mathscr{C}(\mathcal{X}) \to \mathscr{M}_{\text{partial}}(\mathcal{X})$, where $\mathscr{C}(\mathcal{X})$ is the collection of all closed subsets of $\mathcal{X}$ (each $\mathcal{C} \in \mathscr{C}(\mathcal{X})$ being a union of obstacles, i.e.\ the \emph{unknown} occupancy of the world), and $\mathscr{M}_{\text{partial}}(\mathcal{X})$ is the set of all measurable \emph{partial} functions on $\mathcal{X}$,
+Let $\mathcal{Q}$ be the configuration space of a robot, and  $\mathbf{x} = \mathbf{x}(\mathbf{q}) \in \mathcal{X} \subseteq \mathbb{R}^d$ the position in the world corresponding to $\mathbf{q}\in \mathcal{Q}$ (i.e., the forward kinematics of the robot), where $d = 2$ or $d=3$.
+We also use the notation $\mathcal{A} = \mathcal{A}(\mathbf{q}) \subseteq \mathcal{X}$ to denote the footprint of the robot (which is a closed subset of $\mathcal{X}$) whose configuration is $\mathbf{q}$. Defining a control input as $\mathbf{u} \in \mathcal{U}$, the dynamics of the robot is given as the equation
+\begin{equation*}
+\mathbf{q}_{t+1} = f(\mathbf{q}_{t}, \mathbf{u}_{t}), \quad t = 0, 1, \ldots.
+\end{equation*}
+We specifically consider a \emph{dynamic} environment where $t =0, \ldots, T$ is the time window and $\mathcal{O}_t \subseteq \mathcal{X}$ is the union of \emph{dynamic} obstacles at $t$ (which is often represented as an occupancy map in practice), which is \emph{completely unknown}. $\{ \mathcal{O}_t\}_{t = 0}^T$ is modeled as a set-valued random process, where the randomness of the process embraces \emph{environmental variations}. It is also assumed that each $\mathcal{O}_t$ is indepdent of $\mathbf{q}_0, \mathbf{u}_0, \ldots, \mathbf{q}_t$, which indicates that the motion of the robot does not affect the environmental occupancy $\mathcal{O}_t$.\footnote{Extending this to consider bidirectional interactions among the robot and dynamic agents is left as a future work.} We also write $\mathcal{A}_t \coloneqq \mathcal{A}(\mathbf{q}_t)$.
+Finally, to model a limited perception range, we follow the formulation of~\cite{janson2018safe} and introduce a perception map $P : \mathcal{X} \times \mathscr{C}(\mathcal{X}) \to \mathscr{M}_{\text{partial}}(\mathcal{X})$, where $\mathscr{C}(\mathcal{X})$ is the collection of all closed subsets of $\mathcal{X}$ (each $\mathcal{C} \in \mathscr{C}(\mathcal{X})$ being a union of obstacles, i.e.\ the \emph{unknown} occupancy of the world), and $\mathscr{M}_{\text{partial}}(\mathcal{X})$ is the set of all measurable \emph{partial} functions on $\mathcal{X}$,
 \begin{equation*}
 \mathscr{M}_{\text{partial}}(\mathcal{X}) \coloneqq \bigl\{ D : \mathcal{Y} \to \mathbb{R} \;\big|\; \mathcal{Y}\subseteq\mathcal{X},\ D\ \text{measurable} \bigr\}.
 \end{equation*}
 Intuitively, $P(x, \mathcal{C})$ is the signed distance field (SDF) sensed from configuration $x$ when the true geometry is $\mathcal{C}$; in practice it is realized as a truncated SDF~\cite{newcombe2011kinectfusion}, which we prefer to a binary occupancy map for its smooth, distance-aware structure. The use of \emph{partial} functions accounts for the finite sensing range.
-
 Let $\mathcal{C}_t$, $t \geq 0$, denote the time-varying occupancy, whose dynamics reflect the motion of the environment. At time $t$ the robot at $x_t = x(q_t)$ receives the observation $\widehat{D}_t = P(x_t, \mathcal{C}_t)$ with domain $\mathcal{D}_t$, and the region sensed up to time $t$ is
 \begin{equation*}
 \mathcal{D}_{\leq t} \coloneqq \bigcup_{\tau \leq t}\mathcal{D}_{\tau}.
 \end{equation*}
 On $\mathcal{D}_{\leq t}$ the observations are fused into an SDF estimate $D_{\leq t}: \mathcal{X} \to \mathbb{R}$, which is set to $0$ on the unexplored region $\mathcal{X} \setminus \mathcal{D}_{\leq t}$.
-
+Given $\mathcal{O}_t$, We define the \emph{distance function $D_t$ associated with $\mathcal{O}_t$} as
+\begin{equation*}
+D_t(\mathbf{x}) \coloneqq D(\mathbf{x}, \mathcal{O}_t) = \inf_{\mathbf{x'}\in \mathcal{O}_t} \Vert \mathbf{x} - \mathbf{x}' \Vert, \quad \mathbf{x} \in \mathcal{X}.
+\end{equation*}
 
 
 Since the future occupancy $\mathcal{O}_{t+i}$ for $i > 0$ is unobservable at time $t$, it must be estimated from historical and contextual data, as modern prediction models do. We denote the $i$-step-ahead prediction made at $t$ by $\mathcal{O}_{t+i|t}$.
@@ -197,20 +212,71 @@ and its $i$-step ahead prediction be:
 D_{t+i|t}(x) \coloneqq d(x, \mathcal{O}_{t+i|t}), \quad x \in \mathcal{X}
 \end{equation*}
 
-\begin{problem}[Motion Planning with Safety Guarantee]
-Given a goal configuration and the fused SDF estimate $D_{\leq t}$, the objective is to
-generate a control policy that drives the robot toward the goal while satisfying, over
-the planning horizon $i = 1,\dots,H$,
-\begin{align*}
-\mathbb{P}\!\left[\, D_{t+i}\!\left(x_{t+i}\right) \ge 0, \ \ \forall i \in \{1,\dots,H\} \,\right] \;\ge\; 1-\alpha,
-\end{align*}
-where $x_{t+i}$ denotes the robot position at time $t+i$ under the policy.
-\end{problem}
 
-To avoid overestimating $D_{t+i}$, which can lead to catastrophic collisions, we consider the following score function:
-\begin{equation}\label{eq:functional-score}
-S_{t+i|t} (x) \coloneqq D_{t+i|t}(x) - D_{t+i}(x), \quad x\in \mathcal{X}.
+We are primarily interested in solving the following problem:
+\begin{problem}[Motion Planning with Probabilistic Safety Guarantee]\label{problem:general-motion-planning}
+% Given a goal configuration and the fused SDF estimate $D_{\leq t}$, the objective is to
+% generate a control policy that drives the robot toward the goal while satisfying, over
+% the planning horizon $i = 1,\dots,H$,
+Design a policy $\pi$ {\color{teal}(inputs \& ouputs; inputs: partial observations / outputs: $\mathbf{u}_t$)} that solves
+\begin{align}\label{eq:path-collision-constraint-general}
+\min_{\pi}&\quad  \sum_{t=0}^{T-1} \ell(\mathbf{q}_t, \mathbf{u}_t) + \ell(\mathbf{q}_T) \nonumber \\
+\text{s.t.}&\quad \mathbf{q}_{t+1} = f(\mathbf{q}_t, \mathbf{u}_t), \quad 0 \leq t < T, \nonumber \\
+&\quad \mathbb{P}\left[ \mathcal{A}_t\cap \mathcal{O}_t = \varnothing \;\text{for all}\; 1\leq t \leq T \right] \geq  1 - \alpha.
+\end{align}
+
+% \begin{align*}
+% \mathbb{P}\!\left[\, D_{t+i}\!\left(x_{t+i}\right) \ge 0, \ \ \forall i \in \{1,\dots,H\} \,\right] \;\ge\; 1-\alpha,
+% \end{align*}
+% where $x_{t+i}$ denotes the robot position at time $t+i$ under the policy.
+\end{problem}
+The condition $\mathcal{A}(t) \cap \mathcal{O}(t) = \varnothing$ may be strengthened into
+\begin{equation}\label{eq:collision-constraint-general}
+\inf_{\mathbf{x} \in \mathcal{A}_t} D(\mathbf{x}, \mathcal{O}_t) > \delta
 \end{equation}
+where $\delta > 0$ is a user-specified margin between $\mathcal{A}_t$ and $\mathcal{O}_t$.
+Since $\mathcal{O}_t$ is generally non-convex, the exact verification of this condition is intractable even when $\mathcal{A}_t$ is a convex polytope {\color{teal}(citation?)}. Therefore, a typical remedy for this is to approximate $\mathcal{O}_t$ or the free space $\mathcal{X} \setminus \mathcal{O}_t$ by a union of convex obstacles~\cite{zhang2020optimization,deits2015computing}. Instead of inheriting this assumption, we simply assume that $\mathcal{A}(\mathbf{q})$ is circular:
+\begin{equation*}
+\mathcal{A}(\mathbf{q}) = \{\mathbf{x}' \in \mathcal{X}: \left\Vert \mathbf{x}' - \mathbf{x}(\mathbf{q}) \right\Vert \leq r_{\text{robot}}  \},
+\end{equation*}
+in which case the constraint~\eqref{eq:collision-constraint-general} can be simplified into
+\begin{equation}\label{eq:collision-constraint}
+D(\mathbf{x}_t, \mathcal{O}_t) \geq \delta + r_{\text{robot}}.
+\end{equation}
+This can be simply checked by querying the distance function $D(\cdot, \mathcal{O}_t)$ once at $\mathbf{x}_t$. The condition~\eqref{eq:path-collision-constraint-general} is now translated into
+\begin{equation}\label{eq:path-collision-constraint}
+\mathbb{P}\left[ D(\mathbf{x}_t, \mathcal{O}_t) \geq \delta + r_{\text{robot}}\; \text{for all}\; 1\leq t \leq T \right] \geq 1 - \alpha.
+\end{equation}
+To solve Problem~\ref{problem:general-motion-planning}, the policy $\pi$ should incorporate information  collected up to $t$: $\mathcal{H}_t \coloneqq(\mathcal{O}_0, \ldots, \mathcal{O}_t)$ to obtain future safety while maintaining overall deployment efficiency.
+A feasible approach that enables this is to define $\pi(\mathcal{H}_t)$ to be the solution of the following MPC problem:
+\begin{align}
+\min_{\substack{\mathbf{q}_{0:N}\in \mathcal{Q}\\ \mathbf{u}_{0:N-1}\in \mathcal{U}}}&\ \ \sum_{i=0}^{N-1} \ell(\mathbf{q}_{t+i|t}, \mathbf{u}_{t+i|t}, \mathbf{x}^{\text{ref}}_{t+i|t}) + \ell(\mathbf{q}_{t+N|t}, \mathbf{x}^{\text{ref}}_{t+N|t}) \nonumber \\
+\text{s.t.}
+&\ \ \mathbf{q}_{t|t} = \mathbf{q}_t, \nonumber \\
+&\ \ \mathbf{q}_{t+i+1|t} = f(\mathbf{q}_{t+i|t}, \mathbf{u}_{t+i|t}), \quad 0 \leq i < N, \nonumber\\
+&\ \ D(\mathbf{x}_{t+i|t}, \mathcal{O}_{t+i|t}) \geq \delta + r_{\text{robot}}, \quad 1\leq t \leq T. \label{eq:mpc-constraint-naive}
+\end{align}
+where $(\mathbf{x}_{t+1|t}, \ldots,\mathbf{x}_{t+N|t})$ is a planned path in $\mathcal{X}$ at $t$ based on $\mathbf{x}_t$ and $\mathcal{H}_t$, and  $(\mathcal{O}_{t+1|t}, \ldots, \mathcal{O}_{t+N|t})$ are \emph{predicted} occupancies at $t+1, \ldots, t+N$ from $\mathcal{H}_t$. In this paper, we adopt \emph{frontier method}~\cite{yamauchi1998frontier} that pursues both information gathering and efficiency.
+On the prediction side, several different approaches are available. One common and mature approach is to estimate the kinematic states of dynamic agents through
+detection and tracking dynamic agents from $\mathcal{H}_t$, then deploy motion prediction models to predict their future motions, which can be back-projected into $\mathcal{X}$ to infer $(\mathcal{O}_{t+1|t}, \ldots, \mathcal{O}_{t+N|t})$. {\color{teal}(reference SOTA forecasting models to be added)} Another approach is to perform prediction in an end-to-end fashion, i.e, deploy a model that consumes raw lidar scans and predict their future shapes. In this paper, we adhere to the former approach. {\color{teal}(supportive arguments to be added)}
+Since the prediction results are erroneous, the associated distance functions may falsely predict the true occupancies of the environment. Abbreviating $D_{t+i|t}(\mathbf{x}) \coloneqq D(\mathbf{x}, \mathcal{O}_{t+i|t})$, we define the \emph{score function} as
+\begin{equation}
+S_{t+i|t} (\mathbf{x}) \coloneqq D_{t+i|t}(\mathbf{x}) - D_{t+i}(\mathbf{x}), \quad \mathbf{x}\in \mathcal{X}.
+\end{equation}
+Intuitively, $S_{t+i|t}(\mathbf{x}) > 0$ if the distance from $\mathbf{x}$ to $\mathcal{O}_{t+i}$ is closer than predicted. Hence, $\mathbf{x}$ with $S_{t+i|t}(\mathbf{x}) > 0$ may be unsafe.
+This implies that correcting the underestimation is essential to ensure the constraint~\eqref{eq:path-collision-constraint}.
+
+\section{Functional Conformal Prediction for Provable Distance Function Coverage}
+
+
+\subsection{Why Functional Conformal Prediction?}\label{subsec:fcp-why}
+Compensating learning errors through conformal prediction has been studied in several robotic domains~\cite{}. However, in contrast to these approaches where a single score function is mostly concerned, the error signal $S_{t+i|t}$ considered is \emph{functional}. This motivates us to adopt a different CP framework for such functional objects, namely \emph{functional conformal prediction (FCP)}~\cite{lei2015conformal}. Beside its mathematical nature, a central observation that inspires the use of FCP from practical point of view is that $S_{t+i|t}$ statistically admits \emph{low-dimensional} structures that enables a compact representation of it, rather than leaving $S_{t+i|t}(\mathbf{x})$ across different $\mathbf{x}$ uncorrelated. In Figure~\ref{fig:}, {\color{teal}blabla} To be self-contained, we briefly explain how FCP is baked into our setting so that the learning errors are corrected for safety.
+
+% To avoid overestimating $D_{t+i}$, which can lead to catastrophic collisions, we consider the following score function:
+% \begin{equation}\label{eq:functional-score}
+% S_{t+i|t} (x) \coloneqq D_{t+i|t}(x) - D_{t+i}(x), \quad x\in \mathcal{X}.
+% \end{equation}
+{\color{red}
 Note that each $S_{t+i|t}$ is in a Hilbert space $\mathscr{H}$, e.g., $\mathscr{H}= L^2(\mathcal{X})$. Since we aim to obtain a high-confidence lower bound of $D_{t+i}$, we apply the functional CP to $S_{t+i|t}$ and get its upper bound $U_{t+i|t}$ that satisfies
 \begin{equation}
 \mathbb{P}\!\left[
@@ -230,69 +296,79 @@ or its asymptotic version
 \begin{equation*}
 \lim_{T}\frac{1}{T}\sum_{t=1}^T \mathbb{I}\left[ D_{t+i}(x) \geq D_{t+i|t}(x) - U_{t+i|t}(x) \; \forall x\in \mathcal{X}   \right] = 1 - \alpha.
 \end{equation*}
+}
 
+\subsection{Sketch of Core Pipeline}
+\label{sec:score-comp}
 
-\subsection{Functional Conformal Prediction of a Score Function}
-\label{sec:functional_projection}
-
-Our goal is to construct an upper bound $U_{t+i\mid t}(x)$ for the score function.
-However, directly computing such a bound in the infinite-dimensional function
+Our goal is to construct a high-probability upper bound $U_{t+i\mid t}$ for $S_{t+i|t}$:
+\begin{equation}\label{eq:coverage-guarantee}
+\mathbb{P}\!\left[
+S_{t+i\mid t}(\mathbf{x}) \le \mathsf{U}_{t+i\mid t}(\mathbf{x}) \;\text{for all}\; \mathbf{x}\in\mathcal{X}
+\right] \ge 1-\alpha,
+\end{equation}
+Once such $\mathsf{U}_{t+i|t}$ is identified, this can be used to derive a probabilistic lower bound of $S_{t+i}$ as follows:
+\begin{equation*}
+\mathbb{P}\bigl[ D_{t+i}(\mathbf{x}) \geq \underbrace{D_{t+i|t}(\mathbf{x}) - \mathsf{U}_{t+i|t}(\mathbf{x})}_{\coloneqq \mathsf{L}_{t+i|t}(\mathbf{x})} \;\text{for all}\;  \mathbf{x}\in \mathcal{X}   \bigr] \geq 1 - \alpha
+\end{equation*}
+Then, we replace the constraint~\eqref{eq:mpc-constraint-naive} by the following
+\begin{equation}\label{eq:mpc-constraint-corrected}
+\mathsf{L}_{t+i|t}(\mathbf{x}_{t+i|t}) \geq \delta + r_{\text{robot}}, \quad 1\leq t \leq T.
+\end{equation}
+However, directly computing such a bound in the infinite-dimensional Hilbert
 space $\mathscr{H}$ is generally intractable and often unnecessary.
-Instead, we follow the functional conformal prediction framework
+Instead, we leverage the functional conformal prediction framework
 \cite{lei2015conformal} and compute a bound on a finite-dimensional projection
 of the score function $S_{t+i\mid t}$.
+Specifically, we adopt a \emph{divide-and-conquer} strategy to obtain a legitimate bound $U_{t+i|t}$: Consider the decomposition of $S_{t+i|t}$
+\begin{equation}\label{eq:score-decomposition}
+S_{t+i|t} = \breve{S}_{t+i\mid t} + \underbrace{(S_{t+i|t} - \breve{S}_{t+i|t})}_{\coloneqq R_{t+i|t}}.
+\end{equation}
+An upper bound for $\breve{U}_{t+i|t}$ for $\breve{S}_{t+i|t}$, a \emph{finite-dimensional} projection of $S_{t+i|t}$ whose construction will be discussed later, will be obtained via FCP. The projection residual $R_{t+i|t}$, which is negligible compared to $\breve{S}_{t+i\mid t}$, will be bounded uniformly from above: $\Vert R_{t+i|t}\Vert_{\mathcal{X}} \leq \varepsilon_i$, which can be straightforwardly done by applying standard CP. These bounds will finally be combined to comprise the desired bound of $S_{t+i|t}$:
+\begin{equation}\label{eq:final-envelope}
+\mathsf{U}_{t+i|t}(\mathbf{x}) \coloneqq \breve{\mathsf{U}}_{t+i|t}(\mathbf{x}) + \varepsilon_i.
+\end{equation}
 
-Specifically, we seek a distribution-free projected coverage guarantee of the form
+\subsection{FCP-based Upper Bound}
+The most intricate part of the aforementioned pipeline is construction of the finite-dimensional projection $\breve{S}_{t+i|t}$ of $S_{t+i|t}$ and its high-confidence upper bound $\breve{\mathsf{U}}_{t+i|t}$. To begin with, we define a $p$-dimensional subspace $\mathscr{V} \subset \mathscr{H}$ and let $\breve{S}_{t+i|t} \coloneqq \Pi_{\mathscr{V}}(S_{t+i|t})$, where $\Pi_{\mathscr{V}} : \mathscr{H} \to \mathscr{V}$ denotes the projection operator.
+Then, it remains to find a confidence set $\mathscr{C}_{t+i|t}$ that satisfies a distribution-free coverage guarantee of the form
 \begin{equation}
-\mathbb{P}\!\left(
-\pi_{\mathscr{V}}\!\left(S_{t+i\mid t}\right) \in \mathscr{C}_{t+i\mid t}
-\right) \ge 1 - \alpha,
+\mathbb{P}\left[
+\breve{S}_{t+i|t} \in \mathscr{C}_{t+i\mid t}
+\right] \ge 1 - \alpha,
 \label{eq:functional_projected_coverage}
 \end{equation}
-where $\mathscr{V} \subset \mathscr{H}$ is a $p$-dimensional subspace and
-$\pi_{\mathscr{V}} : \mathscr{H} \to \mathscr{V}$ denotes the projection operator
-constructed via functional principal component analysis (FPCA).
 Here, $\mathscr{C}_{t+i\mid t} \subset \mathscr{V}$ is a conformal prediction set
 defined on the projected space.
-The detailed construction of this set follows Algorithm~2 in
-\cite{lei2015conformal}.
+In the following sections, we describe a specific choice of $\mathscr{V}$ and how $\breve{\mathsf{U}}_{t+i|t}$ is derived from the confidence set $\mathscr{C}_{t+i|t}$ following~\cite{lei2015conformal}.
 
 
+% The set $\mathscr{C}_{t+i\mid t}$ certifies only the finite-dimensional projection $\Pi_{\mathscr{V}}(S_{t+i\mid t})$ and need not cover the full score $S_{t+i\mid t}$; in general $\mathbb{P}[S_{t+i\mid t} \in \mathscr{C}_{t+i\mid t}] \neq 1 - \alpha$. To recover a guarantee on $S_{t+i\mid t}$ itself, we inflate $\mathscr{C}_{t+i\mid t}$ by the projection residual $S_{t+i\mid t} - \Pi_{\mathscr{V}}(S_{t+i\mid t})$, which yields the valid set $S_{t+i\mid t} \in (\Pi_{\mathscr{V}})^{-1}\mathscr{C}_{t+i\mid t} \subseteq \mathscr{H}$; the corresponding projection slack is calibrated conformally in~\eqref{eq:epsilon_quantile}.
 
-The set $\mathscr{C}_{t+i\mid t}$ certifies only the finite-dimensional projection $\pi_{\mathscr{V}}(S_{t+i\mid t})$ and need not cover the full score $S_{t+i\mid t}$; in general $\mathbb{P}[S_{t+i\mid t} \in \mathscr{C}_{t+i\mid t}] \neq 1 - \alpha$. To recover a guarantee on $S_{t+i\mid t}$ itself, we inflate $\mathscr{C}_{t+i\mid t}$ by the projection residual $S_{t+i\mid t} - \pi_{\mathscr{V}}(S_{t+i\mid t})$, which yields the valid set $S_{t+i\mid t} \in (\pi_{\mathscr{V}})^{-1}\mathscr{C}_{t+i\mid t} \subseteq \mathscr{H}$; the corresponding projection slack is calibrated conformally in~\eqref{eq:epsilon_quantile}.
-
-\paragraph{Data-driven basis (FPCA).}
-In our setting, the projection subspace $\mathscr{V}_{p_i}\subset\mathscr{H}$
-is learned from data at each horizon index $i$ via functional principal components.
-Concretely, let $\{S^{(n)}_{t+i\mid t}\}_{n=1}^N$ denote a collection of residual functions
+\subsubsection{Data-driven basis functions}
+In our setting, the projection subspace $\mathscr{V}_{i}\subset\mathscr{H}$
+is learned from data at each horizon index $i=1, \ldots, N$ via functional principal components.
+Concretely, let $\{S^{(n)}_{t+i\mid t}\}_{n=1}^N$ denote a collection of score functions
 at step $i$.
 We choose an orthonormal basis
-$\{\varphi_{i,j}\}_{j=1}^{p_i}$ spanning $\mathscr{V}_{p_i}$ as the leading principal components
+$\{\varphi_{i,j}\}_{j=1}^{p_i}$ spanning $\mathscr{V}_{i}$ as $p_i$ leading principal components
 of this residual sample, in the standard $L^2$ sense.
 
 For any $S\in\mathscr{H}$, define its coefficient vector in this basis by
-\begin{equation*}
+\begin{equation}\label{eq:coefficient}
 \xi_{i}(S)
 \;\coloneqq\;
 \bigl(\langle S,\varphi_{i,1}\rangle,\ldots,\langle S,\varphi_{i,p_i}\rangle\bigr)^\top
 \in\mathbb{R}^{p_i},
-\end{equation*}
+\end{equation}
 so that the projection admits the expansion
 \begin{equation*}
-(\pi_{\mathscr{V}} S)(x) \;=\; \sum_{j=1}^{p_i} \xi_{i,j}(S)\,\varphi_{i,j}(x).
+(\Pi_{\mathscr{V}} S)(x) \;=\; \sum_{j=1}^{p_i} \xi_{i,j}(S)\,\varphi_{i,j}(x).
 \end{equation*}
-The dimension $p_i$ may be fixed or selected as a function of the sample size and approximation accuracy;
+The dimension $p_i$ of $\mathscr{V}_i$ may be fixed or selected as a function of the sample size and approximation accuracy;
 we treat this choice as a modeling parameter.
 
-\paragraph{Computational note.}
-The projection coefficients $\xi_{i,j}(S)=\langle S,\varphi_{i,j}\rangle$ generally require
-integration over $\mathcal X$, which is expensive when $S$ is only available through costly
-distance-transform evaluations on a fine grid.
-Therefore, in implementation we approximate the projection (or its pointwise evaluations)
-using only finitely many grid points $\bar{\mathcal X}\subset\mathcal X$, as described in
-Section~\ref{sec:score-comp}.
-
-\paragraph{Inductive conformal calibration in coefficient space}
+\paragraph{Inductive conformal prediction in coefficient space}
 \label{sec:icp_coeff}
 
 We adopt the inductive conformal predictor (ICP) framework
@@ -335,125 +411,93 @@ ellipsoidal conformal regions in the coefficient space.
 
 Let $\{\xi^{(n)}\}_{n\in\mathrm{cal}}$ be the calibration coefficients and define
 \begin{equation*}
-\lambda_i \;\coloneqq\; \mathrm{Quantile}_{\alpha}\Bigl(\{ g(\xi^{(n)}) \}_{n\in\mathrm{cal}} \Bigr).
+\lambda_i \;\coloneqq\; \mathsf{Quantile}_{1-\alpha/2}\Bigl(\{ g(\xi^{(n)}) \}_{n\in\mathrm{cal}} \Bigr).
 \end{equation*}
 Then the ICP prediction set in coefficient space is
-\begin{equation*}
+\begin{equation}\label{eq:projection-coverage}
 \begin{gathered}
-\mathcal{T}_{t+i\mid t} \coloneqq \{\xi\in\mathbb{R}^{p_i}: g(\xi)\ge \lambda_i\}, \\
-\mathbb{P}\bigl(\xi_{t+i\mid t}\in\mathcal{T}_{t+i\mid t}\bigr)\ge 1-\alpha.
+\mathscr{T}_{t+i\mid t} \coloneqq \{\xi\in\mathbb{R}^{p_i}: g(\xi)\ge \lambda_i\}, \\
+\mathbb{P}\bigl[\xi_{t+i\mid t}\in\mathscr{T}_{t+i\mid t}\bigr]\ge 1-\alpha/2.
 \end{gathered}
-\end{equation*}
-
-\paragraph{Exact union-of-ellipsoids representation.}
-Because $g$ is a maximum over mixture components,
-$\mathcal{T}_{t+i\mid t}$ decomposes exactly as a union of component-wise ellipsoids
-(cf.\ Eq.\ (9) in \cite{lei2015conformal}):
-\begin{equation}
-\begin{aligned}
-\mathcal{T}_{t+i\mid t} &= \bigcup_{k=1}^K \mathcal{T}^{(k)}_{t+i\mid t}, \\
-\mathcal{T}^{(k)}_{t+i\mid t} &\coloneqq \left\{\xi:\ \varphi(\xi;\widehat\mu_k,\widehat\Sigma_k)\ge \tfrac{\lambda_i}{\widehat\pi_k}\right\}.
-\end{aligned}
-\label{eq:exact_union}
 \end{equation}
-Each $\mathcal{T}^{(k)}_{t+i\mid t}$ is an ellipsoid
-\begin{equation}
-\mathcal{T}^{(k)}_{t+i\mid t}
-=
-\left\{\xi:\ (\xi-\widehat\mu_k)^\top \widehat\Sigma_k^{-1}(\xi-\widehat\mu_k)\le r_{k,i}^2\right\},
-\label{eq:ellipsoid_def}
+Based on the confidence set $\mathscr{T}_{t+i|t}$, which lies in the coefficient space $\mathbb{R}^{p_i}$, we derive a high-confidence upper bound of $\breve{S}_{t+i|t}$ as follows:
+\begin{equation*}
+\breve{\mathsf{U}}_{t+i|t}(\mathbf{x}) \coloneqq \sup_{\xi\in\mathscr{T}_{t+i\mid t}} \xi^\top \varphi_i(\mathbf{x}), \quad \mathbf{x} \in \mathcal{X}.
+\end{equation*}
+In particular, it immediately follows from $\breve{S}_{t+i|t}(\mathbf{x})=\xi^\top_{t+i\mid t} \varphi_i(\mathbf{x})$ and~\eqref{eq:projection-coverage} that
+\begin{equation}\label{eq:fcp-prob-bound}
+\mathbb{P}\left[\breve{S}_{t+i|t}(\mathbf{x})\leq \breve{\mathsf{U}}_{t+i|t}(\mathbf{x})\; \text{for all}\; \mathbf{x} \in \mathcal{X}\right]\ge 1-\frac{\alpha}{2}.
 \end{equation}
-where the radius is
+It turns out that $\breve{\mathsf{U}}_{t+i|t}$ admits a closed-form expression
 \begin{equation*}
-r_{k,i}^2
-=
-\max\!\left\{
-0,\,
--2\log\!\left(
-\frac{\lambda_i}{\widehat\pi_k}\,(2\pi)^{p_i/2}\sqrt{\det(\widehat\Sigma_k)}
-\right)
-\right\}.
-\end{equation*}
-In implementation, we add a small diagonal jitter to $\widehat\Sigma_k$
-for numerical stability.
-
-\paragraph{From coefficient regions to a functional upper envelope}
-\label{sec:upper_envelope}
-
-Let the discretized basis vector at coordinate $x$ be
-$\varphi_i(x)\in\mathbb{R}^{p_i}$ (in code, $\varphi_i(\cdot)$ is represented implicitly
-by the PCA components $\phi_i$ over the discretized domain).
-For coefficients $\xi\in\mathbb{R}^{p_i}$, the projected value is $\xi^\top \varphi_i(x)$.
-Using~\eqref{eq:exact_union}, a projected upper envelope satisfies
-\begin{equation*}
-\sup_{\xi\in\mathcal{T}_{t+i\mid t}} \xi^\top \varphi_i(x)
-=
-\max_{1\le k\le K}\ \sup_{\xi\in\mathcal{T}^{(k)}_{t+i\mid t}} \xi^\top \varphi_i(x).
-\end{equation*}
-For an ellipsoid~\eqref{eq:ellipsoid_def}, the support function is available in closed form:
-\begin{equation}
-\sup_{\xi\in\mathcal{T}^{(k)}_{t+i\mid t}} \xi^\top \varphi_i(x)
-=
-\widehat\mu_k^\top \varphi_i(x)
+\breve{\mathsf{U}}_{t+i|t}(\mathbf{x})= \max_{1\leq k\leq K} \left\{ \widehat\mu_k^\top \varphi_i(\mathbf{x})
 +
-r_{k,i}\bigl(\varphi_i(x)^\top \widehat\Sigma_k\, \varphi_i(x)\bigr)^{1/2}.
-\label{eq:ellipsoid_support_function}
-\end{equation}
+r_{k,i}\left(\varphi_i(\mathbf{x})^\top \widehat\Sigma_k\, \varphi_i(\mathbf{x})\right)^{\frac{1}{2}} \right\}
+\end{equation*}
+The detailed derivation of the expression in given in Appendix.
+
+
 
 \paragraph{Projection slack calibration.}
 To translate coefficient-space uncertainty back to the original discretized function,
 we account for the projection residual in sup norm.
 Define the reconstruction error for sample $y^{(n)}$ by
 \begin{equation*}
-e^{(n)} \;\coloneqq\; \|y^{(n)} - \phi_i^\top \phi_i y^{(n)}\|_\infty.
+e^{(n)} \;\coloneqq\; \left\|y^{(n)} - \Pi_{\mathscr{V}}  \left( y^{(n)} \right) \right\|_{\mathcal{X}}.
 \end{equation*}
 Using the calibration split, we set the projection slack to the conformal quantile
 \begin{equation}
-\varepsilon_i \;\coloneqq\; \mathrm{Quantile}_{1-\alpha}( \{e^{(n)}\}_{n\in\mathrm{cal}} ),
+\varepsilon_i \;\coloneqq\; \mathsf{Quantile}_{1-\alpha/2}( \{e^{(n)}\}_{n\in\mathrm{cal}} ),
 \label{eq:epsilon_quantile}
 \end{equation}
-so that with probability at least $1-\alpha$, the projection residual is bounded by $\varepsilon_i$
-under exchangeability assumptions (ICP validity).
-
-\paragraph{Final envelope with projection slack.}
-Combining ~\eqref{eq:ellipsoid_support_function} and ~\eqref{eq:epsilon_quantile},
-we define the functional upper envelope used in our controller:
-\begin{equation}
-\begin{aligned}
-U_{t+i\mid t}(x) \coloneqq{}& \varepsilon_i + \max_{1\le k\le K} \Bigl\{ \widehat\mu_k^\top \varphi_i(x) \\
-&{}+ r_{k,i}\bigl(\varphi_i(x)^\top \widehat\Sigma_k\, \varphi_i(x)\bigr)^{1/2} \Bigr\}.
-\end{aligned}
-\label{eq:functional_upper_envelope}
+which yields
+\begin{equation}\label{eq:projection-res-prob-bound}
+\mathbb{P}\left[ |R_{t+i|t}(\mathbf{x})| \leq \varepsilon_i \; \text{for all}\; \mathbf{x}\in \mathcal{X} \right] \geq 1 - \alpha/2.
 \end{equation}
+Combining~\eqref{eq:score-decomposition},~\eqref{eq:final-envelope},~\eqref{eq:fcp-prob-bound}, and~\eqref{eq:projection-res-prob-bound}, we finally get the desired coverage guarantee~\eqref{eq:coverage-guarantee}.
+
+\noindent
+{\bf Note on Computational Complexity.}
+The projection coefficients $\xi_{i,j}(S)=\langle S,\varphi_{i,j}\rangle$ generally require
+integration over $\mathcal X$, which is expensive when $S$ is only available through costly
+distance-transform evaluations on a fine grid.
+Therefore, in implementation we approximate the projection (or its pointwise evaluations)
+using only finitely many grid points $\bar{\mathcal X}\subset\mathcal X$.
 
 
-\subsection{Computation of Score Function}\label{sec:score-comp}
+% \paragraph{Final envelope with projection slack.}
+% Combining ~\eqref{eq:ellipsoid_support_function} and ~\eqref{eq:epsilon_quantile},
+% we obtain the functional upper envelope used in our controller:
+% \begin{equation}
+% \begin{aligned}
+% \mathsf{U}_{t+i\mid t}(x) \coloneqq{}& \varepsilon_i + \max_{1\le k\le K} \Bigl\{ \widehat\mu_k^\top \varphi_i(x) \\
+% &{}+ r_{k,i}\bigl(\varphi_i(x)^\top \widehat\Sigma_k\, \varphi_i(x)\bigr)^{1/2} \Bigr\}.
+% \end{aligned}
+% \label{eq:functional_upper_envelope}
+% \end{equation}
 
-Evaluating $S_{t+i|t}$~\eqref{eq:functional-score} for all $x\in \mathcal{X}$ induces a substantial amount of computational overhead in practice, especially when $\mathcal{X}$ is large. While computing the distance $d(x, \mathcal{O}_{t+i})$ is costly per se, computing $S_{t+i|t}$ for all $x$ essentially requires the fine discretization of $\mathcal{X}$ and the computation of $S_{t+i|t}$ on the discretization mesh. In such a case, the complexity of the evaluation would be $O(r^{-d})$, where $r > 0$ is the resolution of the discretization, i.e., distance between adjacent points. A compromise we can take would be to take a modest size of $r$ at the cost of the discretization accuracy, and add a correction term considering the accuracy. To make this rigorous, let $\bar{\mathcal{X}} \subseteq \mathcal{X}$ be the finite subset of $\mathcal{X}$ (i.e., a discretization grid), and define its resolution as
-\begin{equation*}
-r = \sup_{x \in \mathcal{X}} \min_{x' \in \bar{\mathcal{X}}} \| x - x' \|_{\mathcal{\mathcal{X}}}.
-\end{equation*}
-Intuitively, $\mathcal{X}$ would be covered by the closed balls of radius $r$ whose centers are $\bar{\mathcal{X}}$. Then, the original score function $S_{t+i|t}$ is bounded from above as
-\begin{equation*}
-S_{t+i|t}(x) \leq \min_{x' \in \bar{\mathcal{X}}} \left\{ S_{t+i|t}(x') + 2\|x - x' \|_{\mathcal{X}} \right\} \leq , \quad x\in \mathcal{X},
-\end{equation*}
- which is clear from the fact that $S_{t+i|t}$ is 2-Lipschitz. Therefore, for any $x\in \mathcal{X}$, there always exists $x' \in \bar{\mathcal{X}}$ such that
- \begin{equation*}
- S_{t+i|t}(x) \leq S_{t+i|t}(x') + 2r.
- \end{equation*}
+
+% \subsection{Computation of Score Function}\label{sec:score-comp}
+
+% Evaluating $S_{t+i|t}$~\eqref{eq:functional-score} for all $x\in \mathcal{X}$ induces a substantial amount of computational overhead in practice, especially when $\mathcal{X}$ is large. While computing the distance $d(x, \mathcal{O}_{t+i})$ is costly per se, computing $S_{t+i|t}$ for all $x$ essentially requires the fine discretization of $\mathcal{X}$ and the computation of $S_{t+i|t}$ on the discretization mesh. In such a case, the complexity of the evaluation would be $O(r^{-d})$, where $r > 0$ is the resolution of the discretization, i.e., distance between adjacent points. A compromise we can take would be to take a modest size of $r$ at the cost of the discretization accuracy, and add a correction term considering the accuracy. To make this rigorous, let $\bar{\mathcal{X}} \subseteq \mathcal{X}$ be the finite subset of $\mathcal{X}$ (i.e., a discretization grid), and define its resolution as
+% \begin{equation*}
+% r = \sup_{x \in \mathcal{X}} \min_{x' \in \bar{\mathcal{X}}} \| x - x' \|_{\mathcal{\mathcal{X}}}.
+% \end{equation*}
+% Intuitively, $\mathcal{X}$ would be covered by the closed balls of radius $r$ whose centers are $\bar{\mathcal{X}}$. Then, the original score function $S_{t+i|t}$ is bounded from above as
+% \begin{equation*}
+% S_{t+i|t}(x) \leq \min_{x' \in \bar{\mathcal{X}}} \left\{ S_{t+i|t}(x') + 2\|x - x' \|_{\mathcal{X}} \right\} \leq , \quad x\in \mathcal{X},
+% \end{equation*}
+%  which is clear from the fact that $S_{t+i|t}$ is 2-Lipschitz. Therefore, for any $x\in \mathcal{X}$, there always exists $x' \in \bar{\mathcal{X}}$ such that
+%  \begin{equation*}
+%  S_{t+i|t}(x) \leq S_{t+i|t}(x') + 2r.
+%  \end{equation*}
 
 
 %%%%%% yoonseok edit
 
-\section{Functional CP-informed MPC}
+\section{FCP-informed MPC}
 \label{sec:cp_mpc}
-
-
-\subsection{Why FCP for Safe Planning?}
-A central motivation that inspires the use of FCP for safe motion planning is that these maps are inherently low-dimensional.
-In Figure~\ref{fig:}, 
-
-We now incorporate the conformalized signed-distance lower bound into a receding-horizon motion planner, following the general safe-planning template of~\cite{lindemann2023safeplanning} but adapting it to our \emph{fieldwise} uncertainty representation.
+We now incorporate the conformalized distance lower bound into a receding-horizon motion planner, following the general safe-planning template of~\cite{lindemann2023safeplanning} but adapting it to our \emph{fieldwise} uncertainty representation.
 The central idea is to conformalize the safety bound over the \emph{entire field} offline, rather than point by point online.
 Since the calibrated bound lives in a compact functional (coefficient) form, the expensive computation---fitting the basis and an accurate \emph{initial} bound from a large calibration dataset through a GMM-based functional conformal procedure---is carried out once, offline, and cached.
 Online, the planner no longer recomputes per-point distances; it simply consults this precomputed field, projecting the realized residuals onto the cached basis and applying a lightweight update.
@@ -516,10 +560,7 @@ We first state the geometric regularity and tracking hypothesis used to transfer
 
 \begin{property}[Lipschitz continuity of the signed distance field]
 \label{prop:sdf_lipschitz}
-For any closed obstacle set $\mathcal O \subset \mathcal X$, the signed distance function
-\[
-D(x,\mathcal O) \coloneqq d(x,\mathcal O)
-\]
+For any closed obstacle set $\mathcal O \subset \mathcal X$, the signed distance function $D(x,\mathcal{O})$
 is $1$-Lipschitz on $\mathcal X$, i.e.,
 \[
 |D(x,\mathcal O)-D(y,\mathcal O)| \le \|x-y\|,
@@ -527,54 +568,43 @@ is $1$-Lipschitz on $\mathcal X$, i.e.,
 \]
 \end{property}
 
-\begin{assumption}[Bounded tracking error]
-\label{ass:tracking_error}
-The low-level tracking controller follows the planned position $p^*_{t+i|t}$ with a uniform error bound $\epsilon > 0$:
-\[
-\|p_{t+i}-p^*_{t+i|t}\| \le \epsilon,
-\qquad \forall i\in\{1,\dots,N\}.
-\]
-\end{assumption}
 
-\subsubsection{Robot dynamics.}
-Let the robot state be $z_t=(x_t,y_t,\theta_t)\in\mathbb R^2\times S^1$ and the control input be
-$u_t=(v_t,\omega_t)\in\mathcal U$.
-We use the discrete-time unicycle model
-\[
-z_{t+1}=f_r(z_t,u_t)
-=
-\begin{bmatrix}
-x_t+\Delta t\,v_t\cos\theta_t\\
-y_t+\Delta t\,v_t\sin\theta_t\\
-\theta_t+\Delta t\,\omega_t
-\end{bmatrix}.
-\]
+% \begin{assumption}[Bounded tracking error]
+% \label{ass:tracking_error}
+% The low-level tracking controller follows the planned position $p^*_{t+i|t}$ with a uniform error bound $\epsilon > 0$:
+% \[
+% \|\mathbf{x}_{t+i}-\mathbf{x}^*_{t+i|t}\| \le \epsilon,
+% \qquad \forall i\in\{1,\dots,N\}.
+% \]
+% \end{assumption}
 
-\subsubsection{Nominal predicted distance and conformal lower bound.}
-At planning time $t$, let $\widehat{\mathcal O}_{t+i|t}$ denote the predicted obstacle set at horizon step $i\in\{1,\dots,N\}$.
-The corresponding nominal signed-distance prediction is
-\begin{equation}
-D_{t+i|t}(x)
-\coloneqq
-d\!\left(x,\widehat{\mathcal O}_{t+i|t}\right)
-=
-\min_{o\in\widehat{\mathcal O}_{t+i|t}}\|x-o\|,
-\qquad x\in\mathcal X .
-\label{eq:D_nominal_mpc}
-\end{equation}
-Recall from \eqref{eq:functional-score} that the residual score field is
-\[
-S_{t+i|t}(x)=D_{t+i|t}(x)-D_{t+i}(x).
-\]
-The offline calibration procedure in Section~\ref{sec:gmm_ellipsoids} yields an initial upper envelope, which is then updated online through a coefficient-space adaptive rule.
-Accordingly, we define the online envelope at horizon index $i$ and planning time $t$ by $\widetilde U_{i,t}(x)$, and the corresponding conformalized lower-bound field by
-\begin{equation}
-\underline D_{t+i|t}(x)
-\coloneqq
-\max\!\left\{D_{t+i|t}(x)-\widetilde U_{i,t}(x),\,0\right\},
-\qquad x\in\mathcal X.
-\label{eq:lower_field_def}
-\end{equation}
+
+
+% \subsubsection{Nominal predicted distance and conformal lower bound.}
+% At planning time $t$, let $\widehat{\mathcal O}_{t+i|t}$ denote the predicted obstacle set at horizon step $i\in\{1,\dots,N\}$.
+% The corresponding nominal signed-distance prediction is
+% \begin{equation}
+% D_{t+i|t}(x)
+% \coloneqq
+% d\!\left(x,\widehat{\mathcal O}_{t+i|t}\right)
+% =
+% \min_{o\in\widehat{\mathcal O}_{t+i|t}}\|x-o\|,
+% \qquad x\in\mathcal X .
+% \label{eq:D_nominal_mpc}
+% \end{equation}
+% Recall from \eqref{eq:functional-score} that the residual score field is
+% \[
+% S_{t+i|t}(x)=D_{t+i|t}(x)-D_{t+i}(x).
+% \]
+% The offline calibration procedure in Section~\ref{sec:gmm_ellipsoids} yields an initial upper envelope, which is then updated online through a coefficient-space adaptive rule.
+% Accordingly, we define the online envelope at horizon index $i$ and planning time $t$ by $\widetilde U_{i,t}(x)$, and the corresponding conformalized lower-bound field by
+% \begin{equation}
+% \underline D_{t+i|t}(x)
+% \coloneqq
+% \max\!\left\{D_{t+i|t}(x)-\widetilde U_{i,t}(x),\,0\right\},
+% \qquad x\in\mathcal X.
+% \label{eq:lower_field_def}
+% \end{equation}
 
 \subsubsection{Robust CP-safe set via constraint tightening.}
 Let
@@ -639,7 +669,14 @@ p^{(k)}_{t+i|t}\in \mathcal S^{\mathrm{cp}}_{t+i|t},
 \end{equation}
 
 \subsubsection{Monte Carlo CP-MPC objective.}
-Among the feasible candidates, the planner selects the control sequence minimizing the finite-horizon objective
+Define the per-step margin by which a position falls short of the tightened, ICS-relaxed clearance,
+\begin{equation}
+g_{t+i|t}(x):=\max\!\bigl(r_{\mathrm{safe}}+\epsilon-\Delta_i,\,0\bigr)-\underline D_{t+i|t}(x),
+\label{eq:soft_margin}
+\end{equation}
+so that the CP-safe set is the zero-sublevel set $\mathcal S^{\mathrm{cp}}_{t+i|t}=\{x:\,g_{t+i|t}(x)\le 0\}$.
+
+Among the candidate trajectories, the planner selects the control sequence solving the finite-horizon problem
 \begin{align}
 \min_{k\in\{1,\dots,K_p\}}
 \ \ &
@@ -660,14 +697,50 @@ f_r\!\left(z^{(k)}_{t+i|t},u^{(k)}_{t+i|t}\right),
 p^{(k)}_{t+i|t}\in \mathcal S^{\mathrm{cp}}_{t+i|t},
 \quad i=1,\dots,N . \nonumber
 \end{align}
-In implementation, the conformal lower bound can be incorporated in one of two ways: as a \emph{hard} feasibility filter that rejects any candidate violating~\eqref{eq:sampled_feasible_mpc} outright---the setting to which the guarantees of Theorems~\ref{thm:asymptotic_safety} and~\ref{thm:asymptotic_safety_afcp} apply---or as a \emph{soft} safety-shaping penalty added to the objective, which leaves the feasible set otherwise unconstrained by the dynamic conformal bound.
-The same calibrated field also admits a softer use: the conformal margin can enter the objective as a graded penalty instead of a hard cutoff, discouraging---rather than forbidding---incursions into the calibrated unsafe region. We compare both choices in our 2D pedestrian experiments.
+This is the \emph{hard} formulation: it rejects outright any candidate that leaves $\mathcal S^{\mathrm{cp}}_{t+i|t}$ at some horizon step, and is the setting to which the guarantees of Theorems~\ref{thm:asymptotic_safety} and~\ref{thm:asymptotic_safety_afcp} apply. Alternatively, the dynamic constraint can be relaxed into a graded penalty, in the spirit of soft-constrained MPC~\cite{scokaert1999feasibility,kerrigan2000soft}. The planner then solves
+\begin{align}
+\min_{k\in\{1,\dots,K_p\}}
+\ \ &
+\sum_{i=0}^{N-1}
+\ell\!\left(z^{(k)}_{t+i|t},u^{(k)}_{t+i|t};p_{\mathrm{goal}}\right)
++
+\ell_f\!\left(z^{(k)}_{t+N|t};p_{\mathrm{goal}}\right)
+\nonumber\\
+&\quad +\,
+w\sum_{i=1}^{N}\Bigl[\max\!\bigl(0,\,g_{t+i|t}(p^{(k)}_{t+i|t})\bigr)\Bigr]^2
+\label{eq:soft_penalty}\\
+\text{s.t.}\quad
+&
+z^{(k)}_{t+i+1|t}
+=
+f_r\!\left(z^{(k)}_{t+i|t},u^{(k)}_{t+i|t}\right),
+\quad i=0,\dots,N-1, \nonumber
+\end{align}
+which retains only the dynamics constraint. The squared hinge charges only incursions into the calibrated unsafe region ($g_{t+i|t}>0$), discouraging---rather than forbidding---them. The weight $w>0$ is fixed rather than adapted, so~\eqref{eq:soft_penalty} is a quadratic-penalty relaxation~\cite{nocedal2006numerical} of the hard problem~\eqref{eq:mc_cp_mpc_obj}: its minimizer approaches the hard-constrained solution as $w\to\infty$. For finite $w$, it stays well-defined even where the hard feasible set is empty, at the cost of the strict closed-loop guarantee. We compare both formulations in our 2D pedestrian experiments.
 
 \subsection{Notes on Computational Complexity}\label{subsec:complexity}
 
 
+
+
 \subsection{Offline GMM Initialization}
 \label{subsec:offline_online_cp}
+
+\noindent
+{\bf Dataset.} During the offline stage, we assume an access to $n_{\text{cal}}$ independent observations of length $T$:
+\begin{equation*}
+\left\{ \mathcal{O}^{(j)}_t : 0 \leq t \leq T,\; 1 \leq j \leq  n_{\text{cal}}  \right\}
+\end{equation*}
+from which we obtain the distance dataset for $i$-th planning step:
+\begin{equation*}
+\mathcal{D}_{\mathrm{cal},i} \coloneqq
+\left\{S_{t+i|t}^{(j)}: 0\leq t \leq T - i, 1 \leq j \leq n_{\text{cal}} \right\}.
+\end{equation*}
+Then, we apply FPCA to obtain an orthonormal basis
+\begin{equation*}
+\{\varphi_{i,1},\dots,\varphi_{i,p_i}\},
+\end{equation*}
+This in turn produces the coefficient vector of each $S \in \mathcal{D}_{\text{cal}, i}$ according to~\eqref{eq:coefficient}.
 
 The key design principle is to separate the field-level \emph{statistical initialization}, computed once offline, from the \emph{lightweight adaptation} performed online.
 Offline, we exploit a large calibration dataset and a flexible GMM to construct the most accurate initial coefficient upper bound possible; this cost is paid only once, before deployment.
@@ -984,8 +1057,7 @@ This completes the proof, verifying that the point-wise safety of the robot is i
 
 
 \section{Experimental Setup}
-We evaluate the proposed \emph{Conformal SDF} framework and its integration into a
-CP-informed model predictive controller (CP-MPC).
+We evaluate the proposed \emph{Conformal SDF} framework and its integration into a model predictive controller.
 Our experiments are designed to assess how functional conformal calibration of
 the signed distance field affects safety, feasibility, and efficiency in
 closed-loop motion planning under prediction uncertainty.
@@ -1046,6 +1118,20 @@ predictor is used as the base prediction model.
 This setup allows us to isolate the effect of \emph{offline error calibration}
 independently of the prediction model itself.
 
+\subsubsection{Robot dynamics.}
+Let the robot state be $z_t=(x_t,y_t,\theta_t)\in\mathbb R^2\times S^1$ and the control input be
+$u_t=(v_t,\omega_t)\in\mathcal U$.
+We use the discrete-time unicycle model
+\[
+z_{t+1}=f_r(z_t,u_t)
+=
+\begin{bmatrix}
+x_t+\Delta t\,v_t\cos\theta_t\\
+y_t+\Delta t\,v_t\sin\theta_t\\
+\theta_t+\Delta t\,\omega_t
+\end{bmatrix}.
+\]
+
 The robot is modeled as a unicycle system with bounded linear and angular velocities.
 For a fair comparison, all methods share the same trajectory sampler, planning
 horizon, and cost structure, including goal-tracking and control-effort terms.
@@ -1075,7 +1161,7 @@ each dataset:
 
 
 \paragraph{Hard vs.\ soft use of the conformal bound in 2D}
-In the 2D pedestrian benchmarks, we evaluate two variants of CP-MPC that differ
+In the 2D pedestrian benchmarks, we evaluate two variants of FCP-MPC that differ
 in how the conformal lower-bound signed distance field is incorporated.
 
 \emph{Hard-CP} enforces the conformal bound strictly as a hard feasibility
@@ -1102,14 +1188,12 @@ with the conformal lower bound:
 \begin{equation}
 \underline{D}_{t+i\mid t}(x_{t+i}) \ge r_{\mathrm{safe}}, \qquad i=1,\dots,H.
 \end{equation}
-We compare CP-MPC against a nominal MPC baseline that uses the predicted distances
-without conformal tightening, while keeping the same trajectory sampler, cost
-function, and planning horizon.
+
 \paragraph{3D Experimental Setup}
-We evaluate CP-MPC in a challenging physics-based quadrotor navigation task
+We evaluate FCP-MPC in a challenging physics-based quadrotor navigation task
 implemented in PyBullet.
 The robot is modeled as a quadrotor with a low-level PID controller running at
-240\,Hz, while the high-level CP-MPC planner operates at a slower planning period
+240\,Hz, while the high-level MPC planner operates at a slower planning period
 $\Delta t = 0.1\,\mathrm{s}$.
 
 The environment contains $M = 280$ dynamic obstacles, modeled as kinematic agents
@@ -1240,10 +1324,11 @@ Lower values indicate better performance.}
   \includegraphics[width=\linewidth]{traj_2d.png}
   \caption{Representative closed-loop trajectories on one scene of each of the five
   ETH--UCY datasets (green squares: start; black stars: goal).
-  Both variants of FCP-MPC (ours)---soft (solid blue) and hard (dashed red)---reach
-  the goal along direct paths, whereas the baselines tend to wander or stall: CC-MPC
-  (gray) is slow and conservative, ECP-MPC (orange) detours, and ACP-MPC (purple) often
-  fails to make steady progress in dense scenes such as \texttt{univ}.}
+  Both variants of FCP-MPC (ours)---soft (thick blue) and hard (thick red)---reach
+  the goal along direct paths, whereas the baselines, drawn in lighter lines, tend to
+  wander or stall: CC-MPC (gray) is slow and conservative, ECP-MPC (orange) detours, and
+  ACP-MPC (purple) often fails to make steady progress in dense scenes such as
+  \texttt{univ}.}
   \label{fig:traj_2d}
 \end{figure*}
 
@@ -1540,7 +1625,8 @@ $280$ moving obstacles, FCP-MPC attained a favorable balance of safety,
 feasibility, and efficiency, scaling far more gracefully than online
 uncertainty-reasoning baselines while remaining real-time feasible.
 
-\paragraph{Limitations and future work.}
+\noindent
+{\bf Limitations and future work.}
 Because the calibrated envelope bounds the worst case, the hard-constrained variant
 remains conservative and can still report a non-zero infeasible rate in the densest
 2D scenes; the soft and online-adapted variants mitigate, but do not eliminate, this
@@ -1551,6 +1637,70 @@ pipeline, and extending the fieldwise calibration to richer robot and obstacle
 dynamics---are promising directions, as are tighter integration with full-stack
 perception and validation on physical hardware.
 
+
+{\appendices
+
+\section*{Derivation of $\breve{\mathsf{U}}_{t+i|t}$}\label{app:derivation}
+\paragraph{Exact union-of-ellipsoids representation.{\color{teal} (will be moved to appendix)}}
+Because $g$ is a maximum over mixture components,
+$\mathscr{T}_{t+i\mid t}$ decomposes exactly as a union of component-wise ellipsoids
+(cf.\ Eq.\ (9) in \cite{lei2015conformal}):
+\begin{equation}
+\begin{aligned}
+\mathscr{T}_{t+i\mid t} &= \bigcup_{k=1}^K \mathscr{T}^{(k)}_{t+i\mid t}, \\
+\mathscr{T}^{(k)}_{t+i\mid t} &\coloneqq \left\{\xi:\ \varphi(\xi;\widehat\mu_k,\widehat\Sigma_k)\ge \tfrac{\lambda_i}{\widehat\pi_k}\right\}.
+\end{aligned}
+\label{eq:exact_union}
+\end{equation}
+Each $\mathscr{T}^{(k)}_{t+i\mid t}$ is an ellipsoid
+\begin{equation}
+\mathscr{T}^{(k)}_{t+i\mid t}
+=
+\left\{\xi:\ (\xi-\widehat\mu_k)^\top \widehat\Sigma_k^{-1}(\xi-\widehat\mu_k)\le r_{k,i}^2\right\},
+\label{eq:ellipsoid_def}
+\end{equation}
+where the radius is
+\begin{equation*}
+r_{k,i}^2
+=
+\max\!\left\{
+0,\,
+-2\log\!\left(
+\frac{\lambda_i}{\widehat\pi_k}\,(2\pi)^{p_i/2}\sqrt{\det(\widehat\Sigma_k)}
+\right)
+\right\}.
+\end{equation*}
+
+
+\paragraph{From coefficient regions to a functional upper envelope}
+\label{sec:upper_envelope}
+
+Let the discretized basis vector at coordinate $x$ be
+$\varphi_i(x)\in\mathbb{R}^{p_i}$ (in code, $\varphi_i(\cdot)$ is represented implicitly
+by the PCA components $\phi_i$ over the discretized domain).
+For coefficients $\xi\in\mathbb{R}^{p_i}$, the projected value is $\xi^\top \varphi_i(x)$.
+Using~\eqref{eq:exact_union}, we finally define the upper bound $\breve{\mathsf{U}}_{t+i|t}(\mathbf{x})$ as
+\begin{equation*}
+\breve{\mathsf{U}}_{t+i|t}(\mathbf{x}) \coloneqq \sup_{\xi\in\mathscr{T}_{t+i\mid t}} \xi^\top \varphi_i(\mathbf{x})
+=
+\max_{1\le k\le K}\ \sup_{\xi\in\mathscr{T}^{(k)}_{t+i\mid t}} \xi^\top \varphi_i(\mathbf{x}).
+\end{equation*}
+For an ellipsoid~\eqref{eq:ellipsoid_def}, the inner supremum  is given in closed form:
+\begin{equation}
+\sup_{\xi\in\mathscr{T}^{(k)}_{t+i\mid t}} \xi^\top \varphi_i(\mathbf{x})
+=
+\widehat\mu_k^\top \varphi_i(\mathbf{x})
++
+r_{k,i}\left(\varphi_i(\mathbf{x})^\top \widehat\Sigma_k\, \varphi_i(\mathbf{x})\right)^{1/2}.
+\label{eq:ellipsoid_support_function}
+\end{equation}
+
+In implementation, we add a small diagonal jitter to $\widehat\Sigma_k$
+for numerical stability.
+
+
+
+}
 
 \bibliographystyle{IEEEtran}
 \bibliography{reference}

@@ -2,34 +2,34 @@
 \hline
 Dataset & Method & Collision rate $\downarrow$ & Infeasible rate $\downarrow$ & Steps to goal $\downarrow$ & Ctrl.\ time (ms) $\downarrow$ \\
 \hline
-eth & ACP-MPC~\cite{dixit2023adaptive} & 0.062 & \textbf{0.223} & 71.7 & \textbf{0.61} \\
- & CC-MPC~\cite{lekeufack2024decision} & 0.055 & N/A & 99.0 & 0.66 \\
- & ECP-MPC~\cite{shin2025egocentric} & 0.042 & 0.226 & 62.0 & 34.91 \\
- & FCP-MPC (hard) & \textbf{0.023} & 0.265 & 73.7 & 2.56 \\
- & FCP-MPC (soft) & 0.165 & N/A & \textbf{34.0} & 3.11 \\
+eth & ACP-MPC~\cite{dixit2023adaptive} & 0.079 & 0.284 & 79.0 & \textbf{0.94} \\
+ & CC-MPC~\cite{lekeufack2024decision} & 0.036 & N/A & 96.7 & 1.08 \\
+ & ECP-MPC~\cite{shin2025egocentric} & 0.039 & 0.276 & 85.7 & 42.16 \\
+ & FCP-MPC (hard) & \textbf{0.023} & \textbf{0.265} & 73.7 & 2.59 \\
+ & FCP-MPC (soft) & 0.165 & N/A & \textbf{34.0} & 3.31 \\
 \hline
-hotel & ACP-MPC~\cite{dixit2023adaptive} & \textbf{0.000} & 0.223 & 73.7 & \textbf{0.81} \\
- & CC-MPC~\cite{lekeufack2024decision} & 0.055 & N/A & timeout & 0.89 \\
- & ECP-MPC~\cite{shin2025egocentric} & \textbf{0.000} & \textbf{0.069} & 68.3 & 44.91 \\
- & FCP-MPC (hard) & 0.103 & 0.114 & 42.3 & 3.55 \\
- & FCP-MPC (soft) & 0.089 & N/A & \textbf{29.0} & 3.61 \\
+hotel & ACP-MPC~\cite{dixit2023adaptive} & \textbf{0.041} & 0.428 & 80.3 & \textbf{1.23} \\
+ & CC-MPC~\cite{lekeufack2024decision} & 0.049 & N/A & 99.3 & 1.48 \\
+ & ECP-MPC~\cite{shin2025egocentric} & 0.047 & 0.306 & timeout & 52.38 \\
+ & FCP-MPC (hard) & 0.103 & \textbf{0.114} & 42.3 & 3.25 \\
+ & FCP-MPC (soft) & 0.089 & N/A & \textbf{29.0} & 3.64 \\
 \hline
-univ & ACP-MPC~\cite{dixit2023adaptive} & \textbf{0.011} & \textbf{0.344} & timeout & \textbf{2.78} \\
- & CC-MPC~\cite{lekeufack2024decision} & 0.077 & N/A & timeout & 3.43 \\
- & ECP-MPC~\cite{shin2025egocentric} & 0.351 & 0.629 & 263.0 & 62.63 \\
- & FCP-MPC (hard) & 0.253 & 0.383 & timeout & 7.57 \\
- & FCP-MPC (soft) & 0.284 & N/A & \textbf{95.0} & 12.75 \\
+univ & ACP-MPC~\cite{dixit2023adaptive} & \textbf{0.000} & 0.660 & timeout & \textbf{4.70} \\
+ & CC-MPC~\cite{lekeufack2024decision} & 0.053 & N/A & timeout & 5.78 \\
+ & ECP-MPC~\cite{shin2025egocentric} & 0.204 & 0.530 & timeout & 78.27 \\
+ & FCP-MPC (hard) & 0.253 & \textbf{0.383} & timeout & 7.65 \\
+ & FCP-MPC (soft) & 0.284 & N/A & \textbf{95.0} & 12.71 \\
 \hline
-zara1 & ACP-MPC~\cite{dixit2023adaptive} & 0.135 & 0.491 & 91.3 & \textbf{0.62} \\
- & CC-MPC~\cite{lekeufack2024decision} & 0.076 & N/A & 91.0 & 0.68 \\
- & ECP-MPC~\cite{shin2025egocentric} & \textbf{0.063} & \textbf{0.136} & 58.7 & 41.95 \\
- & FCP-MPC (hard) & 0.163 & 0.262 & 70.3 & 2.30 \\
- & FCP-MPC (soft) & 0.146 & N/A & \textbf{32.0} & 3.09 \\
+zara1 & ACP-MPC~\cite{dixit2023adaptive} & 0.188 & 0.573 & timeout & \textbf{0.88} \\
+ & CC-MPC~\cite{lekeufack2024decision} & \textbf{0.041} & N/A & 90.0 & 1.07 \\
+ & ECP-MPC~\cite{shin2025egocentric} & 0.098 & \textbf{0.180} & 82.0 & 49.16 \\
+ & FCP-MPC (hard) & 0.163 & 0.262 & 70.3 & 2.42 \\
+ & FCP-MPC (soft) & 0.146 & N/A & \textbf{32.0} & 3.59 \\
 \hline
-zara2 & ACP-MPC~\cite{dixit2023adaptive} & 0.247 & 0.672 & 93.3 & \textbf{0.74} \\
- & CC-MPC~\cite{lekeufack2024decision} & \textbf{0.064} & N/A & 97.3 & 0.82 \\
- & ECP-MPC~\cite{shin2025egocentric} & 0.201 & 0.322 & 81.7 & 45.92 \\
- & FCP-MPC (hard) & 0.185 & \textbf{0.248} & 84.3 & 2.63 \\
- & FCP-MPC (soft) & 0.272 & N/A & \textbf{61.7} & 3.92 \\
+zara2 & ACP-MPC~\cite{dixit2023adaptive} & 0.262 & 0.628 & 94.0 & \textbf{1.09} \\
+ & CC-MPC~\cite{lekeufack2024decision} & \textbf{0.056} & N/A & timeout & 1.25 \\
+ & ECP-MPC~\cite{shin2025egocentric} & 0.220 & 0.412 & timeout & 52.12 \\
+ & FCP-MPC (hard) & 0.185 & \textbf{0.248} & 84.3 & 2.74 \\
+ & FCP-MPC (soft) & 0.272 & N/A & \textbf{61.7} & 4.06 \\
 \hline
 \end{tabular}

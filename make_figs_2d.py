@@ -53,13 +53,14 @@ TASK = {
     "univ":  {"start": (3.5, 2.0), "goal": (11.5, 8.5)},
 }
 
-# (controller key, label, color, linewidth, linestyle, zorder). Ours is emphasized.
+# (controller key, label, color, linewidth, linestyle, zorder, alpha).
+# Ours (FCP) are dark, thick, solid; baselines are light, thinner, solid (no dashes).
 METHODS = [
-    ("cc",                "CC-MPC",            "#8c8c8c", 2.2, "-",  2),
-    ("ecp-mpc",           "ECP-MPC",           "#ff7f0e", 2.2, "-",  2),
-    ("acp-mpc",           "ACP-MPC",           "#9467bd", 2.2, "-",  2),
-    ("fcp-hard-adaptive", "FCP-MPC (hard, ours)", "#d62728", 3.2, "--", 4),
-    ("fcp-soft-adaptive", "FCP-MPC (soft, ours)", "#1f77b4", 3.4, "-",  5),
+    ("cc",                "CC-MPC",            "#bdbdbd", 2.0, "-", 2, 0.55),
+    ("ecp-mpc",           "ECP-MPC",           "#ffc266", 2.0, "-", 2, 0.55),
+    ("acp-mpc",           "ACP-MPC",           "#c9b3e6", 2.0, "-", 2, 0.55),
+    ("fcp-hard-adaptive", "FCP-MPC (hard, ours)", "#d62728", 3.8, "-", 4, 1.0),
+    ("fcp-soft-adaptive", "FCP-MPC (soft, ours)", "#1f77b4", 4.0, "-", 5, 1.0),
 ]
 
 
@@ -95,18 +96,26 @@ def _load_scene(dataset, key, scene_idx):
 
 def main():
     os.makedirs(PAPER_DIR, exist_ok=True)
-    fig, axes = plt.subplots(2, 3, figsize=(14.0, 8.0))
-    axes = axes.ravel()
-    for ax in axes[len(DATASETS):]:   # hide unused panels (5 datasets in a 3x2 grid)
-        ax.set_visible(False)
+    # 3-2 layout with the bottom row *staggered between* the top row (not directly
+    # below): a 2x6 grid where the 3 top panels span pairs of columns and the 2
+    # bottom panels are offset by one column so they sit in the gaps.
+    fig = plt.figure(figsize=(14.0, 8.0))
+    gs = fig.add_gridspec(2, 6)
+    axes = [
+        fig.add_subplot(gs[0, 0:2]),
+        fig.add_subplot(gs[0, 2:4]),
+        fig.add_subplot(gs[0, 4:6]),
+        fig.add_subplot(gs[1, 1:3]),
+        fig.add_subplot(gs[1, 3:5]),
+    ]
 
     for ax, dataset in zip(axes, DATASETS):
-        for key, label, color, lw, ls, z in METHODS:
+        for key, label, color, lw, ls, z, a in METHODS:
             traj = _load_scene(dataset, key, SCENE_IDX)
             if traj is None:
                 continue
             ax.plot(traj[:, 0], traj[:, 1], color=color, lw=lw, ls=ls,
-                    alpha=0.9, zorder=z, label=label)
+                    alpha=a, zorder=z, label=label)
 
         start = TASK[dataset]["start"]
         goal = TASK[dataset]["goal"]

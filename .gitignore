@@ -24,3 +24,8 @@
 !T_RO2026/*.png
 !T_RO2026/*.bib
 !T_RO2026/*.cls
+
+# Scene homographies are small and needed to render the spatial-uncertainty
+# overlay; track them (videos stay ignored -- re-fetch via assets/download_videos.sh).
+!assets/homographies/
+!assets/homographies/*.txt

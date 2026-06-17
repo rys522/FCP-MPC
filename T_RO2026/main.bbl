@@ -145,10 +145,31 @@ R.~A. Newcombe, S.~Izadi, O.~Hilliges, D.~Molyneaux, D.~Kim, A.~J. Davison,
   Symposium on Mixed and Augmented Reality}.\hskip 1em plus 0.5em minus
   0.4em\relax IEEE, 2011, pp. 127--136.
 
+\bibitem{deits2015computing}
+R.~Deits and R.~Tedrake, ``Computing large convex regions of obstacle-free
+  space through semidefinite programming,'' in \emph{Algorithmic Foundations of
+  Robotics XI}, ser. Springer Tracts in Advanced Robotics.\hskip 1em plus 0.5em
+  minus 0.4em\relax Springer, 2015, vol. 107, pp. 109--124.
+
 \bibitem{fraichard2004inevitable}
 T.~Fraichard and H.~Asama, ``Inevitable collision states --- a step towards
   safer robots?'' \emph{Advanced Robotics}, vol.~18, no.~10, pp. 1001--1024,
   2004.
+
+\bibitem{scokaert1999feasibility}
+P.~O.~M. Scokaert and J.~B. Rawlings, ``Feasibility issues in linear model
+  predictive control,'' \emph{AIChE Journal}, vol.~45, no.~8, pp. 1649--1659,
+  1999.
+
+\bibitem{kerrigan2000soft}
+E.~C. Kerrigan and J.~M. Maciejowski, ``Soft constraints and exact penalty
+  functions in model predictive control,'' in \emph{Proceedings of the UKACC
+  International Conference on Control}, 2000.
+
+\bibitem{nocedal2006numerical}
+J.~Nocedal and S.~J. Wright, \emph{Numerical Optimization}, 2nd~ed., ser.
+  Springer Series in Operations Research and Financial Engineering.\hskip 1em
+  plus 0.5em minus 0.4em\relax Springer, 2006.
 
 \bibitem{salzmann2020trajectron}
 T.~Salzmann, B.~Ivanovic, P.~Chakravarty, and M.~Pavone, ``Trajectron++:
