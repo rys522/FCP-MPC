@@ -5,6 +5,41 @@ commands below on the desktop (conda env `cp`), then commit the regenerated
 tables/figures. Everything except the final 3D table/figure regeneration is
 already done and committed.
 
+---
+
+## ⮞ Copy-paste prompt for Claude Code on the desktop
+
+> All code is committed (HEAD `b8c2bd1`). First `git pull`. Then regenerate the
+> **dynamic-environment** 3D paper tables and figures and commit them.
+>
+> The environment now has goal-directed crossing-pedestrian obstacles
+> (`goal_directed_frac=0.5` in `make_figs_3d.py::ENV_KWARGS`). `make_3d_results.py`
+> was refactored to a single 5-method pass (ACP/CC/ECP/FCP-hard/FCP-soft over the
+> same 17 seeds) — there is no longer any scan/soft3d/build_final chain.
+>
+> Run (conda env `cp`):
+> ```bash
+> conda run -n cp python make_3d_results.py \
+>   --seeds 20 21 22 23 24 30 31 32 33 34 35 36 37 38 39 40 41 --traj-seeds 20 22 30
+> conda run -n cp python run_sparse_3d.py
+> ```
+> Then:
+> 1. Check `T_RO2026/table_3d_results.tex` is 5 rows; under crossing traffic the
+>    baselines (ACP/ECP) should crash/timeout more while FCP (hard/soft) still
+>    reaches the goal. If FCP also fails badly, lower `goal_directed_frac` (e.g.
+>    0.3) or `goal_speed_range` in `make_figs_3d.py::ENV_KWARGS` and re-run.
+> 2. Look at `T_RO2026/traj_3d_seeds.png`. If a panel is ~empty (a baseline died at
+>    step ~1), re-pick `--traj-seeds <a> <b> <c>` — seeds where FCP reaches AND the
+>    baselines visibly travel before crashing — and re-run `make_3d_results.py`.
+> 3. Commit `T_RO2026/table_3d_results.tex`, `table_3d_sparse.tex`,
+>    `traj_3d_seeds.png`, `control_time_3d.png`
+>    (`metric_3d/*` is gitignored). Do not commit `T_RO2026/main.*` build artifacts,
+>    `main.tex`, `reference.bib`, `make_figs_2d.py` (pre-existing edits).
+>
+> Sanity-check first with `conda run -n cp python make_3d_results.py --smoke`.
+
+---
+
 ## Goal
 Produce the **dynamic-environment** 3D tables & figures: obstacles now include
 goal-directed *crossing pedestrians* (traverse the workspace) instead of only a
