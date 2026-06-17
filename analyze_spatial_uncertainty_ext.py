@@ -153,13 +153,14 @@ def analyze(trajs, cell, nmin, trim, tag, bg, to_px, out_prefix):
 
 
 # ------------------------------------------------------------------ loaders
-def load_sdd(data_dir, scene, video):
-    base = os.path.join(data_dir, "annotations", scene, video)
-    ann = os.path.join(base, "annotations.txt")
-    if not os.path.isfile(ann):
-        raise FileNotFoundError(f"SDD annotations not found: {ann}")
+def load_sdd(ann_path):
+    """Load one SDD annotation file (pixel bbox -> centre tracks). Robust to the
+    standard layout (annotations/<scene>/<video>/annotations.txt) and to mirrors like
+    flclain (<scene>/<video>/annotation.txt). Finds a nearby reference image."""
+    if not os.path.isfile(ann_path):
+        raise FileNotFoundError(f"SDD annotation file not found: {ann_path}")
     rows = {}
-    for r in np.genfromtxt(ann, dtype=None, encoding="utf-8"):
+    for r in np.genfromtxt(ann_path, dtype=None, encoding="utf-8"):
         tid, xmin, ymin, xmax, ymax, frame, lost = (int(r[0]), float(r[1]), float(r[2]),
                                                     float(r[3]), float(r[4]), int(r[5]), int(r[6]))
         if lost:
@@ -171,18 +172,28 @@ def load_sdd(data_dir, scene, video):
         a = np.array([[p[1], p[2]] for p in pts], np.float32)[::12]  # ~30fps -> ~2.5fps
         if len(a) >= OBS_LEN + 2:
             trajs.append(a)
-    ref = os.path.join(base, "reference.jpg")
-    bg = cv2.cvtColor(cv2.imread(ref), cv2.COLOR_BGR2RGB) if os.path.isfile(ref) else None
+    # reference image: try the annotation dir and its parent (scene) dir
+    d = os.path.dirname(ann_path)
+    bg = None
+    for cand in (os.path.join(d, "reference.jpg"), os.path.join(d, "reference.png"),
+                 os.path.join(os.path.dirname(d), "reference.jpg"),
+                 os.path.join(os.path.dirname(d), "reference.png")):
+        if os.path.isfile(cand):
+            bg = cv2.cvtColor(cv2.imread(cand), cv2.COLOR_BGR2RGB); break
     return trajs, bg, (lambda P: P)
 
 
 def sdd_autofind(data_dir):
-    """Return [(scene, video), ...] discovered under data_dir/annotations/."""
-    found = []
-    for ann in sorted(glob.glob(os.path.join(data_dir, "annotations", "*", "*", "annotations.txt"))):
-        parts = ann.split(os.sep)
-        found.append((parts[-3], parts[-2]))
+    """Return annotation-file paths discovered anywhere under data_dir (handles both
+    `annotations.txt` and `annotation.txt`, any nesting)."""
+    found = sorted(set(glob.glob(os.path.join(data_dir, "**", "annotation*.txt"),
+                                 recursive=True)))
     return found
+
+
+def sdd_tag(ann_path, data_dir):
+    rel = os.path.relpath(os.path.dirname(ann_path), data_dir)
+    return "SDD/" + rel.replace(os.sep, "/")
 
 
 def load_round(data_dir, rec):
@@ -224,25 +235,28 @@ def main():
     args = ap.parse_args()
     here = os.path.dirname(os.path.abspath(__file__))
 
-    jobs = []
     if args.dataset == "sdd":
-        if args.scene and args.video:
-            jobs = [(args.scene, args.video)]
-        else:
-            jobs = sdd_autofind(args.data_dir)
-            if not jobs:
-                raise FileNotFoundError(f"no SDD annotations under {args.data_dir}/annotations/*/*/")
-            print(f"[auto-find] {len(jobs)} SDD scene/video(s): {jobs}")
+        ann_paths = sdd_autofind(args.data_dir)
+        if args.scene:                       # optional substring filter (e.g. deathCircle)
+            ann_paths = [a for a in ann_paths if args.scene in a]
+        if not ann_paths:
+            raise FileNotFoundError(
+                f"no SDD annotation*.txt found under {args.data_dir} "
+                f"(expected e.g. <dir>/<scene>/<video>/annotation.txt)")
+        print(f"[auto-find] {len(ann_paths)} SDD annotation file(s)")
         summary = []
-        for scene, video in jobs:
-            trajs, bg, to_px = load_sdd(args.data_dir, scene, video)
-            cell = args.cell or 40.0
-            pref = os.path.join(here, f"sdd_{scene}_{video}")
-            summary.append(analyze(trajs, cell, args.nmin, args.trim,
-                                   f"SDD/{scene}/{video}", bg, to_px, pref))
+        for ann in ann_paths:
+            trajs, bg, to_px = load_sdd(ann)
+            tag = sdd_tag(ann, args.data_dir)
+            pref = os.path.join(here, "sdd_" + tag[len("SDD/"):].replace("/", "_"))
+            try:
+                summary.append(analyze(trajs, args.cell or 40.0, args.nmin, args.trim,
+                                       tag, bg, to_px, pref))
+            except RuntimeError as e:
+                print(f"  [skip] {tag}: {e}")
         print("\n==== SUMMARY (controlled corr error<->turning) ====")
         for s in summary:
-            print(f"  {s['tag']:28s} raw={s['r_raw']:+.2f} ctrl={s['r_ctrl']:+.2f} "
+            print(f"  {s['tag']:30s} raw={s['r_raw']:+.2f} ctrl={s['r_ctrl']:+.2f} "
                   f"dens={s['r_dens']:+.2f} cells={s['n_ctrl']} -> {s['verdict']}")
     else:
         trajs, bg, to_px = load_round(args.data_dir, args.recording)
