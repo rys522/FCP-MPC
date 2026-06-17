@@ -53,19 +53,28 @@ TABLE_TEX = os.path.join(PAPER_DIR, "table_3d_results.tex")
 CACHE = os.path.join(PAPER_DIR, "results_3d_cache.pkl")
 
 # Row order and citation keys for the paper table (\input{table_3d_results.tex}).
-TABLE_ORDER = ["ACP-MPC", "CC-MPC", "ECP-MPC", "FCP-MPC (ours)"]
+# Both FCP variants are produced in the SAME run (one offline-calibrated field deployed
+# two ways: hard filter / soft penalty), so the 5-row paper table is self-consistent
+# and no longer assembled from separate scan/soft3d/build_final passes.
+TABLE_ORDER = ["ACP-MPC", "CC-MPC", "ECP-MPC", "FCP-MPC (hard)", "FCP-MPC (soft)"]
 TABLE_CITE = {
     "ACP-MPC": r"~\cite{dixit2023adaptive}",
     "CC-MPC": r"~\cite{lekeufack2024decision}",
     "ECP-MPC": r"~\cite{shin2025egocentric}",
-    "FCP-MPC (ours)": "",
+    "FCP-MPC (hard)": "",
+    "FCP-MPC (soft)": "",
 }
 TRAJ_OUT = os.path.join(PAPER_DIR, "traj_3d_seeds.png")
 SCAL_OUT = os.path.join(PAPER_DIR, "control_time_3d.png")
 
-# label -> (run_fn, extras); reuse the exact method configs from make_figs_3d
-METHOD_MAP = {m[0]: (m[1], m[2]) for m in METHODS}
-METHOD_LABELS = [m[0] for m in METHODS]
+# label -> (run_fn, extras). Baselines reuse the exact configs from make_figs_3d;
+# FCP is run as both hard and soft (same field, two deployments) in one pass.
+METHOD_MAP = {m[0]: (m[1], m[2]) for m in METHODS if not m[0].startswith("FCP")}
+METHOD_MAP["FCP-MPC (hard)"] = (run_fcp, {"CP": True, "alpha": 0.10,
+                                          "safety_mode": "hard", "break_on_collision": True})
+METHOD_MAP["FCP-MPC (soft)"] = (run_fcp, {"CP": True, "alpha": 0.10,
+                                          "safety_mode": "soft", "break_on_collision": True})
+METHOD_LABELS = ["ACP-MPC", "CC-MPC", "ECP-MPC", "FCP-MPC (hard)", "FCP-MPC (soft)"]
 
 
 # ----------------------------------------------------------------------------- metrics
@@ -340,16 +349,21 @@ def write_scalability(results_all):
 
 
 def render_traj(results_main, seeds_for_fig):
+    # The trajectory figure overlays the baselines against ONE FCP headline (soft, the
+    # practical variant); map its label to "FCP-MPC (ours)" so make_figure plots it.
+    def _fig_label(lab):
+        return "FCP-MPC (ours)" if lab == "FCP-MPC (soft)" else lab
+
     data = {}
     for seed in seeds_for_fig:
-        rs = [r for r in results_main if r["seed"] == seed]
+        rs = [r for r in results_main if r["seed"] == seed and not r["label"].startswith("FCP-MPC (hard)")]
         if not rs:
             continue
-        trajs = {r["label"]: r["traj"] for r in rs if r["traj"] is not None}
+        trajs = {_fig_label(r["label"]): r["traj"] for r in rs if r["traj"] is not None}
         crashed = {}
         for r in rs:
             tr = r["traj"]
-            crashed[r["label"]] = bool(
+            crashed[_fig_label(r["label"])] = bool(
                 (not r["metrics"].get("reached_goal", 0))
                 and tr is not None and len(tr) > 0 and float(tr[-1][2]) <= 0.15)
         ref = rs[0]

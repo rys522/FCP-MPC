@@ -47,6 +47,8 @@ class ObstacleAgent:
     vel: np.ndarray  # (3,)
     mode: int = 0    # 0: CV, 1: Turn, 2: Wander, 3: Stop-Go
     mode_ttl: int = 0
+    goal: Optional[np.ndarray] = None  # if set, agent walks toward this goal (crossing pedestrian)
+    speed: float = 0.0                 # preferred cruising speed for goal-directed agents
 
 class CVPredictor3D:
     def __init__(self, dt, horizon, process_noise_std=0.0):
@@ -93,6 +95,11 @@ class QuadWorldEnv3D(BaseAviary):
         mode_max_ttl: int = 25,
         turn_rate_std: float = 1.0,
         stop_go_p: float = 0.1,
+        # Goal-directed (crossing-pedestrian) obstacles
+        goal_directed_frac: float = 0.0,        # fraction of obstacles that walk toward a goal
+        goal_speed_range: Tuple = (0.3, 0.7),   # cruising speed sampled per goal-directed agent
+        goal_reach_thresh: float = 1.0,         # distance at which a new crossing goal is drawn
+        goal_steer_gain: float = 0.3,           # how fast velocity turns toward the goal direction
         # GUI
         gui: bool = False,
     ):
@@ -135,6 +142,11 @@ class QuadWorldEnv3D(BaseAviary):
         self.mode_max_ttl = mode_max_ttl
         self.turn_rate_std = turn_rate_std
         self.stop_go_p = stop_go_p
+
+        self.goal_directed_frac = float(goal_directed_frac)
+        self.goal_speed_range = goal_speed_range
+        self.goal_reach_thresh = float(goal_reach_thresh)
+        self.goal_steer_gain = float(goal_steer_gain)
 
         # fixed start/goal
         if start_xyz_yaw is None:
@@ -303,17 +315,26 @@ class QuadWorldEnv3D(BaseAviary):
         col_id = p.createCollisionShape(p.GEOM_SPHERE, radius=0.3)
         vis_id = p.createVisualShape(p.GEOM_SPHERE, radius=0.3, rgbaColor=[1, 0, 0, 0.6])
         
+        n_goal_directed = int(round(n_obs * self.goal_directed_frac))
         for pid in range(n_obs):
             pos = np.array([
                 self.rng.uniform(*self.xlim),
                 self.rng.uniform(*self.ylim),
                 self.rng.uniform(*self.zlim)
             ], dtype=np.float32)
-            
-            vel = self.rng.normal(0, 0.5, size=3).astype(np.float32)
-            vel[2] *= 0.2
-            
-            agent = ObstacleAgent(pid=pid, pos=pos, vel=vel)
+
+            if pid < n_goal_directed:
+                # Crossing pedestrian: head toward a goal on the far side at a steady speed.
+                speed = float(self.rng.uniform(*self.goal_speed_range))
+                goal = self._new_crossing_goal(pos)
+                direction = goal - pos
+                direction /= (np.linalg.norm(direction) + 1e-6)
+                vel = (direction * speed).astype(np.float32)
+                agent = ObstacleAgent(pid=pid, pos=pos, vel=vel, goal=goal, speed=speed)
+            else:
+                vel = self.rng.normal(0, 0.5, size=3).astype(np.float32)
+                vel[2] *= 0.2
+                agent = ObstacleAgent(pid=pid, pos=pos, vel=vel)
             self.obstacles.append(agent)
             self.history_xyz[pid] = [pos.copy()]
             
@@ -339,52 +360,85 @@ class QuadWorldEnv3D(BaseAviary):
 
         return self._make_obs()
 
+    def _new_crossing_goal(self, pos):
+        """Draw a goal on the far side of the workspace so the agent traverses it
+        (one horizontal axis is pushed to the opposite extreme; the rest is random)."""
+        g = np.array([
+            self.rng.uniform(*self.xlim),
+            self.rng.uniform(*self.ylim),
+            self.rng.uniform(*self.zlim),
+        ], dtype=np.float32)
+        axis = int(self.rng.integers(0, 2))   # cross along x or y
+        lim = [self.xlim, self.ylim][axis]
+        mid = 0.5 * (lim[0] + lim[1])
+        g[axis] = lim[0] if pos[axis] > mid else lim[1]
+        return g
+
     def _step_obstacles_logic(self):
-        """Update obstacle positions based on their modes"""
+        """Update obstacle positions: goal-directed agents steer toward a crossing
+        goal; the rest follow the random multi-mode (CV/Turn/Wander/Stop-Go) walk."""
         for i, ob in enumerate(self.obstacles):
-            # 1. Mode Switch
-            if ob.mode_ttl <= 0 or self.rng.random() < self.mode_switch_p:
-                ob.mode = self.rng.integers(0, 4)
-                ob.mode_ttl = self.rng.integers(self.mode_min_ttl, self.mode_max_ttl)
-            ob.mode_ttl -= 1
-            
-            # 2. Dynamics
-            acc = self.rng.normal(0, self.obs_process_noise, size=3)
-            acc[2] *= 0.2
-            
-            v = ob.vel.copy()
-            
-            if ob.mode == 0: # CV
-                pass 
-            elif ob.mode == 1: # Turn
-                ang = self.rng.normal(0, self.turn_rate_std) * self.dt
-                c, s = np.cos(ang), np.sin(ang)
-                v[0], v[1] = c*v[0] - s*v[1], s*v[0] + c*v[1]
-            elif ob.mode == 2: # Wander
-                target = self.rng.normal(0, 1.0, size=3)
-                v += (target - v) * 0.2
-            elif ob.mode == 3: # Stop-Go
-                if self.rng.random() < self.stop_go_p:
-                    v *= 0.1
-            
-            v += acc * self.dt
-            ob.vel = v
-            next_pos = ob.pos + ob.vel * self.dt
-            
-            # 3. Bounds Reflection
-            for dim, lim in enumerate([self.xlim, self.ylim, self.zlim]):
-                if not (lim[0] < next_pos[dim] < lim[1]):
-                    ob.vel[dim] *= -1.0
+            if ob.goal is not None:
+                # Goal-directed crossing pedestrian
+                to_goal = ob.goal - ob.pos
+                dist = float(np.linalg.norm(to_goal))
+                if dist < self.goal_reach_thresh:
+                    ob.goal = self._new_crossing_goal(ob.pos)
+                    to_goal = ob.goal - ob.pos
+                    dist = float(np.linalg.norm(to_goal))
+                desired = (to_goal / (dist + 1e-6)) * ob.speed
+                v = ob.vel + (desired - ob.vel) * self.goal_steer_gain
+                v += self.rng.normal(0, self.obs_process_noise, size=3) * self.dt
+                ob.vel = v
+                next_pos = ob.pos + ob.vel * self.dt
+                # Stay inside the workspace; re-target next step if it hits a wall.
+                for dim, lim in enumerate([self.xlim, self.ylim, self.zlim]):
                     next_pos[dim] = np.clip(next_pos[dim], lim[0], lim[1])
-            
-            ob.pos = next_pos
-            
+                ob.pos = next_pos
+            else:
+                # 1. Mode Switch
+                if ob.mode_ttl <= 0 or self.rng.random() < self.mode_switch_p:
+                    ob.mode = self.rng.integers(0, 4)
+                    ob.mode_ttl = self.rng.integers(self.mode_min_ttl, self.mode_max_ttl)
+                ob.mode_ttl -= 1
+
+                # 2. Dynamics
+                acc = self.rng.normal(0, self.obs_process_noise, size=3)
+                acc[2] *= 0.2
+
+                v = ob.vel.copy()
+
+                if ob.mode == 0: # CV
+                    pass
+                elif ob.mode == 1: # Turn
+                    ang = self.rng.normal(0, self.turn_rate_std) * self.dt
+                    c, s = np.cos(ang), np.sin(ang)
+                    v[0], v[1] = c*v[0] - s*v[1], s*v[0] + c*v[1]
+                elif ob.mode == 2: # Wander
+                    target = self.rng.normal(0, 1.0, size=3)
+                    v += (target - v) * 0.2
+                elif ob.mode == 3: # Stop-Go
+                    if self.rng.random() < self.stop_go_p:
+                        v *= 0.1
+
+                v += acc * self.dt
+                ob.vel = v
+                next_pos = ob.pos + ob.vel * self.dt
+
+                # 3. Bounds Reflection
+                for dim, lim in enumerate([self.xlim, self.ylim, self.zlim]):
+                    if not (lim[0] < next_pos[dim] < lim[1]):
+                        ob.vel[dim] *= -1.0
+                        next_pos[dim] = np.clip(next_pos[dim], lim[0], lim[1])
+
+                ob.pos = next_pos
+
             # 4. History
             hist = self.history_xyz[ob.pid]
             hist.append(ob.pos.copy())
-            if len(hist) > 5: 
+            if len(hist) > 5:
                 hist.pop(0)
-            
+
             # 5. Sync PyBullet
             p.resetBasePositionAndOrientation(self.obs_ids[i], ob.pos, [0,0,0,1])
 

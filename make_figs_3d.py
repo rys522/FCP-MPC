@@ -58,6 +58,9 @@ ENV_KWARGS = dict(
     pred_model_noise=0.20, obs_process_noise=0.22, gt_future_noise=0.20,
     mode_switch_p=0.95, mode_min_ttl=1, mode_max_ttl=6,
     turn_rate_std=3.0, stop_go_p=0.6, gui=False,
+    # Dynamic environment (paper's main setting): half the obstacles are crossing
+    # pedestrians that traverse the workspace toward goals; the rest random-walk.
+    goal_directed_frac=0.5,
 )
 EXP_BASE = dict(
     nx=40, ny=40, nz=40,
@@ -158,7 +161,7 @@ def make_figure(data: dict, out_path: str) -> None:
         obs = d["obs"]
         if isinstance(obs, np.ndarray) and obs.size:
             ax.scatter(obs[:, 0], obs[:, 1], obs[:, 2],
-                       c="0.7", s=4, alpha=0.12, depthshade=False, zorder=0)
+                       c="0.45", s=7, alpha=0.30, depthshade=False, zorder=0)
 
         crashed = d.get("crashed", {})
         for name, _fn, _ex, color, lw, z in METHODS:
