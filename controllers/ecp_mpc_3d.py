@@ -7,6 +7,8 @@ import numpy as np
 import time
 import math
 
+from controllers.utils import sample_random_paths_3d
+
 DISTANCE_BOUND = 10000.0
 
 
@@ -158,10 +160,13 @@ class EgocentricCPMPC3D:
         v_lim: Tuple[float, float] = (-0.8, 0.8),         # v_xy
         vz_lim: Tuple[float, float] = (-0.3, 0.3),
         yaw_rate_lim: Tuple[float, float] = (-0.7, 0.7),
-        # discretization points (like original ECP)
+        # discretization points (kept for API parity; unused by the sampling rollout)
         v_points: Tuple[float, ...] = (-1.0, 0.0, 1.0),
         w_points: Tuple[float, ...] = (-1.0, 0.0, 1.0),
         vz_points: Tuple[float, ...] = (-1.0, 0.0, 1.0),
+        # sampling-based ("MPPI-style") rollout, matching FCP-3D
+        n_paths: int = 2000,
+        seed: int = 0,
         # ACI / online calibration
         calibration_set_size: int = 15,
         miscoverage_level: float = 0.10,
@@ -180,13 +185,12 @@ class EgocentricCPMPC3D:
         self.wmin, self.wmax = map(float, yaw_rate_lim)
         self.vzmin, self.vzmax = map(float, vz_lim)
 
-        self._v_grid = np.array(v_points, dtype=np.float32) * self.vmax
-        self._w_grid = np.array(w_points, dtype=np.float32) * self.wmax
-        self._vz_grid = np.array(vz_points, dtype=np.float32) * self.vzmax
-
-        n_decision_epochs = self.n_steps // self.n_skip
-        n_points = self._v_grid.size * self._w_grid.size * self._vz_grid.size
-        self.n_paths = int(n_points ** n_decision_epochs)
+        # Sampling-based rollout: the candidate set is re-drawn each step (instead of a
+        # fixed (v, w, vz) meshgrid). The egocentric ACI keeps a per-path adapted
+        # miscoverage level; with resampling a given row no longer tracks a fixed control
+        # sequence, so the per-row adaptation behaves as a noisy global adaptation.
+        self.n_paths = int(n_paths)
+        self.rng = np.random.default_rng(int(seed))
 
         # ACI alpha_t: (n_paths, n_steps)
         self._miscoverage_level = float(miscoverage_level)
@@ -386,62 +390,25 @@ class EgocentricCPMPC3D:
         returns:
           paths: (P, T+1, 3)
           vels:  (P, T, 3) where last dim is (v_xy, yaw_rate, vz)
+
+        Uses the same sampling-based ("MPPI-style") rollout as FCP-3D so the action
+        search matches the proposed method instead of the legacy (v, w, vz) meshgrid.
+        The number of returned paths is fixed at ``self.n_paths`` to stay aligned with
+        the per-path ``alpha_t`` buffer used by the egocentric ACI update.
         """
-        dt = self.dt
-        T = self.n_steps
-        n_skip = int(n_skip)
-        n_decision_epochs = T // n_skip
-
-        v_grid, w_grid, vz_grid = np.meshgrid(self._v_grid, self._w_grid, self._vz_grid, indexing="xy")
-        v_grid = v_grid.reshape(-1).astype(np.float32)
-        w_grid = w_grid.reshape(-1).astype(np.float32)
-        vz_grid = vz_grid.reshape(-1).astype(np.float32)
-        n_points = v_grid.size
-
-        state_shape = tuple(n_points for _ in range(n_decision_epochs)) + (T + 1,)
-        x = np.zeros(state_shape, dtype=np.float32)
-        y = np.zeros(state_shape, dtype=np.float32)
-        z = np.zeros(state_shape, dtype=np.float32)
-        yaw = np.zeros(state_shape, dtype=np.float32)
-
-        x[..., 0] = float(robot_xyz[0])
-        y[..., 0] = float(robot_xyz[1])
-        z[..., 0] = float(robot_xyz[2])
-        yaw[..., 0] = float(robot_yaw)
-
-        control_shape = tuple(n_points for _ in range(n_decision_epochs)) + (T,)
-        v_xy = np.zeros(control_shape, dtype=np.float32)
-        w = np.zeros(control_shape, dtype=np.float32)
-        vz = np.zeros(control_shape, dtype=np.float32)
-
-        for e in range(n_decision_epochs):
-            aug = [1] * n_decision_epochs
-            aug[e] = -1
-            v_e = v_grid.reshape(aug)
-            w_e = w_grid.reshape(aug)
-            vz_e = vz_grid.reshape(aug)
-
-            for t in range(e * n_skip, (e + 1) * n_skip):
-                v_xy[..., t] = v_e
-                w[..., t] = w_e
-                vz[..., t] = vz_e
-
-                yaw[..., t + 1] = yaw[..., t] + dt * w_e
-                x[..., t + 1] = x[..., t] + dt * v_e * np.cos(yaw[..., t + 1])
-                y[..., t + 1] = y[..., t] + dt * v_e * np.sin(yaw[..., t + 1])
-                z[..., t + 1] = z[..., t] + dt * vz_e
-
-        x = x.reshape(-1, T + 1)
-        y = y.reshape(-1, T + 1)
-        z = z.reshape(-1, T + 1)
-
-        v_xy = v_xy.reshape(-1, T)
-        w = w.reshape(-1, T)
-        vz = vz.reshape(-1, T)
-
-        paths = np.stack([x, y, z], axis=-1).astype(np.float32)      # (P,T+1,3)
-        vels = np.stack([v_xy, w, vz], axis=-1).astype(np.float32)   # (P,T,3)
-        return paths, vels
+        return sample_random_paths_3d(
+            np.asarray(robot_xyz, dtype=np.float32),
+            float(robot_yaw),
+            n_steps=self.n_steps,
+            n_skip=n_skip,
+            dt=self.dt,
+            v_lim=(self.vmin, self.vmax),
+            w_lim=(self.wmin, self.wmax),
+            vz_lim=(self.vzmin, self.vzmax),
+            n_paths=self.n_paths,
+            rng=self.rng,
+            last_best_vels=self.last_best_vels,
+        )
 
     # ---------------------------------------------------------
     # scoring (same weights as Functional)

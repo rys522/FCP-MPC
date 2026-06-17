@@ -62,7 +62,7 @@ def run_cc(
             dt=dt,
             min_linear_x=min_linear_x, max_linear_x=max_linear_x,
             min_angular_z=min_angular_z, max_angular_z=max_angular_z,
-            n_skip=4,
+            n_skip=2,  # match FCP's control-blocking granularity (sampling-based MPC)
             conformal_control_variable=1.,
             risk_level=risk_level,
             step_size=step_size,

@@ -1,6 +1,8 @@
 import numpy as np
 from typing import Dict, List
 
+from controllers.utils import sample_random_paths
+
 
 class AdaptiveConformalPredictionModule:
     """
@@ -175,7 +177,9 @@ class AdaptiveCPMPC:
                  robot_rad=0.4,
                  obstacle_rad=1./np.sqrt(2.),
                  target_miscoverage_level=0.2,
-                 step_size=0.05
+                 step_size=0.05,
+                 n_paths=1200,
+                 seed=0
                  ):
         self._n_steps = n_steps
         self._dt = dt
@@ -191,6 +195,11 @@ class AdaptiveCPMPC:
         self.robot_rad = robot_rad
         self.obstacle_rad = obstacle_rad
         self.safe_rad = self.robot_rad + self.obstacle_rad
+
+        # Sampling-based ("MPPI-style") rollout configuration, matching FCP.
+        self.n_paths = int(n_paths)
+        self.rng = np.random.default_rng(int(seed))
+        self.last_best_vels = None  # warm-start storage
 
         max_interval_lengths = 1.5 * dt * np.arange(1, n_steps + 1)
         offline_calibration_set = {i: [] for i in range(n_steps)}
@@ -212,6 +221,7 @@ class AdaptiveCPMPC:
             return None, {'feasible': False}
         else:
             path, vel, cost = self.score_paths(safe_paths, vels, goal)
+            self.last_best_vels = vel  # warm-start the next sampling step
             info = {
                 'cost': cost,
                 'feasible': True,
@@ -286,65 +296,19 @@ class AdaptiveCPMPC:
             n_skip=5
     ):
         """
-        Generate multiple paths starting at (x, y, theta) = (0, 0, 0)
+        Sample random control sequences and roll out unicycle dynamics.
+
+        Uses the same sampling-based ("MPPI-style") rollout as FunctionalCPMPC so the
+        action search matches the proposed method instead of the legacy 3x3 (v, w) grid.
         """
-
-        # TODO: Employing pruning techniques would reduce the number of the paths, but would be also challenging to optimize...
-        # TODO: use numba?
-        # physical parameters
-        dt = self._dt
-        # velocity & acceleration ranges
-
-        linear_xs = np.array([self.min_linear_x, .0, self.max_linear_x])
-        angular_zs = np.array([self.min_angular_z, .0, self.max_angular_z])
-
-        n_points = linear_xs.size * angular_zs.size
-
-        linear_xs, angular_zs = np.meshgrid(linear_xs, angular_zs)
-
-        linear_xs = np.reshape(linear_xs, newshape=(-1,))
-        angular_zs = np.reshape(angular_zs, newshape=(-1,))
-
-        # (# grid points, 2)
-        # velocity_profile = np.stack((linear_xs, angular_zs), axis=0)
-
-        n_decision_epochs = self._n_steps // n_skip
-
-        # profiles = [velocity_profile for _ in range(n_decision_epochs)]
-
-        # n_paths = n_points ** n_decision_epochs
-
-        state_shape = tuple(n_points for _ in range(n_decision_epochs)) + (self._n_steps + 1,)
-        x = np.zeros(state_shape)
-        y = np.zeros(state_shape)
-        th = np.zeros(state_shape)
-
-        # state initialization
-        x[..., 0] = pos_x
-        y[..., 0] = pos_y
-        th[..., 0] = orientation_z
-
-        control_shape = tuple(n_points for _ in range(n_decision_epochs)) + (self._n_steps,)
-        v = np.zeros(control_shape)
-        w = np.zeros(control_shape)
-
-        for e in range(n_decision_epochs):
-            augmented_shape = [1] * n_decision_epochs
-            augmented_shape[e] = -1
-            v_epoch = linear_xs.reshape(augmented_shape)
-            w_epoch = angular_zs.reshape(augmented_shape)
-            for t in range(e * n_skip, (e + 1) * n_skip):
-                v[..., t] = v_epoch
-                w[..., t] = w_epoch
-
-                x[..., t + 1] = x[..., t] + dt * v_epoch * np.cos(th[..., t])
-                y[..., t + 1] = y[..., t] + dt * v_epoch * np.sin(th[..., t])
-                th[..., t + 1] = th[..., t] + dt * w_epoch
-
-        x = np.reshape(x, (-1, self._n_steps + 1))
-        y = np.reshape(y, (-1, self._n_steps + 1))
-        # th = np.reshape(th, (-1, self._n_steps))
-        v = np.reshape(v, (-1, self._n_steps))
-        w = np.reshape(w, (-1, self._n_steps))
-
-        return np.stack((x, y), axis=-1), np.stack((v, w), axis=-1)
+        return sample_random_paths(
+            pos_x, pos_y, orientation_z,
+            n_steps=self._n_steps,
+            n_skip=n_skip,
+            dt=self._dt,
+            min_v=self.min_linear_x, max_v=self.max_linear_x,
+            min_w=self.min_angular_z, max_w=self.max_angular_z,
+            n_paths=self.n_paths,
+            rng=self.rng,
+            last_best_vels=self.last_best_vels,
+        )

@@ -1,6 +1,149 @@
+import math
 import numpy as np
 import time
 import sklearn.metrics
+
+
+def sample_random_paths(
+        pos_x,
+        pos_y,
+        orientation_z,
+        *,
+        n_steps,
+        n_skip,
+        dt,
+        min_v,
+        max_v,
+        min_w,
+        max_w,
+        n_paths,
+        rng,
+        last_best_vels=None,
+):
+    """
+    Sample random piecewise-constant control sequences and roll out unicycle dynamics.
+
+    This mirrors the sampling-based ("MPPI-style") rollout used by FunctionalCPMPC so
+    that every controller searches over the same continuous (v, w) action space rather
+    than a fixed 3x3 grid of (v, w) levels. Controls are blocked over `n_skip` steps;
+    if `last_best_vels` is provided, its shifted continuation seeds the first candidate
+    (warm start).
+
+    Returns
+    -------
+    paths : np.ndarray, shape (n_paths, n_steps + 1, 2)
+    vels  : np.ndarray, shape (n_paths, n_steps, 2)
+    """
+    n_steps = int(n_steps)
+    n_skip = int(n_skip)
+    if n_steps <= 0:
+        raise ValueError(f"n_steps must be >= 1, got {n_steps}")
+
+    # Number of control epochs after blocking
+    n_epochs = int(math.ceil(n_steps / max(1, n_skip)))
+
+    # Sample epoch-wise controls
+    v_epoch = rng.uniform(min_v, max_v, size=(n_paths, n_epochs)).astype(np.float32)
+    w_epoch = rng.uniform(min_w, max_w, size=(n_paths, n_epochs)).astype(np.float32)
+
+    # Warm start (first candidate): reuse the previous best plan shifted by one step
+    if last_best_vels is not None and last_best_vels.shape[0] >= 2:
+        v_warm = np.append(last_best_vels[1:, 0], rng.uniform(min_v, max_v))
+        w_warm = np.append(last_best_vels[1:, 1], rng.uniform(min_w, max_w))
+        v_epoch[0, :] = v_warm[:n_epochs]
+        w_epoch[0, :] = w_warm[:n_epochs]
+
+    # Expand to per-step controls and truncate to horizon length
+    v = np.repeat(v_epoch, n_skip, axis=1)[:, :n_steps]  # (P, n_steps)
+    w = np.repeat(w_epoch, n_skip, axis=1)[:, :n_steps]  # (P, n_steps)
+
+    # Roll out positions
+    paths = np.zeros((n_paths, n_steps + 1, 2), dtype=np.float32)
+    paths[:, 0, 0] = float(pos_x)
+    paths[:, 0, 1] = float(pos_y)
+
+    th = np.full((n_paths,), float(orientation_z), dtype=np.float32)
+    dt = float(dt)
+
+    for t in range(n_steps):
+        paths[:, t + 1, 0] = paths[:, t, 0] + dt * v[:, t] * np.cos(th)
+        paths[:, t + 1, 1] = paths[:, t, 1] + dt * v[:, t] * np.sin(th)
+        th = th + dt * w[:, t]
+
+    vels = np.stack([v, w], axis=-1).astype(np.float32)  # (P, n_steps, 2)
+    return paths, vels
+
+
+def sample_random_paths_3d(
+        robot_xyz,
+        robot_yaw,
+        *,
+        n_steps,
+        n_skip,
+        dt,
+        v_lim,
+        w_lim,
+        vz_lim,
+        n_paths,
+        rng,
+        last_best_vels=None,
+):
+    """
+    3D analogue of :func:`sample_random_paths` for the (v_xy, yaw_rate, vz) action space.
+
+    Samples random piecewise-constant control sequences and rolls out the same
+    unicycle-with-altitude dynamics used by the legacy grid generator so the egocentric
+    3D baseline searches over a continuous, sampling-based ("MPPI-style") action set
+    rather than a fixed (v, w, vz) meshgrid.
+
+    Returns
+    -------
+    paths : np.ndarray, shape (n_paths, n_steps + 1, 3)
+    vels  : np.ndarray, shape (n_paths, n_steps, 3)  with last dim (v_xy, yaw_rate, vz)
+    """
+    n_steps = int(n_steps)
+    n_skip = int(n_skip)
+    if n_steps <= 0:
+        raise ValueError(f"n_steps must be >= 1, got {n_steps}")
+
+    n_epochs = int(math.ceil(n_steps / max(1, n_skip)))
+    vmin, vmax = float(v_lim[0]), float(v_lim[1])
+    wmin, wmax = float(w_lim[0]), float(w_lim[1])
+    vzmin, vzmax = float(vz_lim[0]), float(vz_lim[1])
+
+    v_epoch = rng.uniform(vmin, vmax, size=(n_paths, n_epochs)).astype(np.float32)
+    w_epoch = rng.uniform(wmin, wmax, size=(n_paths, n_epochs)).astype(np.float32)
+    vz_epoch = rng.uniform(vzmin, vzmax, size=(n_paths, n_epochs)).astype(np.float32)
+
+    # Warm start (first candidate): reuse the previous best plan shifted by one step
+    if last_best_vels is not None and last_best_vels.shape[0] >= 2:
+        v_warm = np.append(last_best_vels[1:, 0], rng.uniform(vmin, vmax))
+        w_warm = np.append(last_best_vels[1:, 1], rng.uniform(wmin, wmax))
+        vz_warm = np.append(last_best_vels[1:, 2], rng.uniform(vzmin, vzmax))
+        v_epoch[0, :] = v_warm[:n_epochs]
+        w_epoch[0, :] = w_warm[:n_epochs]
+        vz_epoch[0, :] = vz_warm[:n_epochs]
+
+    v = np.repeat(v_epoch, n_skip, axis=1)[:, :n_steps]    # (P, n_steps)
+    w = np.repeat(w_epoch, n_skip, axis=1)[:, :n_steps]
+    vz = np.repeat(vz_epoch, n_skip, axis=1)[:, :n_steps]
+
+    paths = np.zeros((n_paths, n_steps + 1, 3), dtype=np.float32)
+    paths[:, 0, 0] = float(robot_xyz[0])
+    paths[:, 0, 1] = float(robot_xyz[1])
+    paths[:, 0, 2] = float(robot_xyz[2])
+
+    yaw = np.full((n_paths,), float(robot_yaw), dtype=np.float32)
+    dt = float(dt)
+
+    for t in range(n_steps):
+        yaw = yaw + dt * w[:, t]
+        paths[:, t + 1, 0] = paths[:, t, 0] + dt * v[:, t] * np.cos(yaw)
+        paths[:, t + 1, 1] = paths[:, t, 1] + dt * v[:, t] * np.sin(yaw)
+        paths[:, t + 1, 2] = paths[:, t, 2] + dt * vz[:, t]
+
+    vels = np.stack([v, w, vz], axis=-1).astype(np.float32)  # (P, n_steps, 3)
+    return paths, vels
 
 
 def compute_quantiles(x, axis, levels):

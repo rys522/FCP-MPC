@@ -1,6 +1,6 @@
 from typing import Dict
 import numpy as np
-from controllers.utils import compute_pairwise_distances_along_axis, compute_pairwise_distances, compute_quantiles
+from controllers.utils import compute_pairwise_distances_along_axis, compute_pairwise_distances, compute_quantiles, sample_random_paths
 
 DISTANCE_BOUND = 10000
 
@@ -53,7 +53,9 @@ class EgocentricCPMPC:
             obstacle_rad=1./np.sqrt(2.),
             calibration_set_size=10,
             miscoverage_level=0.1,
-            step_size=0.05
+            step_size=0.05,
+            n_paths=1200,
+            seed=0
     ):
         """
         Parameters
@@ -98,13 +100,16 @@ class EgocentricCPMPC:
         self.max_angular_z = max_angular_z
         self.min_angular_z = min_angular_z
 
-        n_decision_epochs = n_steps // n_skip
+        # Sampling-based ("MPPI-style") rollout configuration, matching FCP.
+        # The egocentric ACI keeps a per-path adapted miscoverage level; with random
+        # sampling the candidate set is re-drawn each step (so a given row no longer
+        # tracks a fixed control sequence), and the per-row adaptation behaves as a
+        # noisy global adaptation. alpha_t is sized to the sampled path count.
+        self.n_paths = int(n_paths)
+        self.rng = np.random.default_rng(int(seed))
+        self.last_best_vels = None  # warm-start storage
 
-        n_points = 9
-
-        n_paths = n_points ** n_decision_epochs
-
-        self.alpha_t = miscoverage_level * np.ones((n_paths, n_steps))
+        self.alpha_t = miscoverage_level * np.ones((self.n_paths, n_steps))
 
         self.n_skip = n_skip
 
@@ -152,6 +157,7 @@ class EgocentricCPMPC:
                 'quantiles': quantiles}
         else:
             path, vel, cost = self.score_paths(safe_paths, vels, goal)
+            self.last_best_vels = vel  # warm-start the next sampling step
 
             info = {
                 'feasible': True,
@@ -382,65 +388,21 @@ class EgocentricCPMPC:
             n_skip=5
     ):
         """
-        Generate multiple paths starting at (x, y, theta) = (0, 0, 0)
+        Sample random control sequences and roll out unicycle dynamics.
+
+        Uses the same sampling-based ("MPPI-style") rollout as FunctionalCPMPC so the
+        action search matches the proposed method instead of the legacy 3x3 (v, w) grid.
+        The number of returned paths is fixed at ``self.n_paths`` so it stays aligned
+        with the per-path ``alpha_t`` buffer used by the egocentric ACI update.
         """
-
-        # TODO: Employing pruning techniques would reduce the number of the paths, but would be also challenging to optimize...
-        # TODO: use numba?
-        # physical parameters
-        dt = self._dt
-        # velocity & acceleration ranges
-
-        linear_xs = np.array([self.min_linear_x, .0, self.max_linear_x])
-        angular_zs = np.array([self.min_angular_z, .0, self.max_angular_z])
-
-        n_points = linear_xs.size * angular_zs.size
-
-        linear_xs, angular_zs = np.meshgrid(linear_xs, angular_zs)
-
-        linear_xs = np.reshape(linear_xs, newshape=(-1,))
-        angular_zs = np.reshape(angular_zs, newshape=(-1,))
-
-        # (# grid points, 2)
-        # velocity_profile = np.stack((linear_xs, angular_zs), axis=0)
-
-        n_decision_epochs = self._n_steps // n_skip
-
-        # profiles = [velocity_profile for _ in range(n_decision_epochs)]
-
-        # n_paths = n_points ** n_decision_epochs
-
-        state_shape = tuple(n_points for _ in range(n_decision_epochs)) + (self._n_steps + 1,)
-        x = np.zeros(state_shape)
-        y = np.zeros(state_shape)
-        th = np.zeros(state_shape)
-
-        # state initialization
-        x[..., 0] = pos_x
-        y[..., 0] = pos_y
-        th[..., 0] = orientation_z
-
-        control_shape = tuple(n_points for _ in range(n_decision_epochs)) + (self._n_steps,)
-        v = np.zeros(control_shape)
-        w = np.zeros(control_shape)
-
-        for e in range(n_decision_epochs):
-            augmented_shape = [1] * n_decision_epochs
-            augmented_shape[e] = -1
-            v_epoch = linear_xs.reshape(augmented_shape)
-            w_epoch = angular_zs.reshape(augmented_shape)
-            for t in range(e * n_skip, (e + 1) * n_skip):
-                v[..., t] = v_epoch
-                w[..., t] = w_epoch
-
-                x[..., t + 1] = x[..., t] + dt * v_epoch * np.cos(th[..., t])
-                y[..., t + 1] = y[..., t] + dt * v_epoch * np.sin(th[..., t])
-                th[..., t + 1] = th[..., t] + dt * w_epoch
-
-        x = np.reshape(x, (-1, self._n_steps + 1))
-        y = np.reshape(y, (-1, self._n_steps + 1))
-        # th = np.reshape(th, (-1, self._n_steps))
-        v = np.reshape(v, (-1, self._n_steps))
-        w = np.reshape(w, (-1, self._n_steps))
-
-        return np.stack((x, y), axis=-1), np.stack((v, w), axis=-1)
+        return sample_random_paths(
+            pos_x, pos_y, orientation_z,
+            n_steps=self._n_steps,
+            n_skip=n_skip,
+            dt=self._dt,
+            min_v=self.min_linear_x, max_v=self.max_linear_x,
+            min_w=self.min_angular_z, max_w=self.max_angular_z,
+            n_paths=self.n_paths,
+            rng=self.rng,
+            last_best_vels=self.last_best_vels,
+        )
