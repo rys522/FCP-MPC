@@ -166,30 +166,40 @@ You only need, per scene/video: `annotations.txt` (+ `reference.jpg`). `deathCir
 roundabout; `hyang`/`gates` are intersections — these have the fixed curved geometry that
 open ETH-UCY sidewalks lack.
 
-### Download (recommended: flclain mirror — small, no 69 GB videos)
-Primary: clone the annotations+reference mirror (all 8 scenes incl. `deathCircle`
-roundabout, `hyang`/`gates` intersections; pixel coords; standard SDD format):
+### Download (recommended: OpenTraj's SDD zip — cited, MIT, single file, no account)
+OpenTraj (Amirian et al., ACCV 2020; MIT) is the community-standard trajectory-benchmark
+toolkit. It ships loaders, not raw data, and points to a single SDD annotations zip
+(annotations + reference images; NOT the 69 GB videos):
 ```bash
-git clone https://github.com/flclain/StanfordDroneDataset sdd_data
+mkdir -p sdd_data && cd sdd_data
+curl -L "https://www.dropbox.com/s/v9jvt4ln7t42m6m/StanfordDroneDataset.zip?dl=1" -o sdd.zip
+unzip -q sdd.zip && rm sdd.zip && cd ..
 ```
-Optional upgrade — **constrained-SDD** (explicit per-scene polygon constraints for
-building/obstacle/offroad; lets you correlate uncertainty with *distance-to-constraint*,
-a cleaner geometric feature than turning): `pip install constrained-sdd`
-(`csdd.ConstrainedStanfordDroneDataset`, `get_trajectory_prediction_dataset`). Needs a
-small custom loader (its API differs from annotation.txt). Treat as supplementary.
+Unzips to the standard SDD layout (all 8 scenes incl. `deathCircle` roundabout,
+`hyang`/`gates` intersections; pixel coords; FPS 30). Our parser auto-finds it — no need
+to install the OpenTraj toolkit. Fallbacks: `git clone
+https://github.com/flclain/StanfordDroneDataset sdd_data` (smaller, unofficial, no
+license) or OpenTraj's own `opentraj/toolkit/loaders/loader_sdd.py`.
 
-**Citations** (cold take: don't hang a load-bearing claim on a niche derived set):
-- Original SDD (always cite): Robicquet, Sadeghian, Alahi, Savarese, *Learning Social
-  Etiquette: Human Trajectory Understanding in Crowded Scenes*, ECCV 2016.
+Optional upgrade — **constrained-SDD** (april-tools; explicit polygon constraints for
+building/obstacle/offroad → correlate uncertainty with *distance-to-constraint*, a cleaner
+geometric feature than turning): `pip install constrained-sdd`
+(`csdd.ConstrainedStanfordDroneDataset`, `get_trajectory_prediction_dataset`). Needs a
+small custom loader; treat as supplementary.
+
+**Citations** (cold take: keep the load-bearing claim on standard SDD):
+- Original SDD (always): Robicquet, Sadeghian, Alahi, Savarese, *Learning Social Etiquette:
+  Human Trajectory Understanding in Crowded Scenes*, ECCV 2016.
+- OpenTraj (if you use its zip/toolkit): Amirian, Zhang, Castro, Baldelomar, Hayet, Pettré,
+  *OpenTraj: Assessing Prediction Complexity in Human Trajectories Datasets*, ACCV 2020.
 - constrained-SDD (only if used): Kurscheidt, Morettin, Sebastiani, Passerini, Vergari,
   *A Probabilistic Neuro-symbolic Layer for Algebraic Constraint Satisfaction*,
   arXiv:2503.19466 (2025) + the april-tools/constrained-sdd repo.
-Recommendation: use standard SDD (flclain) as primary; constrained-SDD only as extra
-evidence.
 
-**The analysis auto-finds the data.** Point `--data-dir` at the clone; it globs
+**The analysis auto-finds the data.** Point `--data-dir` at `sdd_data`; it globs
 `**/annotation*.txt` (works for both `annotation.txt` and `annotations.txt`, any nesting)
-and locates a nearby `reference.jpg/png`.
+and locates a nearby `reference.jpg/png`. After downloading, sanity-check: per-scene track
+counts plausible, coordinates within the reference-image size, reference image present.
 
 ### 1) Spatial-uncertainty analysis + control check (already hardened)
 `analyze_spatial_uncertainty_ext.py` already applies the controls ETH-UCY failed
