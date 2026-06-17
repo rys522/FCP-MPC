@@ -1,7 +1,24 @@
+# Pinned to the working `cp` conda env. Covers both the 2D (ETH-UCY) and the
+# 3D (PyBullet quadrotor) experiments.
 
-matplotlib==3.9.4
-numpy==2.0.2
+# --- core numerics / ML / plotting (used everywhere) ---
+numpy==2.2.6
 scipy==1.13.1
 scikit-learn==1.6.1
+matplotlib==3.10.8
 opencv-python==4.11.0.86
 
+# --- 3D simulation environment (quad_env.py / sim_*_3d.py) ---
+pybullet==3.2.5
+gymnasium==1.2.3
+gym-pybullet-drones==2.0.0
+
+# --- 3D logging / image + figure utilities ---
+rerun-sdk==0.28.2
+scikit-image==0.25.2
+Pillow==12.1.0
+
+# --- data wrangling / extra plotting ---
+pandas==2.3.3
+seaborn==0.13.2
+joblib==1.5.2
