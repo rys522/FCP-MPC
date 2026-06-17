@@ -1,5 +1,10 @@
-# Pinned to the working `cp` conda env. Covers both the 2D (ETH-UCY) and the
-# 3D (PyBullet quadrotor) experiments.
+# Pinned to the working `cp` conda env (Python 3.10). Covers both the 2D (ETH-UCY)
+# and the 3D (PyBullet quadrotor) experiments.
+#
+#   pip install -r requirements.txt
+#
+# gym-pybullet-drones is installed straight from its git commit (not on PyPI at this
+# version); the rest are standard PyPI packages. Needs `git` + network for that line.
 
 # --- core numerics / ML / plotting (used everywhere) ---
 numpy==2.2.6
@@ -11,7 +16,7 @@ opencv-python==4.11.0.86
 # --- 3D simulation environment (quad_env.py / sim_*_3d.py) ---
 pybullet==3.2.5
 gymnasium==1.2.3
-gym-pybullet-drones==2.0.0
+gym-pybullet-drones @ git+https://github.com/utiasDSL/gym-pybullet-drones.git@a8c238c21c7586ee1735bafb358a4d5637402f14
 
 # --- 3D logging / image + figure utilities ---
 rerun-sdk==0.28.2
