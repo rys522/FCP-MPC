@@ -120,8 +120,7 @@ def main():
              rows=np.array(rows, dtype=object), cross=np.array(cross, dtype=object))
     _write_csv(rows, cross)
     _write_tex(rows, cross)
-    _write_reliability_table(rows)
-    _write_reliability(rows)
+    _write_reliability_table(rows)   # reliability is reported as a TABLE, not a figure
 
 
 def _write_csv(rows, cross):

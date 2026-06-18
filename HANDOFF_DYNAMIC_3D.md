@@ -1,7 +1,7 @@
 # Handoff — re-run 3D on desktop (overnight OK)
 
-Continue via `git pull` (env `cp`). The 2D experiments + coverage are being re-run on the
-laptop; **this handoff is only the 3D re-run** with the corrected FCP envelope.
+Continue via `git pull` (env `cp`). The 2D experiments are re-run on the laptop;
+**this handoff is only the 3D re-run** with the corrected FCP envelope.
 
 ## What changed (committed)
 The FCP envelope was rewritten and is now shared by 2D and 3D:
@@ -14,13 +14,18 @@ The FCP envelope was rewritten and is now shared by 2D and 3D:
   the two conformal steps uses level α; lower-tail λ quantile.)
 - **Horizon-dependent clearance relaxation** re-added to the controllers (`func_cp_mpc.py`,
   `func_3d_mpc.py`; hard filter + soft penalty): the required clearance is relaxed by
-  `Δ_t = ½·a_lat·(t·Δt)²` (`a_lat = v_max·max|yaw_rate|`). `Δ_0 = 0`, so the applied/1-step keeps
+  `Δ_t = ½·a_lat·(t·Δt)²` (a_lat: 2D = v_max·ω_max [unicycle centripetal]; **3D = g·tan(tilt_max)
+  ≈ 5.66 m/s²** [drone translates laterally without yaw]). `Δ_0 = 0`, so the applied/1-step keeps
   full clearance (relaxation acts only for t≥1) and the **i=1 closed-loop guarantee is
   unaffected**. Rationale: rejecting a path because a probability-dependent bound flags it
   unsafe many steps ahead — a step that is re-planned and still evadable — is over-conservative.
   (Avoid the term "ICS", which usually denotes a tightening/avoid notion.)
 - **Online AFCP** is now a scalar radius-multiplier `c` via ACI (2D only; 3D is offline, so its
   online adapter is unused).
+- **Projection-residual ε kept** (`proj_residual=True`): ε = conformal sup-norm quantile of the
+  truncation, so the envelope covers the FULL field (not just the projection). It is
+  data-determined (~1.0) and not shrunk; any over-conservatism is handled by the clearance
+  relaxation, not by lowering ε.
 - **p_base = 5** everywhere (diagnostic: higher p ⇒ *more* conservative support function; ε is
   small and ≈p-independent; 5 is a good middle, consistent with the L3 "5–7 PCs" story).
 
@@ -42,5 +47,8 @@ The FCP envelope was rewritten and is now shared by 2D and 3D:
 ## Notes
 - **Do NOT touch the commented-out Math-Setup blocks in `main.tex`** (owner is reconciling the
   theory section separately).
-- 2D (laptop): coverage/reliability + 2D experiment tables are regenerated with the same
+- Coverage/reliability tables are **dropped** from the paper: with the valid (conservative)
+  envelope, empirical coverage is ~100% everywhere → uninformative; safety is evidenced by the
+  closed-loop collision rates instead.
+- 2D (laptop): 2D experiment tables are regenerated with the same
   envelope; the paper's 2D numbers come from there.
