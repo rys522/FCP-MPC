@@ -13,6 +13,7 @@ does). Conda env `cp` for everything. The dynamic-env 3D run itself is **done**
    spatial-uncertainty analysis and check the CONTROLLED gate → if SUPPORTED, run the SDD
    navigation benchmark → update `main.tex`. write the code and execute it and save the figure and/or tables to be used in the paper.
 4. Fix the **2D-table propagation** caveat so the paper shows the MPPI 2D numbers.
+5. **§5 (NEW)** Regenerate the 3D table with **mean±std over the 17 seeds** — see §5.
 Each section below is self-contained with exact commands and what to verify/commit.
 
 ---
@@ -277,3 +278,33 @@ and the tracked `sdd_*_{diag,overlay,cells}` outputs + `sdd_all_analysis.log`.
 - Push the two commits (`git push origin main`).
 - SDD nav benchmark: confirm metre-scale source + CV-vs-trained forecaster, then it can run.
 - main.tex: approve the L2/L3 figures/snippet from `SDD_FINDINGS.md`.
+
+---
+
+## 5) 3D table with mean±std over 17 seeds  (NEW — needs the desktop's full per-seed data)
+
+**Why this is here:** the laptop only has a degenerate `metric_3d/results_3d.{csv,json}`
+(seed 25, all-zero) + a few `table3d.csv` fcp seeds — **not** the real 17-seed × 5-method
+run that produced the current `T_RO2026/table_3d_results.tex`. Std must be computed where
+that data lives (this desktop).
+
+**Code is already prepared.** `make_3d_results.py::write_latex_table` now emits
+`mean$\pm$std` for **collision rate, infeasible rate, and steps-to-goal** (std shown only
+when >1 seed; bolding still compares means). Ctrl-time stays a single pooled mean.
+
+**Do:**
+1. Re-run the full 17-seed dense run: `python make_3d_results.py` (env `cp`). This
+   regenerates `T_RO2026/table_3d_results.tex` **with ±std** from the in-memory per-seed
+   metrics, plus `metric_3d/results_3d.{csv,json}`.
+2. Apply the **same ±std treatment to the sparse table** (`table_3d_sparse.tex`): whatever
+   script writes it (`run_sparse_3d.py` / its table writer) should mirror the
+   `_steps_cell` / `_fpm` changes in `make_3d_results.py` (collision, infeasible, steps as
+   mean±std). If it shares `write_latex_table`, it's already done — just verify.
+3. In `main.tex`, the two 3D table captions (`tab:pybullet_results`,
+   `tab:results_sparse`) should say **"mean $\pm$ std over 17 seeds"** (currently
+   "averaged over 17 seeds"). One-line caption edit each.
+4. Rebuild `main.tex`, eyeball that `lcccc` still fits (it's a `table*`, full width —
+   `0.044\pm0.021` etc. fit fine), commit.
+
+**2D std:** intentionally NOT added — only n=3 scenes/dataset (univ n=1), so std is too
+noisy to be meaningful; the coverage table already carries ±std (see `make_coverage_table.py`).

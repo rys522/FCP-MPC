@@ -762,17 +762,8 @@ class FunctionalCPMPC:
                 if self.CP:
                     U_vec = self.evaluate_U_batch(x_t, t)  # (Palive,)
                     d_lower = np.maximum(d_nom - U_vec, 0.0)
-                
-                # ICS relaxation
 
-                a_lat_max = self.max_v * self.max_w
-                
-                elapsed_time = t * self.dt
-                delta_evade = 0.5 * a_lat_max * (elapsed_time ** 2)
-                
-                effective_r_safe = max(0.0, self.safe_rad - delta_evade)
-
-                hit = d_lower < effective_r_safe
+                hit = d_lower < self.safe_rad
 
                 if np.any(hit):
                     idx_alive = np.flatnonzero(alive)      # indices in [0,P)
@@ -937,12 +928,7 @@ class FunctionalCPMPC:
                     else:
                         d_lower = d_nom
 
-                    # ICS-relaxed effective safety radius
-                    a_lat_max = self.max_v * self.max_w
-                    delta_evade = 0.5 * a_lat_max * (t * self.dt) ** 2
-                    effective_r_safe = max(0.0, self.safe_rad - delta_evade)
-
-                    violation = np.maximum(0.0, effective_r_safe - d_lower)
+                    violation = np.maximum(0.0, self.safe_rad - d_lower)
                     safety_pen += violation ** 2
 
                 total_cost = total_cost + self.weights.w_safety * safety_pen

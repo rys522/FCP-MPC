@@ -267,8 +267,11 @@ def _steps_cell(rs, max_steps):
     break_on_collision / floor contact)."""
     reached = [m for m in rs if m["reached_goal"]]
     if reached:
-        v = float(np.mean([m["steps"] for m in reached]))
-        return f"{v:.1f}", v
+        vs = [m["steps"] for m in reached]
+        v = float(np.mean(vs))
+        sd = float(np.std(vs))
+        cell = f"${v:.1f}\\pm{sd:.1f}$" if len(vs) > 1 else f"{v:.1f}"
+        return cell, v
     n_timeout = sum(1 for m in rs if m["steps"] >= max_steps)
     return ("timeout" if n_timeout * 2 >= len(rs) else "crashed"), None
 
@@ -293,12 +296,14 @@ def write_latex_table(outcome_results, clean_ctrl):
             continue
         ct = clean_ctrl.get(label, {})
         steps_str, steps_val = _steps_cell(rs, max_steps)
+        coll_v = [m["collision_rate"] for m in rs]
+        infeas_v = [m["infeas_rate"] for m in rs]
         rows[label] = dict(
-            coll=float(np.mean([m["collision_rate"] for m in rs])),
-            infeas=(None if label in SOFT_INFEAS_NA
-                    else float(np.mean([m["infeas_rate"] for m in rs]))),
+            coll=float(np.mean(coll_v)), coll_std=float(np.std(coll_v)),
+            infeas=(None if label in SOFT_INFEAS_NA else float(np.mean(infeas_v))),
+            infeas_std=(None if label in SOFT_INFEAS_NA else float(np.std(infeas_v))),
             ctrl=ct.get("ctrl_mean_ms", float("nan")),
-            steps_str=steps_str, steps_val=steps_val,
+            steps_str=steps_str, steps_val=steps_val, n=len(rs),
         )
 
     def _best(key):
@@ -317,6 +322,14 @@ def write_latex_table(outcome_results, clean_ctrl):
         s = fmt.format(v)
         return rf"\textbf{{{s}}}" if is_best else s
 
+    def _fpm(label, key, nd, is_best):
+        """mean$\pm$std cell (std only when more than one seed)."""
+        m = rows[label][key]
+        sd = rows[label].get(key + "_std")
+        body = f"{m:.{nd}f}" if (sd is None or rows[label]['n'] <= 1) else f"{m:.{nd}f}\\pm{sd:.{nd}f}"
+        s = f"${body}$"
+        return rf"\textbf{{{s}}}" if is_best else s
+
     lines = [r"\begin{tabular}{lcccc}", r"\hline",
              "Method &", r"Collision rate $\downarrow$ &",
              r"Infeasible rate $\downarrow$ &", r"Steps to goal $\downarrow$ &",
@@ -328,10 +341,10 @@ def write_latex_table(outcome_results, clean_ctrl):
         steps = (rf"\textbf{{{r['steps_str']}}}" if label == best_steps
                  else r["steps_str"])
         infeas_cell = ("N/A" if r["infeas"] is None
-                       else _f(label, "infeas", "{:.3f}", label == best_infeas))
+                       else _fpm(label, "infeas", 3, label == best_infeas))
         lines += [
             f"{label}{TABLE_CITE.get(label, '')}",
-            f"& {_f(label, 'coll', '{:.3f}', label == best_coll)}",
+            f"& {_fpm(label, 'coll', 3, label == best_coll)}",
             f"& {infeas_cell}",
             f"& {steps}",
             rf"& {_f(label, 'ctrl', '{:.1f}', label == best_ctrl)} \\",
