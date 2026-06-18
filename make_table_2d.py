@@ -21,17 +21,17 @@ OUT_ABLATION_TEX = "table_2d_ablation.tex" # FCP-MPC internal ablation: online a
 DATASETS = ["eth", "hotel", "univ", "zara1", "zara2"]   # standard ETH-UCY order
 
 # ---- Main results table ----
-# Baselines keep their \cite; FCP rows are our full method, i.e. the *adaptive*
-# (online-updated) envelope, shown for the hard and soft constraint modes.
-# The fixed/adaptive breakdown lives in the ablation table below, so the main
-# table stays compact (5 rows/dataset instead of 7).
+# Baselines keep their \cite; FCP rows are the core method = the *offline-calibrated*
+# (non-adaptive) envelope, shown for the hard and soft constraint modes. Online
+# adaptation is an optional add-on, so its effect is isolated in the ablation table
+# below; the main table compares like-for-like (offline envelopes) and stays compact.
 # Ordered by development year: ACP (2023), CC (2024), ECP (2025), FCP (ours, 2026).
 MAIN_CONTROLLERS = [
-    ("acp-mpc",           r"ACP-MPC~\cite{dixit2023adaptive}"),
-    ("cc",                r"CC-MPC~\cite{lekeufack2024decision}"),
-    ("ecp-mpc",           r"ECP-MPC~\cite{shin2025egocentric}"),
-    ("fcp-hard-adaptive", r"FCP-MPC (hard)"),
-    ("fcp-soft-adaptive", r"FCP-MPC (soft)"),
+    ("acp-mpc",              r"ACP-MPC~\cite{dixit2023adaptive}"),
+    ("cc",                   r"CC-MPC~\cite{lekeufack2024decision}"),
+    ("ecp-mpc",              r"ECP-MPC~\cite{shin2025egocentric}"),
+    ("fcp-hard-nonadaptive", r"FCP-MPC (hard)"),
+    ("fcp-soft-nonadaptive", r"FCP-MPC (soft)"),
 ]
 
 # ---- Ablation table: effect of online coefficient adaptation ----
