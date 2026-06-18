@@ -654,7 +654,11 @@ class FunctionalCPMPC3D:
             else:
                 U_vals = np.zeros((x_t.shape[0],), dtype=np.float32)
 
-            unsafe_t = (dists - U_vals) < self.safe_rad
+            # Horizon-dependent clearance relaxation at far-horizon steps (Delta_0 = 0 keeps
+            # the applied/1-step at full clearance; the bound U is untouched).
+            delta_evade = 0.5 * (self.vmax * max(abs(self.wmin), abs(self.wmax))) * (t * self.dt) ** 2
+            eff_safe = max(0.0, self.safe_rad - delta_evade)
+            unsafe_t = (dists - U_vals) < eff_safe
             unsafe[check_idxs] |= unsafe_t
 
         safe_mask = ~unsafe
@@ -681,7 +685,9 @@ class FunctionalCPMPC3D:
             x_t = paths[:, t + 1, :].astype(np.float32, copy=False)
             dists = np.min(np.linalg.norm(x_t[:, None, :] - obs_pts[None, :, :], axis=-1), axis=1)
             U_vals = self.evaluate_U_batch(x_t, t) if self.CP else np.zeros(P, dtype=np.float32)
-            viol = np.maximum(0.0, self.safe_rad - (dists - U_vals))
+            delta_evade = 0.5 * (self.vmax * max(abs(self.wmin), abs(self.wmax))) * (t * self.dt) ** 2
+            eff_safe = max(0.0, self.safe_rad - delta_evade)
+            viol = np.maximum(0.0, eff_safe - (dists - U_vals))
             pen += (viol * viol).astype(np.float32)
         return pen
 

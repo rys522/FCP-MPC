@@ -786,7 +786,14 @@ class FunctionalCPMPC:
                     U_vec = self.evaluate_U_batch(x_t, t)  # (Palive,)
                     d_lower = np.maximum(d_nom - U_vec, 0.0)
 
-                hit = d_lower < self.safe_rad
+                # Horizon-dependent clearance relaxation of the *clearance* (not the bound):
+                # far-horizon steps are re-planned, so we relax the required clearance by the
+                # lateral displacement the robot can still realize over the t steps remaining
+                # (Delta_0 = 0, so the applied/1-step keeps full clearance and the i=1
+                # guarantee is unaffected; relaxation only acts for t>=1, i.e. >=2 steps ahead).
+                delta_evade = 0.5 * (self.max_v * self.max_w) * (t * self.dt) ** 2
+                effective_r_safe = max(0.0, self.safe_rad - delta_evade)
+                hit = d_lower < effective_r_safe
 
                 if np.any(hit):
                     idx_alive = np.flatnonzero(alive)      # indices in [0,P)
@@ -951,7 +958,9 @@ class FunctionalCPMPC:
                     else:
                         d_lower = d_nom
 
-                    violation = np.maximum(0.0, self.safe_rad - d_lower)
+                    delta_evade = 0.5 * (self.max_v * self.max_w) * (t * self.dt) ** 2
+                    effective_r_safe = max(0.0, self.safe_rad - delta_evade)
+                    violation = np.maximum(0.0, effective_r_safe - d_lower)
                     safety_pen += violation ** 2
 
                 total_cost = total_cost + self.weights.w_safety * safety_pen

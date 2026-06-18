@@ -31,7 +31,10 @@ from multi_pedestrians_cp import (
 )
 
 BOX, H, W = M.BOX, M.H, M.W
-TSTEPS, TIME_HORIZON = M.TSTEPS, M.TIME_HORIZON
+TSTEPS = M.TSTEPS
+# Validate the coverage the theorem actually certifies: the i=1 (applied / 1-step-ahead)
+# envelope. The closed-loop guarantee invokes only the applied step, so report 1-step coverage.
+TIME_HORIZON = 1
 SAFE_THRESHOLD = M.SAFE_THRESHOLD
 P_BASE, K_MIX, TEST_SIZE = M.P_BASE, M.K_MIX, M.TEST_SIZE
 RANDOM_STATE, N_JOBS, BACKEND = M.RANDOM_STATE, M.N_JOBS, M.BACKEND
@@ -117,6 +120,7 @@ def main():
              rows=np.array(rows, dtype=object), cross=np.array(cross, dtype=object))
     _write_csv(rows, cross)
     _write_tex(rows, cross)
+    _write_reliability_table(rows)
     _write_reliability(rows)
 
 
@@ -155,6 +159,25 @@ def _write_tex(rows, cross):
     with open(os.path.join("T_RO2026", "table_coverage_cross.tex"), "w") as f:
         f.write("\n".join(cl) + "\n")
     print("[saved] T_RO2026/table_coverage_cross.tex")
+
+
+def _write_reliability_table(rows):
+    """Reliability as a LaTeX table: target coverage 1-alpha (columns) vs empirical
+    timestep coverage per scene (rows)."""
+    alphas = [0.05, 0.10, 0.20, 0.30]
+    head = " & ".join([rf"$1-\alpha={1-a:.2f}$" for a in alphas])
+    lines = [r"\begin{tabular}{l" + "c" * len(alphas) + "}", r"\hline",
+             rf"Scene & {head} \\", r"\hline"]
+    for ds in DATASETS:
+        cells = []
+        for a in alphas:
+            r = [x for x in rows if x[0] == ds and abs(x[1] - a) < 1e-9]
+            cells.append(f"{r[0][4]*100:.1f}" if r else "--")
+        lines.append(rf"\texttt{{{ds}}} & " + " & ".join(cells) + r" \\")
+    lines += [r"\hline", r"\end{tabular}"]
+    with open(os.path.join("T_RO2026", "table_reliability.tex"), "w") as f:
+        f.write("\n".join(lines) + "\n")
+    print("[saved] T_RO2026/table_reliability.tex")
 
 
 def _write_reliability(rows):

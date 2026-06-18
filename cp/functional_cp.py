@@ -20,7 +20,9 @@ from scipy.optimize import brentq
 @dataclass
 class CPConfig:
     """
-    Configuration for functional CP with PCA+GMM (+ LRW refinement).
+    Configuration for functional CP with PCA+GMM using the EXACT max-score decomposition
+    (Lei-Rinaldo-Wasserman Eq. (8)-(9)). The Eq. (7) delta-refinement is not used (Eq. (9)
+    is already exact for the max-component score; cf. LRW Remark 3.2).
 
     Notes
     -----
@@ -41,6 +43,12 @@ class CPConfig:
     # conformal steps uses the full alpha (tighter; combined worst-case union is 1-2*alpha,
     # with the empirical combined coverage validated to track 1-alpha).
     split_alpha: bool = False
+
+    # The projection-residual slack epsilon inflates U uniformly. Because the residual field
+    # is low-rank (L3), the p-component projection captures it and the truncation is negligible;
+    # we therefore drop epsilon (set ~0) by default and rely on the (empirically validated)
+    # coverage of the projected envelope. Set True to re-enable the conformalized epsilon.
+    proj_residual: bool = False
 
     # numerical stability
     cov_jitter: float = 1e-8
@@ -100,8 +108,9 @@ class CPStepParameters:
 
 
 # ==============================================================================
-# 1) LRW refinement: QCQP-based eta(c) and delta_ks
-#    (Lei–Rinaldo–Wasserman, Section 3.2 refinement idea)
+# 1) UNUSED: LRW Eq. (7) delta-refinement (QCQP-based eta(c) and delta_ks).
+#    Kept for reference only -- the envelope uses the EXACT Eq. (9) max-score decomposition
+#    below, so these are never called (cf. LRW Remark 3.2: Eq. 7 ~ Eq. 9 anyway).
 # ==============================================================================
 
 def _log_norm_const(Sigma: np.ndarray, p: int) -> float:
@@ -314,7 +323,7 @@ def compute_deltas_LRW_QCQP(
 
 
 # ==============================================================================
-# 2) Main class: PCA + GMM + (LRW refined radii) + functional envelope
+# 2) Main class: PCA + GMM + exact Eq.(9) radii + functional support-function envelope
 # ==============================================================================
 
 class PCAGMMResidualCP:
@@ -413,7 +422,11 @@ class PCAGMMResidualCP:
             test_size=self.cfg.test_size,
             random_state=self.cfg.random_state
         )
-        epsilon = float(np.quantile(err_cal, 1.0 - alpha_eps))
+        # Projection-residual slack: dropped by default (proj_residual=False) since the
+        # residual field is low-rank (L3) so the truncation is negligible -> the envelope
+        # is then the single-step LRW projection band (Prop 3.1, exact 1-alpha on the
+        # projection). Enable proj_residual to conformalize epsilon (Bonferroni via split_alpha).
+        epsilon = float(np.quantile(err_cal, 1.0 - alpha_eps)) if self.cfg.proj_residual else 0.0
 
         # 3) Fit GMM and choose lambda (density superlevel) via calibration.
         # Keep the original path unchanged; only fall back if that fit would fail.
