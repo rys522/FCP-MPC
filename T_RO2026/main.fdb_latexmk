@@ -1,13 +1,13 @@
 # Fdb version 4
-["bibtex main"] 1781756947.63568 "main.aux" "main.bbl" "main" 1781756949.01937 0
-  "./reference.bib" 1781755504.25557 13009 7e87f4f534a80544afd0499f1bcb1f23 ""
+["bibtex main"] 1781765211.97612 "main.aux" "main.bbl" "main" 1781765244.54649 0
+  "./reference.bib" 1781764981.10001 15933 99d655f81ce2eacbc1e1d4490feaad6a ""
   "/usr/local/texlive/2025/texmf-dist/bibtex/bst/ieeetran/IEEEtran.bst" 1440712899 57748 7c8250ecf02814ce6ddc0cdbb63df1dd ""
-  "main.aux" 1781756948.79181 28735 b6e57a14229e55e44189cdf87f07e912 "pdflatex"
+  "main.aux" 1781765214.48409 28455 7bbb3f805684c95d50c22906b68e21b9 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1781756947.71165 "main.tex" "main.pdf" "main" 1781756949.01951 0
+["pdflatex"] 1781765212.22281 "main.tex" "main.pdf" "main" 1781765244.56952 0
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -246,13 +246,13 @@
   "control_time_3d.png" 1781752650.53332 101376 59de4fc470fcbd0122c7a0cb83c60da9 ""
   "fcp_lowrank_fpca.png" 1781754385.16168 77480 4befc2de24341b2b42c8c4d8b31cfd80 ""
   "fcp_stationarity_split.png" 1781752650.53391 101747 022236a4997afbbeb6e0a28c0032b628 ""
-  "main.aux" 1781756948.79181 28735 b6e57a14229e55e44189cdf87f07e912 "pdflatex"
-  "main.bbl" 1781756947.70925 9242 5cf8c0a4f91cca991c378c6b4172de74 "bibtex main"
-  "main.out" 1781756948.79307 6509 f97999dd5c138891b351bcf0efe26eb2 "pdflatex"
-  "main.tex" 1781756931.39948 93463 76d1598e298ad721dae429c54d501062 ""
+  "main.aux" 1781765214.48409 28455 7bbb3f805684c95d50c22906b68e21b9 "pdflatex"
+  "main.bbl" 1781765212.21458 9823 9510afd87764c808b45335259a3d39cb "bibtex main"
+  "main.out" 1781765214.48629 6175 6772767b8f2419974f7c7bc68580be30 "pdflatex"
+  "main.tex" 1781765165.11499 97157 c4dc32962881c9e6e19a97b446d27a15 ""
   "multi_obs_H2.png" 1781224172 103040 f5acdbb4d39c21c0518c2e4490786301 ""
-  "table_2d_ablation.tex" 1781700679.56506 1494 0dbf695848d4c2042ddab963c66d99b7 ""
-  "table_2d_results.tex" 1781700679.56349 2005 9d11f6c5b38c5d1437a2640c39d602d0 ""
+  "table_2d_ablation.tex" 1781759051.27341 1524 93a9883926c688330774e67176b99e27 ""
+  "table_2d_results.tex" 1781759051.27333 2008 9acc613c8175df2d5f15f84792548252 ""
   "table_3d_results.tex" 1781752650.53435 532 e8bce6ec5208cda2e70c848be86a473c ""
   "table_3d_sparse.tex" 1781752650.53455 528 b89fd3bdc0152bd652d5b4c1c75cb43b ""
   "traj_2d.png" 1781684291.7442 177297 493eb93be1ed27f05a0cb2c4edea4cca ""

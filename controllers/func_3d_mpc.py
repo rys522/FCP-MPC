@@ -246,6 +246,9 @@ class FunctionalCPMPC3D:
         self.robot_rad = float(robot_rad)
         self.obstacle_rad = float(obstacle_rad)
         self.safe_rad = self.robot_rad + self.obstacle_rad
+        # Quadrotor max lateral acceleration for the clearance relaxation: a drone translates
+        # sideways without yawing, so a_lat = g*tan(tilt_max) (tilt_max ~ 30 deg), NOT v*yaw_rate.
+        self.a_lat = 9.81 * 0.5774  # ~5.66 m/s^2
 
         self.vmin, self.vmax = map(float, v_lim)
         self.wmin, self.wmax = map(float, yaw_rate_lim)
@@ -656,7 +659,7 @@ class FunctionalCPMPC3D:
 
             # Horizon-dependent clearance relaxation at far-horizon steps (Delta_0 = 0 keeps
             # the applied/1-step at full clearance; the bound U is untouched).
-            delta_evade = 0.5 * (self.vmax * max(abs(self.wmin), abs(self.wmax))) * (t * self.dt) ** 2
+            delta_evade = 0.5 * self.a_lat * (t * self.dt) ** 2
             eff_safe = max(0.0, self.safe_rad - delta_evade)
             unsafe_t = (dists - U_vals) < eff_safe
             unsafe[check_idxs] |= unsafe_t
@@ -685,7 +688,7 @@ class FunctionalCPMPC3D:
             x_t = paths[:, t + 1, :].astype(np.float32, copy=False)
             dists = np.min(np.linalg.norm(x_t[:, None, :] - obs_pts[None, :, :], axis=-1), axis=1)
             U_vals = self.evaluate_U_batch(x_t, t) if self.CP else np.zeros(P, dtype=np.float32)
-            delta_evade = 0.5 * (self.vmax * max(abs(self.wmin), abs(self.wmax))) * (t * self.dt) ** 2
+            delta_evade = 0.5 * self.a_lat * (t * self.dt) ** 2
             eff_safe = max(0.0, self.safe_rad - delta_evade)
             viol = np.maximum(0.0, eff_safe - (dists - U_vals))
             pen += (viol * viol).astype(np.float32)

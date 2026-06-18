@@ -66,12 +66,6 @@ D.~S. Sundarsingh, Y.~Li, T.~Tang, G.~J. Pappas, N.~Atanasov, and Y.~Kantaros,
   \emph{IEEE Robotics and Automation Letters}, vol.~11, no.~4, pp. 4921--4928,
   2026.
 
-\bibitem{long2026sensor}
-K.~Long, Y.~Yi, Z.~Dai, S.~Herbert, J.~Cort{\'e}s, and N.~Atanasov,
-  ``Sensor-based distributionally robust control for safe robot navigation in
-  dynamic environments,'' \emph{The International Journal of Robotics
-  Research}, vol.~45, no.~2, pp. 328--351, 2026.
-
 \bibitem{wang2007simultaneous}
 C.-C. Wang, C.~Thorpe, S.~Thrun, M.~Hebert, and H.~Durrant-Whyte,
   ``Simultaneous localization, mapping and moving object tracking,'' \emph{The
@@ -107,10 +101,6 @@ G.~Chen, W.~Dong, P.~Peng, J.~Alonso-Mora, and X.~Zhu, ``Continuous occupancy
   mapping in dynamic environments using particles,'' \emph{IEEE Transactions on
   Robotics}, vol.~40, pp. 64--84, 2023.
 
-\bibitem{mahler2007statistical}
-R.~Mahler, \emph{Statistical Multisource-Multitarget Information Fusion}.\hskip
-  1em plus 0.5em minus 0.4em\relax Artech House, 2007.
-
 \bibitem{park2019deepsdf}
 J.~J. Park, P.~Florence, J.~Straub, R.~Newcombe, and S.~Lovegrove, ``Deepsdf:
   Learning continuous signed distance functions for shape representation,'' in
@@ -122,6 +112,45 @@ J.~Ortiz, A.~Clegg, J.~Dong, E.~Sucar, D.~Novotny, M.~Zollhoefer, and
   M.~Mukadam, ``{iSDF}: Real-time neural signed distance fields for robot
   perception,'' in \emph{Proceedings of Robotics: Science and Systems}, New
   York City, NY, USA, Jun. 2022.
+
+\bibitem{newcombe2011kinectfusion}
+R.~A. Newcombe, S.~Izadi, O.~Hilliges, D.~Molyneaux, D.~Kim, A.~J. Davison,
+  P.~Kohli, J.~Shotton, S.~Hodges, and A.~Fitzgibbon, ``Kinectfusion: Real-time
+  dense surface mapping and tracking,'' in \emph{2011 10th IEEE International
+  Symposium on Mixed and Augmented Reality}.\hskip 1em plus 0.5em minus
+  0.4em\relax IEEE, 2011, pp. 127--136.
+
+\bibitem{salzmann2020trajectron}
+T.~Salzmann, B.~Ivanovic, P.~Chakravarty, and M.~Pavone, ``Trajectron++:
+  Dynamically-feasible trajectory forecasting with heterogeneous data,'' in
+  \emph{Computer Vision -- ECCV 2020}.\hskip 1em plus 0.5em minus 0.4em\relax
+  Springer, 2020, pp. 683--700.
+
+\bibitem{mahler2007statistical}
+R.~Mahler, \emph{Statistical Multisource-Multitarget Information Fusion}.\hskip
+  1em plus 0.5em minus 0.4em\relax Artech House, 2007.
+
+\bibitem{hakobyan2019risk}
+A.~Hakobyan, G.~C. Kim, and I.~Yang, ``Risk-aware motion planning and control
+  using cvar-constrained optimization,'' \emph{IEEE Robotics and Automation
+  letters}, vol.~4, no.~4, pp. 3924--3931, 2019.
+
+\bibitem{fan2021step}
+D.~D. Fan, K.~Otsu, Y.~Kubo, A.~Dixit, J.~Burdick, and A.-A. Agha-Mohammadi,
+  ``Step: Stochastic traversability evaluation and planning for risk-aware
+  off-road navigation,'' \emph{Robotics: Science and Systems XVII}, 2021.
+
+\bibitem{hakobyan2021wasserstein}
+A.~Hakobyan and I.~Yang, ``Wasserstein distributionally robust motion control
+  for collision avoidance using conditional value-at-risk,'' \emph{IEEE
+  Transactions on Robotics}, vol.~38, no.~2, pp. 939--957, 2021.
+
+\bibitem{ryu2024integrating}
+K.~Ryu and N.~Mehr, ``Integrating predictive motion uncertainties with
+  distributionally robust risk-aware control for safe robot navigation in
+  crowds,'' in \emph{2024 IEEE International Conference on Robotics and
+  Automation (ICRA)}.\hskip 1em plus 0.5em minus 0.4em\relax IEEE, 2024, pp.
+  2410--2417.
 
 \bibitem{lei2015conformal}
 J.~Lei, A.~Rinaldo, and L.~Wasserman, ``A conformal prediction approach to
@@ -137,13 +166,6 @@ I.~Gibbs and E.~Cand{\`e}s, ``Adaptive conformal inference under distribution
 L.~Janson, T.~Hu, and M.~Pavone, ``Safe motion planning in unknown
   environments: Optimality benchmarks and tractable policies,'' in
   \emph{Robotics: Science and Systems}, Pittsburgh, PA, USA, Jun. 2018.
-
-\bibitem{newcombe2011kinectfusion}
-R.~A. Newcombe, S.~Izadi, O.~Hilliges, D.~Molyneaux, D.~Kim, A.~J. Davison,
-  P.~Kohli, J.~Shotton, S.~Hodges, and A.~Fitzgibbon, ``Kinectfusion: Real-time
-  dense surface mapping and tracking,'' in \emph{2011 10th IEEE International
-  Symposium on Mixed and Augmented Reality}.\hskip 1em plus 0.5em minus
-  0.4em\relax IEEE, 2011, pp. 127--136.
 
 \bibitem{zhang2020optimization}
 X.~Zhang, A.~Liniger, and F.~Borrelli, ``Optimization-based collision
@@ -161,11 +183,6 @@ R.~Deits and R.~Tedrake, ``Computing large convex regions of obstacle-free
 B.~Yamauchi, ``Frontier-based exploration using multiple robots,'' in
   \emph{Proceedings of the second international conference on Autonomous
   agents}, 1998, pp. 47--53.
-
-\bibitem{fraichard2004inevitable}
-T.~Fraichard and H.~Asama, ``Inevitable collision states --- a step towards
-  safer robots?'' \emph{Advanced Robotics}, vol.~18, no.~10, pp. 1001--1024,
-  2004.
 
 \bibitem{williams2017information}
 G.~Williams, N.~Wagener, B.~Goldfain, P.~Drews, J.~M. Rehg, B.~Boots, and E.~A.
@@ -188,11 +205,5 @@ E.~C. Kerrigan and J.~M. Maciejowski, ``Soft constraints and exact penalty
 J.~Nocedal and S.~J. Wright, \emph{Numerical Optimization}, 2nd~ed., ser.
   Springer Series in Operations Research and Financial Engineering.\hskip 1em
   plus 0.5em minus 0.4em\relax Springer, 2006.
-
-\bibitem{salzmann2020trajectron}
-T.~Salzmann, B.~Ivanovic, P.~Chakravarty, and M.~Pavone, ``Trajectron++:
-  Dynamically-feasible trajectory forecasting with heterogeneous data,'' in
-  \emph{Computer Vision -- ECCV 2020}.\hskip 1em plus 0.5em minus 0.4em\relax
-  Springer, 2020, pp. 683--700.
 
 \end{thebibliography}
