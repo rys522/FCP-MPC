@@ -114,7 +114,7 @@ def compute_metrics(result, dt, max_steps, out_dt_fail_frac=0.10):
         collisions=coll, collision_rate=(coll / steps if steps else 0.0),
         infeasible_steps=infeas, infeas_rate=(infeas / steps if steps else 0.0),
         ctrl_mean_ms=cs["mean"], ctrl_p50_ms=cs["p50"], ctrl_p90_ms=cs["p90"],
-        ctrl_p99_ms=cs["p99"], ctrl_max_ms=cs["max"],
+        ctrl_p99_ms=cs["p99"], ctrl_max_ms=cs["max"], ctrl_n=len(ctrl),
         loop_mean_ms=ls["mean"], loop_p99_ms=ls["p99"], loop_over_dt_rate=over,
     )
 
@@ -198,8 +198,17 @@ def clean_ctrl_by_method(timing_rows, n_obs):
               if r["label"] == label and r["n_obs"] == n_obs]
         if not rs:
             continue
+        # Pooled PER-STEP mean: weight each episode by its number of timed control steps
+        # (ctrl_n), so the reported control time is a per-step average over all control steps
+        # rather than an average of episode means. This is robust to episodes contributing
+        # different step counts (e.g. ECP after warmup steps are excluded), which otherwise
+        # let a single long-surviving seed dominate or a few warmup-only crashes bias it.
+        wpairs = [(m["ctrl_mean_ms"], int(m.get("ctrl_n", 0))) for m in rs
+                  if m.get("ctrl_n", 0) > 0 and not np.isnan(m["ctrl_mean_ms"])]
+        tot_n = sum(n for _, n in wpairs)
+        ctrl_mean = (sum(v * n for v, n in wpairs) / tot_n) if tot_n else float("nan")
         out[label] = {
-            "ctrl_mean_ms": _agg([m["ctrl_mean_ms"] for m in rs]),
+            "ctrl_mean_ms": ctrl_mean,
             "ctrl_p99_ms": _agg([m["ctrl_p99_ms"] for m in rs]),
             "loop_over_dt_rate": _agg([m["loop_over_dt_rate"] for m in rs]),
         }
@@ -337,7 +346,8 @@ def write_latex_table(outcome_results, clean_ctrl):
 def write_scalability(results_all):
     os.makedirs(METRIC_DIR, exist_ok=True)
     cols = ["method", "seed", "n_obs", "status", "steps", "ctrl_mean_ms", "ctrl_p50_ms",
-            "ctrl_p90_ms", "ctrl_p99_ms", "ctrl_max_ms", "loop_mean_ms", "loop_over_dt_rate"]
+            "ctrl_p90_ms", "ctrl_p99_ms", "ctrl_max_ms", "ctrl_n", "loop_mean_ms",
+            "loop_over_dt_rate"]
     with open(SCAL_CSV, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()

@@ -257,9 +257,14 @@ def run_one_episode_ecp_3d_rerun(
             ctrl_ms = (t1 - t0) * 1000.0
             step_ms = (t3 - t2) * 1000.0
             loop_ms = (t3 - t_loop0) * 1000.0
-            timing_ctrl_ms.append(ctrl_ms)
-            timing_step_ms.append(step_ms)
-            timing_loop_ms.append(loop_ms)
+            # Exclude warmup/learning steps from the control-time benchmark: during warmup the
+            # robot is stationary and ECP's online calibration set is still filling, so those
+            # steps are cheap and unrepresentative of steady-state control cost. Counting them
+            # biases the per-step timing downward for episodes that crash during warmup.
+            if k >= int(warmup_steps):
+                timing_ctrl_ms.append(ctrl_ms)
+                timing_step_ms.append(step_ms)
+                timing_loop_ms.append(loop_ms)
         else:
             ctrl_ms = step_ms = loop_ms = 0.0
 

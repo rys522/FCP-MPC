@@ -43,9 +43,19 @@ def main():
     # Nominal MPC is shown in the table but excluded from the scalability plot.
     order = [m for m in ["CC-MPC", "ECP-MPC", "ACP-MPC", "FCP-MPC (ours)"]
              if m in set(df['method_display'])]
+    def _per_step_mean(g):
+        # pooled per-step mean: weight each episode's mean by its number of timed control
+        # steps (ctrl_n) so the curve is a per-step average, consistent with the table and
+        # robust to episodes contributing different step counts (e.g. ECP after warmup).
+        d = g.dropna(subset=['ctrl_mean_ms'])
+        if 'ctrl_n' in d and d['ctrl_n'].sum() > 0:
+            return (d['ctrl_mean_ms'] * d['ctrl_n']).sum() / d['ctrl_n'].sum()
+        return d['ctrl_mean_ms'].mean()
+
     for m in order:
         sub = (df[df['method_display'] == m]
-               .groupby('n_obs')['ctrl_mean_ms'].mean().reset_index().sort_values('n_obs'))
+               .groupby('n_obs').apply(_per_step_mean).reset_index(name='ctrl_mean_ms')
+               .sort_values('n_obs'))
         c, ls, mk, lw, ms = style.get(m, ("0.5", "-", "o", 1.8, 5))
         plt.plot(sub['n_obs'], sub['ctrl_mean_ms'], color=c, linestyle=ls,
                  marker=mk, linewidth=lw, markersize=ms, label=m)
