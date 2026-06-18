@@ -218,7 +218,7 @@ Theorem~\ref{thm:asymptotic_safety_afcp}.
 
 
 
-Let $\mathcal{Q}$ be the configuration space of a robot, and  $\mathrm{x} = \mathrm{x}(\mathrm{q}) \in \mathcal{X} \subseteq \mathbb{R}^d$ the position in the world corresponding to $\mathrm{q}\in \mathcal{Q}$ (i.e., the forward kinematics of the robot), where $d = 2$ or $d=3$.
+Let $\mathcal{Q}$ be the configuration space of a robot, and  $\mathrm{x} = \mathrm{x}(\mathrm{q}) \in \mathcal{X} \subseteq \mathbb{R}^d$ the position in the world $\mathcal{X}$ (which is assumed to be compact) corresponding to $\mathrm{q}\in \mathcal{Q}$ (i.e., the forward kinematics of the robot), where $d = 2$ or $d=3$.
 We also use the notation $\mathcal{A} = \mathcal{A}(\mathrm{q}) \subseteq \mathcal{X}$ to denote the footprint of the robot (which is a closed subset of $\mathcal{X}$) whose configuration is $\mathrm{q}$. Defining a control input as $\mathrm{u} \in \mathcal{U}$, the dynamics of the robot is given as the equation
 \begin{equation*}
 \mathrm{q}_{t+1} = f(\mathrm{q}_{t}, \mathrm{u}_{t}), \quad t = 0, 1, \ldots.
@@ -315,12 +315,12 @@ This implies that correcting the underestimation is essential to ensure the cons
 
 
 \subsection{Why Functional Conformal Prediction?}\label{subsec:fcp-why}
-In contrast to prior conformal-prediction approaches in robotics, where a single scalar score function is typically considered, the error signal $S_{t+i|t}$ here is \emph{functional}: each score is a function $S_{t+i\mid t}\colon\mathcal{X}\to\mathbb{R}$, an element of $L^2(\mathcal{X})$, rather than a scalar. This motivates a CP framework tailored to such functional objects, namely \emph{functional conformal prediction (FCP)}~\cite{lei2015conformal}. The practical value of FCP rests on two empirical properties of the residual field, which we verify on the ETH--UCY benchmark. First, the field is approximately \emph{time-invariant}: estimated from two temporally disjoint halves of the data, the per-cell residual statistics agree closely across the split (Fig.~\ref{fig:fcp_stationarity}; cell-mean correlation $r=0.71$--$0.91$ across \texttt{eth}, \texttt{univ}, and \texttt{hotel}), so $S_{t+i\mid t}\stackrel{d}{\approx}S_{t'+i\mid t'}$ for $t\neq t'$. Second, the field is \emph{low-rank}: a few functional principal components already capture most of its variance (Fig.~\ref{fig:fcp_lowrank}; $5$--$7$ components reach $90\%$ on most scenes), so it admits the compact expansion
+In contrast to prior conformal-prediction approaches in robotics, where a single scalar score function is typically considered, the error signal $S_{t+i|t}$ here is \emph{functional}: each score is a function $S_{t+i\mid t}\colon\mathcal{X}\to\mathbb{R}$, an element of the Hilbert space $\mathscr{H} := L^2(\mathcal{X})$, rather than a scalar. This motivates a CP framework tailored to such functional objects, namely \emph{functional conformal prediction (FCP)}~\cite{lei2015conformal}. The practical value of FCP rests on two empirical properties of the residual field, which we verify on the ETH--UCY benchmark. First, the residual field is approximately \emph{time-invariant}: estimated from two temporally disjoint halves of the data, the per-cell residual statistics agree closely across the split (Fig.~\ref{fig:fcp_stationarity}; cell-mean correlation $r=0.71$--$0.91$ across \texttt{eth}, \texttt{univ}, and \texttt{hotel}), so $S_{t+i\mid t}\stackrel{d}{\approx}S_{t'+i\mid t'}$ for $t\neq t'$. Second, the field is \emph{low-rank}: a few functional principal components already capture most of its variance (Fig.~\ref{fig:fcp_lowrank}; $5$--$7$ components reach $90\%$ on most scenes), so it admits the compact expansion
 \begin{equation}
 S_{t+i\mid t}(\mathrm{x}) \;\approx\; \bar{S}_i(\mathrm{x}) + \sum_{k=1}^{r}\xi^{(k)}_{t}\,\psi_k(\mathrm{x}), \qquad r\ll\infty,
 \label{eq:lowrank-score}
 \end{equation}
-with FPCA modes $\{\psi_k\}_{k=1}^{r}\subset L^2(\mathcal{X})$ that are stable across $t$. The uncertainty is thus spatially structured and compressible, even though it is not reducible to a simple geometric cue such as path curvature or visitation density. These two properties---which we quantify on the ETH--UCY benchmark in Section~\ref{sec:res-properties} (Figs.~\ref{fig:fcp_stationarity} and~\ref{fig:fcp_lowrank})---are exactly what make FCP practical: the modes $\{\psi_k\}$ and the resulting envelope $U_{t+i\mid t}\colon\mathcal{X}\to\mathbb{R}_{\ge 0}$ are estimated \emph{once, offline}, while online the controller merely evaluates $U_{t+i\mid t}(\mathrm{x})$ pointwise along its rollouts, keeping the per-step cost low. To be self-contained, we briefly explain how FCP is baked into our setting so that the learning errors are corrected for safety.
+with FPCA modes $\{\psi_k\}_{k=1}^{r}\subset L^2(\mathcal{X})$ that are stable across $t$. The uncertainty is thus spatially structured and compressible, even though it is not reducible to a simple geometric cue such as path curvature or visitation density. These two properties---which we quantify on the ETH--UCY benchmark in Section~\ref{sec:spatial-regularity} (Figs.~\ref{fig:fcp_stationarity} and~\ref{fig:fcp_lowrank})---are exactly what make FCP practical: the modes $\{\psi_k\}$ and the resulting envelope $U_{t+i\mid t}\colon\mathcal{X}\to\mathbb{R}_{\ge 0}$ are estimated \emph{once, offline}, while online the controller merely evaluates $U_{t+i\mid t}(\mathrm{x})$ pointwise along its rollouts, keeping the per-step cost low. To be self-contained, we briefly explain how FCP is baked into our setting so that the learning errors are corrected for safety.
 
 % To avoid overestimating $D_{t+i}$, which can lead to catastrophic collisions, we consider the following score function:
 % \begin{equation}\label{eq:functional-score}
@@ -1092,6 +1092,7 @@ This completes the proof, verifying that the point-wise safety of the robot is i
 \end{proof}
 
 
+
 \section{Experimental Setup}
 We evaluate how functional conformal prediction of the signed distance field affects
 safety, feasibility, and efficiency in closed-loop motion planning under prediction
@@ -1373,15 +1374,16 @@ $0.22$, oracle future noise $0.20$), averaged over $17$ seeds. The high-level
 planner runs at $\Delta t=0.1$\,s, so any per-step cost above $100$\,ms violates
 the real-time budget.
 
-Neither uncertainty-reasoning baseline navigates the dense field reliably. ACP-MPC~\cite{dixit2023adaptive}
-inflates a scalar conformal radius per obstacle; despite a moderate collision rate ($0.051$)
-it never reaches the goal (crashed on all $17$ seeds), and its per-step adaptation costs
-$216$\,ms. ECP-MPC~\cite{shin2025egocentric} is by far the slowest ($1283$\,ms/step,
-over $12\times$ the budget); it reaches the goal on only $2$ of $17$ seeds, at a high
-collision ($0.094$) and infeasible ($0.378$) rate. CC-MPC does reach the goal on every
-seed ($186$ steps) thanks to its purely soft formulation (zero infeasible by construction),
-but at a higher collision rate ($0.085$) and a per-step cost ($209$\,ms) that also exceeds
-the budget.
+All controllers share the same goal-anchored sampling-based planner, so the comparison
+isolates the conformal method rather than the planner. Neither uncertainty-reasoning
+baseline reaches the goal: both fly the full horizon, but their hard conformal filters are
+too conservative to thread the dense field and time out on every seed. ACP-MPC~\cite{dixit2023adaptive}
+inflates a scalar conformal radius per obstacle (collision $0.049$, infeasible $0.125$) at
+$216$\,ms/step; ECP-MPC~\cite{shin2025egocentric} is by far the slowest ($1283$\,ms/step,
+over $12\times$ the budget), with collision $0.036$ and infeasible $0.082$. CC-MPC does
+reach the goal on every seed ($186$ steps) thanks to its purely soft formulation (zero
+infeasible by construction), but at a higher collision rate ($0.085$) and a per-step cost
+($209$\,ms) that also exceeds the budget.
 
 The two deployments of the \emph{same} offline-conformalized field behave very
 differently at this density.
@@ -1400,12 +1402,13 @@ Table~\ref{tab:results_sparse} repeats the comparison at $N_{\mathrm{obs}}=50$, 
 space is ample. FCP-MPC~(soft) again reaches the goal on every seed with the lowest
 collision rate ($0.008$), and FCP-MPC~(hard)---no longer starved of feasible candidates---
 reaches it on $88\%$ of seeds with the infeasible rate dropping to $0.353$. CC-MPC also
-reaches the goal, whereas ACP- and ECP-MPC still crash on every seed. We discuss this
-density trend in Section~\ref{sec:discussion}.
+reaches the goal, whereas ACP- and ECP-MPC still time out on every seed even with ample
+free space, as their per-obstacle and egocentric inflation stays too conservative to
+approach the goal. We discuss this density trend in Section~\ref{sec:discussion}.
 Figure~\ref{fig:fcp_3d} illustrates the conformal bound in 3D, and
 Figure~\ref{fig:traj_3d} compares closed-loop trajectories across three seeds:
-FCP-MPC threads to the goal in every panel while the baselines stall or fall
-(red~$\times$) early in the field.
+FCP-MPC threads to the goal in every panel while the baselines, under the same planner,
+stall short of it.
 
 \begin{figure}[!t]
   \centering
@@ -1429,12 +1432,11 @@ FCP-MPC threads to the goal in every panel while the baselines stall or fall
   \includegraphics[width=\linewidth]{traj_3d_seeds.png}
   \caption{Closed-loop trajectory comparison in the dense 3D quadrotor task
   ($M{=}280$ dynamic obstacles) across three random seeds, shown in
-  panels~(a)--(c). Each panel overlays all four controllers---CC-MPC (gray),
-  ECP-MPC (orange), ACP-MPC (purple), and FCP-MPC (ours, blue). Green square:
-  start; black star: goal; a red~$\times$ marks where a controller lost control
-  and fell to the floor. FCP-MPC is the only method that makes consistent
-  progress to the goal across seeds, while the baselines stall or crash early in
-  the dense field.}
+  panels~(a)--(c). All four controllers use the \emph{same} goal-anchored planner and
+  overlay---CC-MPC (gray), ECP-MPC (orange), ACP-MPC (purple), and FCP-MPC (ours, blue).
+  Green square: start; black star: goal. FCP-MPC is the only method that makes consistent
+  progress to the goal across seeds, while the baselines---under the identical planner---
+  stall short of it, their conformal filters too conservative to thread the dense field.}
   \label{fig:traj_3d}
 \end{figure*}
 
@@ -1514,16 +1516,18 @@ where free space is scarce, complementing the open 3D study below.
 
 
 \paragraph{Separating conformal prediction from real-time planning in 3D.}
-The three behaviors in Table~\ref{tab:pybullet_results} follow from \emph{where} each
-controller spends its uncertainty budget.
-ECP-MPC reasons about uncertainty online and pays for it: its per-step latency far exceeds
-the $100$\,ms budget, so the quadrotor loses control authority and crashes before reaching
-the goal.
-ACP-MPC's pointwise inflation is cheaper per query but still re-checks every obstacle, and
-it too crashes without reaching the goal.
-CC-MPC reaches the goal but, lacking any uncertainty model, is both slower and less safe.
-FCP-MPC moves the expensive computation offline, so at runtime safety is a fieldwise query
-against a cached bound---fast, largely obstacle-count-insensitive, and predictable.
+With a shared planner, the behaviors in Table~\ref{tab:pybullet_results} separate two
+axes: how \emph{conservative} each conformal filter is (whether it can reach the goal at
+all) and how \emph{expensive} it is per step (whether it meets the real-time budget).
+ECP-MPC fails on both---its egocentric inflation is too conservative to thread the field
+(times out) and its per-step latency ($1283$\,ms) far exceeds the budget.
+ACP-MPC's per-obstacle inflation likewise never reaches the goal, at a cost ($216$\,ms)
+that also exceeds the budget.
+CC-MPC reaches the goal through a pure soft penalty but, lacking any spatial uncertainty
+model, is both slower and less safe.
+FCP-MPC moves the expensive estimation offline, so at runtime safety is a fieldwise query
+against a cached bound---fast, largely obstacle-count-insensitive, and, as a \emph{field}
+rather than per-obstacle inflation, far less conservative.
 
 \paragraph{Certified hard filter vs.\ practical soft deployment.}
 The same offline field can be deployed in two ways. As a \emph{hard} filter it carries the
@@ -1537,8 +1541,8 @@ practice removes infeasibility entirely and attains the lowest collision rate am
 goal-reaching methods ($0.028$ at $280$, within $\alpha=0.10$) while reaching the goal on
 every seed at both densities.
 Notably, FCP-MPC stays within the target miscoverage level \emph{while actively traversing}
-the dense field, whereas the safe-looking baseline (ACP) attains its low collision count
-only by crashing early, and ECP is both slow and unsafe.
+the dense field, whereas ACP's low collision count reflects a controller that never threads
+it---it times out short of the goal---and ECP is both slow and over-conservative.
 We therefore position the hard filter as the certified variant, appropriate when free space
 is adequate, and the soft penalty as the recommended practical deployment in the densest
 dynamic scenes, where strict enforcement of the worst-case envelope is too conservative to

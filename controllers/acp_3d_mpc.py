@@ -11,6 +11,7 @@ import math
 import numpy as np
 
 from controllers.acp_mpc import AdaptiveConformalPredictionModule
+from controllers.utils import sample_goal_anchored_paths_3d
 
 
 class AdaptiveCPMPC3D:
@@ -66,27 +67,11 @@ class AdaptiveCPMPC3D:
     # Holonomic velocity rollouts (the quadrotor can move in any direction)
     # ------------------------------------------------------------------
     def _sample_paths(self, robot_xyz, goal_xyz):
-        # Goal-directed holonomic rollouts: velocities are sampled around the
-        # straight-line-to-goal direction (with spread for obstacle avoidance), so
-        # the planner makes progress while the ACP filter rejects unsafe candidates.
-        P, T, ns = self.n_paths, self.n_steps, self.n_skip
-        ne = int(math.ceil(T / ns))
-        d = np.asarray(goal_xyz, np.float32) - robot_xyz
-        nrm = float(np.linalg.norm(d))
-        direction = d / nrm if nrm > 1e-6 else np.zeros(3, np.float32)
-        v_nom = direction * self.vmax                        # (3,)
-        sigma = 0.6 * self.vmax
-        vel_e = (v_nom[None, None, :]
-                 + self.rng.normal(0.0, sigma, size=(P, ne, 3)).astype(np.float32))
-        vel_e[..., 0] = np.clip(vel_e[..., 0], self.vmin, self.vmax)
-        vel_e[..., 1] = np.clip(vel_e[..., 1], self.vmin, self.vmax)
-        vel_e[..., 2] = np.clip(vel_e[..., 2], self.vzmin, self.vzmax)
-        vel = np.repeat(vel_e, ns, axis=1)[:, :T, :]         # (P, T, 3)
-        disp = np.cumsum(vel * self.dt, axis=1)              # (P, T, 3)
-        paths = np.concatenate(
-            [np.zeros((P, 1, 3), np.float32), disp], axis=1
-        ) + robot_xyz[None, None, :]                         # (P, T+1, 3)
-        return paths, vel
+        # Shared goal-anchored sampling-based planner (identical across all 3D
+        # controllers) so the comparison isolates the conformal method, not the planner.
+        return sample_goal_anchored_paths_3d(
+            robot_xyz, goal_xyz, n_steps=self.n_steps, n_paths=self.n_paths, dt=self.dt,
+            vmax=self.vmax, vzmin=self.vzmin, vzmax=self.vzmax, rng=self.rng)
 
     def __call__(self, *, robot_xyz, goal_xyz, pred_xyz, pred_mask, intervals, **_ignore):
         robot_xyz = np.asarray(robot_xyz, np.float32).reshape(3)

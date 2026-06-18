@@ -53,7 +53,13 @@ def build_table(results, density):
         rs = [m for m in results if m["label"] == label]
         if not rs:
             continue
-        steps_str, steps_val = _steps_cell(rs, max_steps)
+        rs_reached = [m for m in rs if m["reached_goal"]]
+        if rs_reached:
+            sv = [m["steps"] for m in rs_reached]
+            steps_val, steps_std, steps_label = float(np.mean(sv)), float(np.std(sv)), None
+        else:
+            nt = sum(1 for m in rs if m["steps"] >= max_steps)
+            steps_val, steps_std, steps_label = None, None, ("timeout" if nt * 2 >= len(rs) else "crashed")
         coll_v = [m["collision_rate"] for m in rs]
         infeas_v = [m["infeas_rate"] for m in rs]
         rows[label] = dict(
@@ -61,7 +67,7 @@ def build_table(results, density):
             infeas=(None if label in SOFT_INFEAS_NA else float(np.mean(infeas_v))),
             infeas_std=(None if label in SOFT_INFEAS_NA else float(np.std(infeas_v))),
             ctrl=ctrl.get(label, float("nan")),
-            steps_str=steps_str, steps_val=steps_val, n=len(rs),
+            steps_val=steps_val, steps_std=steps_std, steps_label=steps_label, n=len(rs),
             reached_rate=float(np.mean([m["reached_goal"] for m in rs])),
         )
 
@@ -89,11 +95,13 @@ def build_table(results, density):
         return rf"\textbf{{{s}}}" if _isbest(v, best) else s
 
     def _fpm(label, key, nd, best):
+        # Bold only the MEAN (via \mathbf, which propagates inside math mode); the
+        # \pm std stays at normal weight so the highlight reads cleanly.
         m = rows[label][key]
         sd = rows[label].get(key + "_std")
-        body = f"{m:.{nd}f}" if (sd is None or rows[label]['n'] <= 1) else f"{m:.{nd}f}\\pm{sd:.{nd}f}"
-        s = f"${body}$"
-        return rf"\textbf{{{s}}}" if _isbest(m, best) else s
+        mean_s = rf"\mathbf{{{m:.{nd}f}}}" if _isbest(m, best) else f"{m:.{nd}f}"
+        body = mean_s if (sd is None or rows[label]['n'] <= 1) else f"{mean_s}\\pm{sd:.{nd}f}"
+        return f"${body}$"
 
     lines = [r"\begin{tabular}{lccccc}", r"\hline",
              "Method &", r"Collision rate $\downarrow$ &",
@@ -103,8 +111,12 @@ def build_table(results, density):
         if label not in rows:
             continue
         r = rows[label]
-        steps = (rf"\textbf{{{r['steps_str']}}}"
-                 if _isbest(r["steps_val"], best_steps) else r["steps_str"])
+        if r["steps_label"] is not None:
+            steps = r["steps_label"]
+        else:
+            mean_s = (rf"\mathbf{{{r['steps_val']:.1f}}}"
+                      if _isbest(r["steps_val"], best_steps) else f"{r['steps_val']:.1f}")
+            steps = (f"${mean_s}\\pm{r['steps_std']:.1f}$" if r["n"] > 1 else f"${mean_s}$")
         infeas_cell = ("N/A" if r["infeas"] is None
                        else _fpm(label, "infeas", 3, best_infeas))
         reach_pct = f"{r['reached_rate']*100:.0f}\\%"
@@ -127,8 +139,9 @@ def build_table(results, density):
             continue
         r = rows[label]
         inf = "N/A" if r["infeas"] is None else f"{r['infeas']:.3f}"
+        st = r["steps_label"] if r["steps_label"] else f"{r['steps_val']:.1f}±{r['steps_std']:.1f}"
         print(f"  {label:16} coll={r['coll']:.3f}±{r['coll_std']:.3f}  infeas={inf}  "
-              f"steps={r['steps_str']:>14}  reached={r['reached_rate']*100:.0f}%  ctrl={r['ctrl']}ms  n={r['n']}")
+              f"steps={st:>14}  reached={r['reached_rate']*100:.0f}%  ctrl={r['ctrl']}ms  n={r['n']}")
     print("\n".join(lines))
 
 

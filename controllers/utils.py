@@ -309,5 +309,58 @@ def test_pairwise_distance_computation_along_axis():
     print('loop: time={:.6f}sec'.format(time.time() - begin))
 
 
+def solve_quintic_coeffs_batch(p0, v0, a0, pT, vT, aT, T):
+    """Min-jerk quintic coefficients (batched over the path dimension)."""
+    T2 = T * T; T3 = T2 * T; T4 = T3 * T; T5 = T4 * T
+    c0, c1, c2 = p0, v0, 0.5 * a0
+    H = pT - c0 - c1 * T - c2 * T2
+    V = vT - c1 - 2.0 * c2 * T
+    A = aT - 2.0 * c2
+    c3 = (10.0 * H - 4.0 * V * T + 0.5 * A * T2) / T3
+    c4 = (-15.0 * H + 7.0 * V * T - 1.0 * A * T2) / T4
+    c5 = (6.0 * H - 3.0 * V * T + 0.5 * A * T2) / T5
+    return c0, c1, c2, c3, c4, c5
+
+
+def sample_goal_anchored_paths_3d(x0yz, goal_xyz, *, n_steps, n_paths, dt, vmax,
+                                  vzmin, vzmax, endpoint_sigma=1.0, rng, current_vel=None):
+    """Shared goal-anchored sampling-based planner for the 3D quadrotor.
+
+    Samples terminal points around the (reachable projection of the) goal, fits
+    min-jerk quintics, and returns candidate position trajectories + holonomic
+    velocities. Method-agnostic: every 3D controller searches this SAME candidate set
+    and differs only in its safety logic, so the comparison isolates the conformal
+    method rather than the planner. Returns
+        paths : (n_paths, n_steps+1, 3)
+        vels  : (n_paths, n_steps, 3)   (vx, vy, vz), clamped to the velocity limits.
+    """
+    x0yz = np.asarray(x0yz, np.float32).reshape(3,)
+    goal = np.asarray(goal_xyz, np.float32).reshape(3,)
+    P, N = int(n_paths), int(n_steps)
+    start_vel = (np.asarray(current_vel, np.float32).reshape(3,) * 0.8) if current_vel is not None else np.zeros(3, np.float32)
+    start_acc = np.zeros(3, np.float32)
+    cur_speed = float(np.linalg.norm(start_vel))
+    dist = float(np.linalg.norm(goal - x0yz)); Th = N * dt
+    dirv = (goal - x0yz) / dist if dist > 1e-3 else np.zeros(3, np.float32)
+    maxr = vmax * Th
+    center = goal if dist < maxr else x0yz + dirv * maxr
+    term = rng.normal(loc=center, scale=endpoint_sigma, size=(P, 3)).astype(np.float32); term[0] = center
+    diff = term - x0yz[None, :]
+    dirs = diff / (np.linalg.norm(diff, axis=1, keepdims=True) + 1e-6)
+    low = min(cur_speed, vmax * 0.5)
+    spd = rng.uniform(low=low, high=vmax, size=(P, 1)).astype(np.float32); spd[0] = vmax
+    term_vel = dirs * spd; term_acc = np.zeros_like(term)
+    c0, c1, c2, c3, c4, c5 = solve_quintic_coeffs_batch(
+        x0yz[None, :], start_vel[None, :], start_acc[None, :], term, term_vel, term_acc, Th)
+    t = np.linspace(0.0, Th, N + 1, dtype=np.float32)[:, None, None]
+    paths = np.transpose(c0 + c1 * t + c2 * t**2 + c3 * t**3 + c4 * t**4 + c5 * t**5, (1, 0, 2)).astype(np.float32)
+    vraw = np.transpose(c1 + 2 * c2 * t + 3 * c3 * t**2 + 4 * c4 * t**3 + 5 * c5 * t**4, (1, 0, 2))[:, :-1, :]
+    vz = np.clip(vraw[..., 2], vzmin, vzmax)
+    vxy = np.sqrt(vraw[..., 0]**2 + vraw[..., 1]**2)
+    sc = np.minimum(1.0, vmax / (vxy + 1e-6))
+    vels = np.stack([vraw[..., 0] * sc, vraw[..., 1] * sc, vz], axis=-1).astype(np.float32)
+    return paths, vels
+
+
 if __name__ == "__main__":
     test_quantile_computation()

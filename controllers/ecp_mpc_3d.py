@@ -7,7 +7,7 @@ import numpy as np
 import time
 import math
 
-from controllers.utils import sample_random_paths_3d
+from controllers.utils import sample_random_paths_3d, sample_goal_anchored_paths_3d
 
 DISTANCE_BOUND = 10000.0
 
@@ -385,31 +385,28 @@ class EgocentricCPMPC3D:
         self,
         robot_xyz: np.ndarray,
         robot_yaw: float,
+        goal_xyz: np.ndarray,
         *,
         n_skip: int,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         returns:
           paths: (P, T+1, 3)
-          vels:  (P, T, 3) where last dim is (v_xy, yaw_rate, vz)
+          vels:  (P, T, 3) where last dim is holonomic (vx, vy, vz)
 
-        Uses the same sampling-based ("MPPI-style") rollout as FCP-3D so the action
-        search matches the proposed method instead of the legacy (v, w, vz) meshgrid.
-        The number of returned paths is fixed at ``self.n_paths`` to stay aligned with
-        the per-path ``alpha_t`` buffer used by the egocentric ACI update.
+        Shared goal-anchored sampling-based planner (identical across all 3D
+        controllers) so the comparison isolates the conformal method, not the planner.
         """
-        return sample_random_paths_3d(
+        return sample_goal_anchored_paths_3d(
             np.asarray(robot_xyz, dtype=np.float32),
-            float(robot_yaw),
+            np.asarray(goal_xyz, dtype=np.float32),
             n_steps=self.n_steps,
-            n_skip=n_skip,
-            dt=self.dt,
-            v_lim=(self.vmin, self.vmax),
-            w_lim=(self.wmin, self.wmax),
-            vz_lim=(self.vzmin, self.vzmax),
             n_paths=self.n_paths,
+            dt=self.dt,
+            vmax=self.vmax,
+            vzmin=self.vzmin,
+            vzmax=self.vzmax,
             rng=self.rng,
-            last_best_vels=self.last_best_vels,
         )
 
     # ---------------------------------------------------------
@@ -486,6 +483,7 @@ class EgocentricCPMPC3D:
         paths, vels = self.generate_paths_3d(
             np.asarray(robot_xyz, dtype=np.float32),
             float(robot_yaw),
+            np.asarray(goal_xyz, dtype=np.float32),
             n_skip=self.n_skip,
         )
         self.path_history.append(paths)
@@ -522,19 +520,13 @@ class EgocentricCPMPC3D:
 
         next_pos = best_path[1]  # (3,)
 
-        # Convert (v_xy, yaw_rate, vz) -> env command (vx,vy,vz,yaw_rate)
-        v_xy, w, vz = best_vel_traj[0]
-        yaw = float(robot_yaw)
-
-        vx = float(v_xy * np.cos(yaw))
-        vy = float(v_xy * np.sin(yaw))
-
+        # Holonomic shared-planner velocities (vx, vy, vz) -> env command (vx,vy,vz,yaw_rate)
+        vx, vy, vz = map(float, best_vel_traj[0])
         vx = float(np.clip(vx, self.vmin, self.vmax))
         vy = float(np.clip(vy, self.vmin, self.vmax))
         vz = float(np.clip(vz, self.vzmin, self.vzmax))
-        w = float(np.clip(w, self.wmin, self.wmax))
 
-        target_vel_env = np.array([vx, vy, vz, w], dtype=np.float32)
+        target_vel_env = np.array([vx, vy, vz, 0.0], dtype=np.float32)
 
         info = {
             "feasible": True,
