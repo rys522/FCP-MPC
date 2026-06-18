@@ -109,7 +109,11 @@ class EgocentricCPMPC:
         self.rng = np.random.default_rng(int(seed))
         self.last_best_vels = None  # warm-start storage
 
-        self.alpha_t = miscoverage_level * np.ones((self.n_paths, n_steps))
+        # Global per-horizon ACI level: ONE scalar per horizon step, shared across candidates.
+        # A per-path alpha_t is ill-defined under MPPI resampling (paths are redrawn each step,
+        # so row j has no consistent meaning); a single alpha_t[i] is the correct egocentric ACI
+        # under resampling and avoids the noisy per-row random walk.
+        self.alpha_t = miscoverage_level * np.ones(n_steps)
 
         self.n_skip = n_skip
 
@@ -292,7 +296,8 @@ class EgocentricCPMPC:
 
             scores = np.clip(min_dist_pred - min_dist_obs, a_min=0., a_max=None)
             # final shape: (search space size, prediction length)
-            quantiles = compute_quantiles(scores, axis=-1, levels=1. - self.alpha_t)  # quantile along batch dim
+            levels = 1. - np.tile(self.alpha_t, (n_paths, 1))  # broadcast global per-step level to all paths
+            quantiles = compute_quantiles(scores, axis=-1, levels=levels)  # quantile along batch dim
             # maximum for Q_{1 - alpha_t} when alpha_t <= 0
             # The value is estimated from the reported FDEs of Trajectron++ on UCY-ETH datasets
             max_scores = .5 * self._dt * np.arange(1, self._n_steps + 1)
@@ -310,7 +315,7 @@ class EgocentricCPMPC:
         obs: dictionary containing the trajectories of the dynamic obstacles
         
         """
-        n_paths = self.alpha_t.shape[0]
+        n_paths = self.n_paths
         if not obs:
             # no dynamic agents in the scene
             self._track_queue.append(obs)
@@ -366,7 +371,7 @@ class EgocentricCPMPC:
 
                 err = (quantiles < min_dist_pred - min_dist_obs)
 
-                self.alpha_t[:, :max_n_steps - 1] += self._gamma * (self._miscoverage_level - err)
+                self.alpha_t[:max_n_steps - 1] += self._gamma * (self._miscoverage_level - err.mean(axis=0))
                 if n_data < self._n_steps + 1:
                     pad_width = self._n_steps + 1 - n_data
                     err = np.hstack((err, np.zeros((n_paths, pad_width))))  # just for the consistent data size

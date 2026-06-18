@@ -261,11 +261,10 @@ def run_fcp_mpc(
     w_safety: float = 50.0,                 # soft-mode safety-shaping weight (declared hyperparameter)
 ):
     # ----- fixed controller settings -----
-    # FCP plans over a 17-step horizon; the dynamic-obstacle CP is only active on the
-    # 12 predicted steps (steps beyond the predictor's horizon are masked out), so the
-    # extra horizon is pure goal-seeking lookahead. The CP/safety horizon (12) is thus
-    # the same as the baselines; only the goal-seeking lookahead is longer.
-    time_horizon = 17
+    # Horizon unified to 12 = the predictor's horizon = the baselines' horizon, for a clean
+    # fair comparison. (Earlier FCP used 17, but steps 13-17 had masked obstacle predictions,
+    # so this matches the obstacle-aware horizon and only drops the goal-seeking lookahead.)
+    time_horizon = 12
     grid_H = 128
     grid_W = 128
     n_skip = 2
