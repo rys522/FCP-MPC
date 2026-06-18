@@ -1373,33 +1373,35 @@ $0.22$, oracle future noise $0.20$), averaged over $17$ seeds. The high-level
 planner runs at $\Delta t=0.1$\,s, so any per-step cost above $100$\,ms violates
 the real-time budget.
 
-Neither uncertainty-reasoning baseline reaches the goal. ACP-MPC~\cite{dixit2023adaptive}
-inflates a scalar conformal radius per obstacle; this keeps its collision ($0.012$)
-and infeasible ($0.147$) rates low, but the per-step adaptation costs $216$\,ms and
-the quadrotor loses control authority before reaching the goal (crashed). ECP-MPC~\cite{shin2025egocentric}
-is by far the slowest ($1283$\,ms/step, over $12\times$ the budget) and crashes as well,
-at a high infeasible rate ($0.330$). CC-MPC does reach the goal ($188$ steps) thanks
-to its purely soft formulation (zero infeasible by construction), but at a higher
-collision rate ($0.051$) and a per-step cost ($209$\,ms) that also exceeds the budget.
+Neither uncertainty-reasoning baseline navigates the dense field reliably. ACP-MPC~\cite{dixit2023adaptive}
+inflates a scalar conformal radius per obstacle; despite a moderate collision rate ($0.051$)
+it never reaches the goal (crashed on all $17$ seeds), and its per-step adaptation costs
+$216$\,ms. ECP-MPC~\cite{shin2025egocentric} is by far the slowest ($1283$\,ms/step,
+over $12\times$ the budget); it reaches the goal on only $2$ of $17$ seeds, at a high
+collision ($0.094$) and infeasible ($0.378$) rate. CC-MPC does reach the goal on every
+seed ($186$ steps) thanks to its purely soft formulation (zero infeasible by construction),
+but at a higher collision rate ($0.085$) and a per-step cost ($209$\,ms) that also exceeds
+the budget.
 
 The two deployments of the \emph{same} offline-conformalized field behave very
 differently at this density.
 FCP-MPC~(hard) enforces the bound as a hard feasibility filter and inherits the
 guarantee of Theorems~\ref{thm:asymptotic_safety}--\ref{thm:asymptotic_safety_afcp};
-it is the only method within the $100$\,ms budget ($40.2$\,ms/step) and attains a very
-low collision rate ($0.010$), but the worst-case envelope compounds over the horizon
-until almost no candidate remains feasible (infeasible $0.873$), so the planner stalls
-and times out before reaching the goal.
-FCP-MPC~(soft) applies the same field as a penalty: it removes infeasibility entirely,
-reaches the goal ($99.6$ steps), and attains the lowest collision rate of all methods
-($0.004$, well within the target $\alpha=0.10$); its per-step cost ($161$\,ms) exceeds
-the budget but is roughly $8\times$ faster than ECP-MPC.
+it is the only method within the $100$\,ms budget ($40.2$\,ms/step) and attains a low
+collision rate ($0.023$), but at this extreme density the worst-case envelope compounds
+over the horizon until almost no candidate remains feasible (infeasible $0.833$), so the
+planner stalls and times out before reaching the goal.
+FCP-MPC~(soft) applies the same field as a penalty: it reaches the goal on every seed
+($100$ steps), removes infeasibility by construction, and attains the lowest collision
+rate among the goal-reaching methods ($0.028$, within the target $\alpha=0.10$); its
+per-step cost ($161$\,ms) exceeds the budget but is roughly $8\times$ faster than ECP-MPC.
 
 Table~\ref{tab:results_sparse} repeats the comparison at $N_{\mathrm{obs}}=50$, where free
-space is ample: \emph{both} FCP-MPC deployments reach the goal with the lowest collision
-rates ($0.012$/$0.015$), and the hard filter no longer times out (infeasible $0.094$),
-while ACP- and ECP-MPC still crash. We discuss this density trend in
-Section~\ref{sec:discussion}.
+space is ample. FCP-MPC~(soft) again reaches the goal on every seed with the lowest
+collision rate ($0.008$), and FCP-MPC~(hard)---no longer starved of feasible candidates---
+reaches it on $88\%$ of seeds with the infeasible rate dropping to $0.353$. CC-MPC also
+reaches the goal, whereas ACP- and ECP-MPC still crash on every seed. We discuss this
+density trend in Section~\ref{sec:discussion}.
 Figure~\ref{fig:fcp_3d} illustrates the conformal bound in 3D, and
 Figure~\ref{fig:traj_3d} compares closed-loop trajectories across three seeds:
 FCP-MPC threads to the goal in every panel while the baselines stall or fall
@@ -1453,7 +1455,8 @@ FCP-MPC threads to the goal in every panel while the baselines stall or fall
 mean $\pm$ std over $17$ seeds ($\alpha=0.10$). FCP-MPC~(hard) and FCP-MPC~(soft) deploy the \emph{same}
 offline-conformalized field as a hard feasibility filter and as a soft penalty, respectively.
 Steps-to-goal is averaged over successful episodes; ``crashed'' / ``timeout'' mark methods
-that never reach the goal.}
+that never reach the goal. The last column (Goal reached) reports the fraction of the
+$17$ seeds on which the controller reached the goal.}
 \label{tab:pybullet_results}
 \input{table_3d_results.tex}
 \end{table*}
@@ -1526,12 +1529,13 @@ against a cached bound---fast, largely obstacle-count-insensitive, and predictab
 The same offline field can be deployed in two ways. As a \emph{hard} filter it carries the
 formal coverage guarantee of Theorems~\ref{thm:asymptotic_safety}--\ref{thm:asymptotic_safety_afcp},
 but the price is conservativeness, and it grows sharply with density: the infeasible rate
-rises from $0.094$ at $N_{\mathrm{obs}}=50$---where the filter still reaches the goal at the
-lowest per-step cost of any method---to $0.873$ at $N_{\mathrm{obs}}=280$, where the
-worst-case envelope leaves so few feasible candidates that the planner stalls and times out.
-As a \emph{soft} penalty the field carries \emph{no} formal guarantee, but in practice
-removes infeasibility entirely and attains the lowest collision rate ($0.004$ at $280$,
-within $\alpha=0.10$) while reaching the goal at both densities.
+rises from $0.353$ at $N_{\mathrm{obs}}=50$---where the filter still reaches the goal on
+$88\%$ of seeds at the lowest per-step cost of any method---to $0.833$ at $N_{\mathrm{obs}}=280$,
+where the worst-case envelope leaves so few feasible candidates that the planner stalls and
+times out. As a \emph{soft} penalty the field carries \emph{no} formal guarantee, but in
+practice removes infeasibility entirely and attains the lowest collision rate among
+goal-reaching methods ($0.028$ at $280$, within $\alpha=0.10$) while reaching the goal on
+every seed at both densities.
 Notably, FCP-MPC stays within the target miscoverage level \emph{while actively traversing}
 the dense field, whereas the safe-looking baseline (ACP) attains its low collision count
 only by crashing early, and ECP is both slow and unsafe.

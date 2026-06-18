@@ -362,7 +362,12 @@ class QuadWorldEnv3D(BaseAviary):
         # Set Drone Initial Position (Randomized within bounds or fixed safe area)
         start_pos = np.array([0.0, 0.0, 1.0]) # Default start
         p.resetBasePositionAndOrientation(self.DRONE_IDS[0], start_pos, [0,0,0,1])
-        
+        # Refresh the cached kinematic state so the FIRST observation reflects the
+        # reset pose (z=1.0). Without this, _getDroneStateVector returns the stale
+        # BaseAviary init altitude (~0.11 m, i.e. on the floor-contact line), which
+        # corrupts every controller's first plan and spuriously crashes it at step 1.
+        self._updateAndStoreKinematicInformation()
+
         # Reset Obstacles
         self._init_obstacles(self.n_obs_target)
         
