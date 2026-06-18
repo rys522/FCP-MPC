@@ -103,18 +103,26 @@ conformal prediction for safe motion planning~\cite{lindemann2023safeplanning, d
 
 \subsection{Notation}
 For $f, g \in L^2(\mathcal{X}, d\mathrm{x})$, we denote their inner product by $\langle f, g \rangle = \int_{\mathcal{X}} f(\mathrm{x})g(\mathrm{x}) d\mathrm{x}$.
-We write $r_{\mathrm{safe}} \coloneqq r_{\mathrm{robot}} + r_{\mathrm{obs}} + \delta$ for the safety radius (robot radius, obstacle radius, and user margin), $\epsilon$ for the low-level tracking-error bound, and $[\,\cdot\,]_+ \coloneqq \max(\cdot,0)$.
 
 
 
 \section{Related Works}
+
+\subsection{Navigation in Dynamic Environments: Perception and Prediction}
+Safe operation in dynamic environments has classically been decomposed into estimating the evolving occupancy of the world and planning against it. A large body of work tracks moving obstacles by coupling simultaneous localization and mapping with multi-object tracking~\cite{wang2007simultaneous,coue2006bayesian}, or by maintaining dynamic occupancy representations through particle-based grids~\cite{danescu2011modeling,tanzmeister2014grid} and random-finite-set filters~\cite{nuss2018random,chen2023continuous}. Among these, continuous particle-based occupancy mapping has been pushed to real-time dense settings~\cite{chen2023continuous}, reflecting a broader trend toward distance- and occupancy-aware spatial representations. In parallel, signed distance fields---learned~\cite{park2019deepsdf,ortiz2022isdf} or fused online from depth sensing~\cite{newcombe2011kinectfusion}---have become a favored geometric layer because of their smooth, queryable structure. Our formulation inherits this representational viewpoint: rather than reasoning over raw occupancy, we operate directly on the predicted signed distance field, and we further treat the prediction error of that field as the object to be quantified. On the forecasting side, learned trajectory predictors such as Trajectron++~\cite{salzmann2020trajectron} supply the multi-step obstacle motion that our planner consumes, and their residual errors are precisely what a safety layer must account for.
+
+\subsection{Risk-Aware Motion Planning}
+A complementary line of research embeds uncertainty directly into the planning objective or constraints. Chance-constrained formulations bound the probability of collision and have been studied extensively, from convex chance-constrained path planning with obstacles~\cite{} to probabilistic collision checking under explicit chance constraints~\cite{} and motion planning in dynamic, uncertain environments~\cite{}. Because exact verification of collision constraints against non-convex moving obstacles is generally intractable, these methods typically approximate the free space or the obstacle set, e.g., by unions of convex regions~\cite{}, or accept conservative encodings of the nonconvex feasible set~\cite{}. Risk-sensitive planners instead optimize coherent risk measures such as the conditional value-at-risk~\cite{}, and distributionally robust approaches hedge against the worst-case distribution within an ambiguity set; the distributionally robust risk map~\cite{}, for instance, certifies CVaR-type safety even when the obstacle motion distribution is only imperfectly learned. These methods deliver strong guarantees but generally require an explicit (often parametric or moment-based) model of the prediction uncertainty, and the worst-case machinery is frequently solved online, which can be costly in dense scenes. Our work targets the same safety semantics while pushing the expensive statistical computation offline and keeping only a lightweight coefficient-space update online.
+
+
+
 % risk-aware motion planning
 
 % conformal prediction for reachability
 
 
 \begin{itemize}
-    \item robust control: DRO~\cite{long2026sensor}
+    \item robust control: DRO
 
     \item navigation in dynamic environments
     \begin{itemize}
@@ -128,6 +136,8 @@ We write $r_{\mathrm{safe}} \coloneqq r_{\mathrm{robot}} + r_{\mathrm{obs}} + \d
 
             \item SDF learning~\cite{park2019deepsdf,ortiz2022isdf}; mostly in 3d; may be irrelevant to ours
         \end{itemize}
+
+        \item risk-aware motion planning~\cite{hakobyan2019risk,fan2021step,hakobyan2021wasserstein,ryu2024integrating}: no safety guarantee, exact formulation is often intractable; require substantial approximations 
     \end{itemize}
 
     
@@ -563,82 +573,85 @@ Figure~\ref{fig:overview} summarizes the resulting pipeline.
   \label{fig:overview}
 \end{figure}
 
-\subsection{Mathematical Setup}
+% \subsection{Mathematical Setup}
 
-\subsubsection{Geometric property and tracking assumption.}
-We first state the geometric regularity and tracking hypothesis used to transfer the conformal field bound into a robust safety constraint.
+% \subsubsection{Geometric property and tracking assumption.}
+% We first state the geometric regularity and tracking hypothesis used to transfer the conformal field bound into a robust safety constraint.
 
-\begin{property}[Lipschitz continuity of the signed distance field]
-\label{prop:sdf_lipschitz}
-For any closed obstacle set $\mathcal O \subset \mathcal X$, the signed distance function $D(x,\mathcal{O})$
-is $1$-Lipschitz on $\mathcal X$, i.e.,
-\[
-|D(x,\mathcal O)-D(y,\mathcal O)| \le \|x-y\|,
-\qquad \forall x,y\in\mathcal X.
-\]
-\end{property}
+% \begin{property}[Lipschitz continuity of the signed distance field]
+% \label{prop:sdf_lipschitz}
+% For any closed obstacle set $\mathcal O \subset \mathcal X$, the signed distance function $D(x,\mathcal{O})$
+% is $1$-Lipschitz on $\mathcal X$, i.e.,
+% \[
+% |D(x,\mathcal O)-D(y,\mathcal O)| \le \|x-y\|,
+% \qquad \forall x,y\in\mathcal X.
+% \]
+% \end{property}
 
 
-\begin{assumption}[Bounded tracking error]
-\label{ass:tracking_error}
-The low-level tracking controller follows the planned position $\mathrm{x}^*_{t+i|t}$ with a uniform error bound $\epsilon > 0$:
-\[
-\|\mathrm{x}_{t+i}-\mathrm{x}^*_{t+i|t}\| \le \epsilon,
-\qquad \forall i\in\{1,\dots,N\}.
-\]
-\end{assumption}
+% \begin{assumption}[Bounded tracking error]
+% \label{ass:tracking_error}
+% The low-level tracking controller follows the planned position $\mathrm{x}^*_{t+i|t}$ with a uniform error bound $\epsilon > 0$:
+% \[
+% \|\mathrm{x}_{t+i}-\mathrm{x}^*_{t+i|t}\| \le \epsilon,
+% \qquad \forall i\in\{1,\dots,N\}.
+% \]
+% \end{assumption}
 
-\subsubsection{Conformal lower-bound field.}
-Let $\widetilde U_{i,t}(\mathrm{x})$ denote the online envelope at horizon index $i$ and planning time $t$ (the offline-only counterpart is $\mathsf{U}_{t+i|t}$; its online adaptation is defined in Section~\ref{subsec:online_update}). The associated conformalized lower-bound distance field is
-\begin{equation}
-\underline D_{t+i|t}(\mathrm{x})
-\coloneqq
-\max\!\left\{D_{t+i|t}(\mathrm{x})-\widetilde U_{i,t}(\mathrm{x}),\,0\right\},
-\qquad \mathrm{x}\in\mathcal X,
-\label{eq:lower_field_def}
-\end{equation}
-which is the online realization of $\mathsf{L}_{t+i|t}$ in~\eqref{eq:mpc-constraint-corrected} (clipped at $0$).
+% \subsubsection{Conformal lower-bound field.}
+% Let $\widetilde U_{i,t}(\mathrm{x})$ denote the online envelope at horizon index $i$ and planning time $t$ (the offline-only counterpart is $\mathsf{U}_{t+i|t}$; its online adaptation is defined in Section~\ref{subsec:online_update}). The associated conformalized lower-bound distance field is
+% \begin{equation}
+% \underline D_{t+i|t}(\mathrm{x})
+% \coloneqq
+% \max\!\left\{D_{t+i|t}(\mathrm{x})-\widetilde U_{i,t}(\mathrm{x}),\,0\right\},
+% \qquad \mathrm{x}\in\mathcal X,
+% \label{eq:lower_field_def}
+% \end{equation}
+% which is the online realization of $\mathsf{L}_{t+i|t}$ in~\eqref{eq:mpc-constraint-corrected} (clipped at $0$).
 
-\subsubsection{Robust CP-safe set via constraint tightening.}
-Recall the safety radius $r_{\mathrm{safe}} = r_{\mathrm{robot}} + r_{\mathrm{obs}} + \delta$; for point obstacles ($r_{\mathrm{obs}}=0$) it reduces to the $\delta+r_{\mathrm{robot}}$ of~\eqref{eq:collision-constraint}.
-The conformal envelope $\widetilde U_{i,t}$ grows with the horizon index $i$ as prediction errors compound, so enforcing the full clearance $r_{\mathrm{safe}}$ against \emph{every} far-horizon step makes the conformal constraint increasingly conservative and can shrink the feasible set to the point of emptiness. To curb this long-horizon conservativeness---without weakening the near-term constraint that governs the control actually applied---we relax the required clearance with the time-to-go, following an inevitable-collision-state (ICS) argument~\cite{fraichard2004inevitable}: under bounded controls the robot retains the maneuverability to evade an obstacle that is still several steps away. Concretely, we introduce a horizon-dependent evasion budget
-\begin{equation}
-\Delta_i \coloneqq \tfrac{1}{2}\, a_{\mathrm{lat}}^{\max}\,\bigl((i-1)\Delta t\bigr)^2,
-\qquad a_{\mathrm{lat}}^{\max} = v_{\max}\,\omega_{\max},
-\label{eq:ics_budget}
-\end{equation}
-which lower-bounds the lateral displacement the controller can realize over the $i-1$ steps remaining before horizon index $i$.
-Combining Property~\ref{prop:sdf_lipschitz}, Assumption~\ref{ass:tracking_error}, and the budget~\eqref{eq:ics_budget}, we define the robustly tightened, ICS-relaxed conformal safe set
-\begin{equation}
-\mathcal S^{\mathrm{cp}}_{t+i|t}
-\coloneqq
-\left\{x\in\mathcal X:\ \underline D_{t+i|t}(x)\ge \max\!\bigl(r_{\mathrm{safe}}+\epsilon-\Delta_i,\,0\bigr)\right\}
-\label{eq:cp_safe_set_mpc}
-\end{equation}
-for $i=1,\dots,N$.
-Because $\Delta_1=0$, the first (immediately applied) step retains the full tightened clearance $r_{\mathrm{safe}}+\epsilon$, and the relaxation loosens only the later, repeatedly re-planned steps.
-Consequently the closed-loop guarantees of Theorems~\ref{thm:asymptotic_safety} and~\ref{thm:asymptotic_safety_afcp}, whose proofs invoke the constraint only at the applied $i=1$ step, continue to hold verbatim; the same effective radius $\max(r_{\mathrm{safe}}+\epsilon-\Delta_i,0)$ is reused inside the soft safety-shaping penalty.
+% \subsubsection{Robust CP-safe set via constraint tightening.}
+% Let
+% \[
+% r_{\mathrm{safe}} = r_{\mathrm{robot}} + r_{\mathrm{obs}}
+% \]
+% denote the nominal safety radius.
+% The conformal envelope $\widetilde U_{i,t}$ grows with the horizon index $i$ as prediction errors compound, so enforcing the full clearance $r_{\mathrm{safe}}$ against \emph{every} far-horizon step makes the conformal constraint increasingly conservative and can shrink the feasible set to the point of emptiness. To curb this long-horizon conservativeness---without weakening the near-term constraint that governs the control actually applied---we relax the required clearance with the time-to-go, following an inevitable-collision-state (ICS) argument~\cite{fraichard2004inevitable}: under bounded controls the robot retains the maneuverability to evade an obstacle that is still several steps away. Concretely, we introduce a horizon-dependent evasion budget
+% \begin{equation}
+% \Delta_i \coloneqq \tfrac{1}{2}\, a_{\mathrm{lat}}^{\max}\,\bigl((i-1)\Delta t\bigr)^2,
+% \qquad a_{\mathrm{lat}}^{\max} = v_{\max}\,\omega_{\max},
+% \label{eq:ics_budget}
+% \end{equation}
+% which lower-bounds the lateral displacement the controller can realize over the $i-1$ steps remaining before horizon index $i$.
+% Combining Property~\ref{prop:sdf_lipschitz}, Assumption~\ref{ass:tracking_error}, and the budget~\eqref{eq:ics_budget}, we define the robustly tightened, ICS-relaxed conformal safe set
+% \begin{equation}
+% \mathcal S^{\mathrm{cp}}_{t+i|t}
+% \coloneqq
+% \left\{x\in\mathcal X:\ \underline D_{t+i|t}(x)\ge \max\!\bigl(r_{\mathrm{safe}}+\epsilon-\Delta_i,\,0\bigr)\right\}
+% \label{eq:cp_safe_set_mpc}
+% \end{equation}
+% for $i=1,\dots,N$.
+% Because $\Delta_1=0$, the first (immediately applied) step retains the full tightened clearance $r_{\mathrm{safe}}+\epsilon$, and the relaxation loosens only the later, repeatedly re-planned steps.
+% Consequently the closed-loop guarantees of Theorems~\ref{thm:asymptotic_safety} and~\ref{thm:asymptotic_safety_afcp}, whose proofs invoke the constraint only at the applied $i=1$ step, continue to hold verbatim; the same effective radius $\max(r_{\mathrm{safe}}+\epsilon-\Delta_i,0)$ is reused inside the soft safety-shaping penalty.
 
-\subsection{Implementation.}
-Incorporating the robustly tightened CP-safe set~\eqref{eq:cp_safe_set_mpc} into the planning problem~\eqref{eq:mpc-constraint-naive} leads to the following MPC formulation:
+\subsection{MPC Formulation.}
+Incorporating the conformalized constraint~\eqref{eq:mpc-constraint-corrected} into~\eqref{eq:mpc-constraint-naive} leads to the following MPC formulation:
 \begin{align}
 \min_{\mathbf{q}, \mathbf{u}}&\ \ \mathfrak{L}(\mathbf{q}, \mathbf{u}, \mathbf{x}^{\text{ref}}) \nonumber \\
 \text{s.t.}
 &\ \ \mathrm{q}_{t|t} = \mathrm{q}_t, \nonumber \\
 &\ \ \mathrm{q}_{t+i+1|t} = f(\mathrm{q}_{t+i|t}, \mathrm{u}_{t+i|t}), \quad 0 \leq i < N, \nonumber\\
-&\ \ \underline D_{t+i|t}(\mathrm{x}_{t+i|t}) \geq \max\!\left(r_{\mathrm{safe}}+\epsilon-\Delta_i,\,0\right), \quad 1\leq i \leq N, \label{eq:mpc-constraint-fcp}
+&\ \ \mathsf{L}_{t+i|t}(\mathrm{x}_{t+i|t}) \geq \delta + r_{\text{robot}}, \quad 1\leq i \leq N. \label{eq:mpc-constraint-fcp}
 \end{align}
-i.e.\ $\mathrm{x}_{t+i|t}\in\mathcal S^{\mathrm{cp}}_{t+i|t}$; this generalizes the basic constraint~\eqref{eq:mpc-constraint-corrected}, which it recovers when the tracking margin $\epsilon$ and the ICS budget $\Delta_i$ vanish.
 Rather than solving this nonlinear program exactly, a sampling-based MPC, such as model predictive path integral (MPPI)~\cite{williams2017information}, can be used as a affordable implementation.
-At each planning step, we draw $K_p$ candidate input sequences
-\begin{equation*}
-\mathcal U_{\mathrm{cand}}
-=
-\{\mathrm u^{(1)},\dots,\mathrm u^{(K_p)}\},
-\qquad
-\mathrm u^{(k)}=(u^{(k)}_{t|t},\dots,u^{(k)}_{t+N-1|t}),
-\end{equation*}
-where $u^{(k)}_{t+i|t}$ is randomly sampled from $\mathcal{U}$.
+% At each planning step, we draw $K_p$ candidate input sequences
+% \begin{equation*}
+% \mathcal U_{\mathrm{cand}}
+% =
+% \{\mathrm u^{(1)},\dots,\mathrm u^{(K_p)}\},
+% \qquad
+% \mathrm u^{(k)}=(u^{(k)}_{t|t},\dots,u^{(k)}_{t+N-1|t}),
+% \end{equation*}
+% where $u^{(k)}_{t+i|t}$ is randomly sampled from $\mathcal{U}$.
 % \subsubsection{Rollout and feasibility filtering.}
 % For each sampled plan $\mathrm u^{(k)}$, the predicted state trajectory is generated by forward simulation:
 % \begin{equation}
@@ -660,12 +673,13 @@ where $u^{(k)}_{t+i|t}$ is randomly sampled from $\mathcal{U}$.
 
 \noindent
 {\bf Hard Constraints vs Soft Penalization.}
-This can be mitigated by modeling them implicitly as \emph{soft constraints}~\cite{scokaert1999feasibility,kerrigan2000soft}: in place of enforcing the hard constraints, the constraints are incorporated into the objective function of the MPC problem as an extra graded term that penalizes the violation of the constraints. Specifically, define the per-step margin by which a position falls short of the tightened, ICS-relaxed clearance,
+While theoretically favorable, the conformalized constraints~\eqref{eq:mpc-constraint-fcp} may still produce extremely small feasible sets when $i$ is large. 
+This can be mitigated by modeling them implicitly as \emph{soft constraints}~\cite{scokaert1999feasibility,kerrigan2000soft}: in place of enforcing the hard constraints, the constraints are incorporated into the objective function of the MPC problem as an extra graded term that penalizes the violation of the constraints. Specifically, we define
 \begin{equation}
-g_{t+i|t}(\mathrm{x}):= \left[ r_{\mathrm{safe}}+\epsilon-\Delta_i \right]_+ - \underline D_{t+i|t}(\mathrm{x}),
+g_{t+i|t}(\mathrm{x}):=  \delta + r_{\text{robot}}  - \mathsf{L}_{t+i|t}(\mathrm{x}),
 \label{eq:soft_margin}
 \end{equation}
-so that the CP-safe set is the zero-sublevel set $\mathcal S^{\mathrm{cp}}_{t+i|t}=\{x:\,g_{t+i|t}(x)\le 0\}$. Then, the soft version of the MPC is stated as follows:
+so that the constraint~\eqref{eq:mpc-constraint-fcp} is identical to $g_{t+i|t}(\mathrm{x})\le 0$. Then, the soft version of the MPC is stated as follows:
 \begin{align}\label{eq:soft-mpc}
 \min_{\mathbf{q}, \mathbf{u}}&\ \mathfrak{L}_{w}(\mathbf{q}, \mathbf{u}, \mathbf{x}^{\text{ref}}) \\
 \text{s.t.}
@@ -729,11 +743,11 @@ for a user-defined constant $w > 0$. The penalty term discourages incursions int
 % which retains only the dynamics constraint. 
 
 
-\subsection{Offline GMM Initialization}
+\subsection{Stage 1: Offline Initialization}
 \label{subsec:offline_online_cp}
 
 \noindent
-{\bf Dataset.} During the offline stage, we assume an access to $n_{\text{cal}}$ independent observations of length $T$:
+{\bf Dataset.} During the offline stage, we assume an access to $n_{\text{cal}}$ independent snapshots of the environment:
 \begin{equation*}
 \left\{ \mathcal{O}^{(j)}_t : 0 \leq t \leq T,\; 1 \leq j \leq  n_{\text{cal}}  \right\}
 \end{equation*}
@@ -787,20 +801,16 @@ $
 \{\xi_i(S_i^{(j)})\}_{j=1}^{n_{\mathrm{cal}}},
 $
 we fit a Gaussian mixture model and apply the coefficient-space conformal construction of Section~\ref{sec:gmm_ellipsoids}.
-This produces an accurate \emph{initial} coefficient upper bound
-$
-\hat{\xi}^{(0)}_i \in \mathbb R^{p_i}_{\ge 0},
-$
-together with the projection residual $\varepsilon_i$.
-Equivalently, the initial offline envelope can be written as
+This yields the mixture parameters $\{\widehat\pi_{i,k},\widehat\mu_{i,k},\widehat\Sigma_{i,k}\}_{k=1}^K$, the conformal level $\lambda_i$ (and hence the per-component radii $r_{i,k}\equiv r_{i,k}(\lambda_i)$ of~\eqref{eq:ellipsoid_def}), and the projection residual $\varepsilon_i$.
+The initial offline envelope is then the closed-form support function of the resulting union of ellipsoids,
 \begin{equation}
 U_i^{(0)}(x)
 =
-\varepsilon_i+\hat{\xi}^{(0)\top}_i \varphi_i(x),
+\varepsilon_i+\max_{1\le k\le K}\Bigl\{\widehat\mu_{i,k}^\top\varphi_i(x)+r_{i,k}\bigl(\varphi_i(x)^\top\widehat\Sigma_{i,k}\,\varphi_i(x)\bigr)^{1/2}\Bigr\},
 \label{eq:Ui_init}
 \end{equation}
 where $\varphi_i(x)\in\mathbb R^{p_i}$ denotes the vector of basis evaluations at $x$.
-The role of the offline GMM is therefore to provide the most accurate initialization $\hat{\xi}^{(0)}_i$ before deployment.
+(The support function automatically takes the worst-case direction over each ellipsoid, so it is a valid upper bound regardless of the sign of the basis functions; a single per-coordinate vector would not be.)
 
 \paragraph{Cached offline tuple.}
 For each horizon index $i$, we cache the offline tuple
@@ -809,7 +819,8 @@ For each horizon index $i$, we cache the offline tuple
 \;\coloneqq\;
 \Bigl(
 \{\varphi_{i,m}\}_{m=1}^{p_i},\,
-\hat{\xi}^{(0)}_i,\,
+\{\widehat\pi_{i,k},\widehat\mu_{i,k},\widehat\Sigma_{i,k}\}_{k=1}^K,\,
+\lambda_i,\,
 \varepsilon_i
 \Bigr),
 \label{eq:Pi_i_tuple}
@@ -820,37 +831,29 @@ and denote by
 \label{eq:Pi_collection}
 \end{equation}
 the full collection of horizon-indexed tuples cached by the controller.
-Crucially, after deployment, the online controller uses only $\boldsymbol{\Pi}$ and no longer requires the fitted GMM itself.
+Crucially, after deployment the online controller only \emph{evaluates} the closed-form envelope~\eqref{eq:Ui_init} from the cached parameters and never \emph{re-fits} the GMM. In practice the two grids $\widehat\mu_{i,k}^\top\varphi_i(\cdot)$ and $(\varphi_i(\cdot)^\top\widehat\Sigma_{i,k}\varphi_i(\cdot))^{1/2}$ are precomputed once, so an envelope update reduces to recombining them with the (scalar-)adapted radii.
 
-\subsection{Online adaptive update}\label{subsec:online_update}
-Once the robot starts moving, the GMM is used only for the initialization above and is not evaluated online.
-At time $t$, if a realized residual field becomes available for horizon index $i$, we project it onto the cached basis:
+\subsection{Stage 2: Online Adaptation}\label{subsec:online_update}
+Once the robot starts moving, the cached envelope is adapted online through a single scalar per horizon index, in the spirit of adaptive conformal inference~\cite{gibbs2021adaptiveconformalinferencedistribution}. Because the offline envelope~\eqref{eq:Ui_init} is parameterized by the calibrated radii $r_{i,k}$, we adapt a scalar multiplier $c_i^{(t)}$ on those radii rather than a high-dimensional coefficient vector: this keeps the band a valid LRW support function at all times and yields a clean coverage event.
+At time $t$, once a realized residual field $S^{\mathrm{on}}_{i,t}$ matures for horizon index $i$, we form the \emph{functional} violation indicator
 \begin{equation}
-\xi^{\mathrm{on}}_{i,t}
-=
-\Bigl(
-\langle S^{\mathrm{on}}_{i,t},\varphi_{i,1}\rangle,\dots,
-\langle S^{\mathrm{on}}_{i,t},\varphi_{i,p_i}\rangle
-\Bigr)^\top .
+\mathrm{err}^{(t)}_i = \mathbb{I}\!\left[\exists x\in\bar{\mathcal X}:\ S^{\mathrm{on}}_{i,t}(x) > \widetilde U_{i,t}(x)\right],
 \label{eq:online_coeff}
 \end{equation}
-As in the offline stage, this projection is evaluated on the discretization grid $\bar{\mathcal X}$ of Section~\ref{sec:score-comp}: it uses only the realized signed-distance residual at these grid points and costs $O(p_i |\bar{\mathcal X}|)$ per horizon index, so the full workspace field need not be reconstructed online.
-We then compare the magnitude of each component of $\xi^{\mathrm{on}}_{i,t}$ against the current online upper bound
-$\hat{\xi}^{(t)}_i$.
-If the empirical violation frequency is above the target level $\alpha_{\mathrm{target}}$, the upper bound is inflated; if it is below the target level, the upper bound is contracted.
-Hence the online update operates directly on the coefficient upper bound\cite{gibbs2021adaptiveconformalinferencedistribution},
+evaluated only on the discretization grid $\bar{\mathcal X}$ of Section~\ref{sec:score-comp} (cost $O(K p_i |\bar{\mathcal X}|)$, no full-field reconstruction and no GMM re-fit). The scalar is then updated by the ACI rule
 \begin{equation}
-\hat{\xi}_{i}^{(t+1)} = \hat{\xi}_{i}^{(t)} + \gamma \cdot \left( \mathbb{I}(|\xi_{i,t}^{\text{on}}| > \hat{\xi}_{i}^{(t)}) - \alpha_{\text{target}} \right).
+c_{i}^{(t+1)} = \Bigl[\,c_{i}^{(t)} + \gamma\,\bigl( \mathrm{err}^{(t)}_i - \alpha_{\text{target}} \bigr)\Bigr]_{+},
 \label{eq:acp_update}
 \end{equation}
-The corresponding online envelope is then
+so the envelope inflates when the realized miscoverage exceeds $\alpha_{\text{target}}$ and contracts otherwise, driving the long-run miscoverage to $\alpha_{\text{target}}$.
+The corresponding online envelope simply rescales the cached radii,
 \begin{equation}
 \widetilde U_{i,t}(x)
 =
-\varepsilon_i+\hat{\xi}^{(t)\top}_i \varphi_i(x).
+\varepsilon_i+\max_{1\le k\le K}\Bigl\{\widehat\mu_{i,k}^\top\varphi_i(x)+c_i^{(t)}\,r_{i,k}\bigl(\varphi_i(x)^\top\widehat\Sigma_{i,k}\,\varphi_i(x)\bigr)^{1/2}\Bigr\}.
 \label{eq:Ui_online}
 \end{equation}
-Thus, offline GMM fitting is used only to initialize $\hat{\xi}^{(0)}_i$, while online adaptation operates entirely on the cached coefficients $\hat{\xi}^{(t)}_i$, without re-evaluating the GMM.
+Thus offline GMM fitting only initializes the cached parameters, while online adaptation moves a single scalar $c_i^{(t)}$ (with $c_i^{(0)}=1$), recomputed against the precomputed grids of~\eqref{eq:Pi_i_tuple} without re-evaluating the GMM.
 
 \paragraph{Optional grid realization for fast online evaluation.}
 Although the primary cached objects are the tuples in~\eqref{eq:Pi_collection}, the envelope~\eqref{eq:Ui_online} may also be evaluated on a fixed workspace grid $\mathcal G$ and stored as a tensor for fast pointwise lookup.
@@ -1079,9 +1082,9 @@ constraint within MPC.
 
 \paragraph{CP}
 We collect a calibration set of length $T_{\mathrm{cal}}$ and compute
-residual score fields $S_{t+i\mid t}(x) = D_{t+i\mid t}(x) - D_{t+i}(x)$ over a
-grid for each horizon step $i \in \{1,\dots,H\}$.
-The residual fields are projected onto a $p$-dimensional subspace using FPCA and
+residual SDF fields $R_{t+i\mid t}(x) = D_{t+i\mid t}(x) - D_{t+i}(x)$ over a
+3D grid for each horizon step $i \in \{1,\dots,H\}$.
+The residual fields are projected onto a $p$-dimensional subspace using PCA and
 modeled via a $K$-component Gaussian mixture model (GMM) in coefficient space.
 We set the target miscoverage level to $\alpha$ and compute horizon-dependent
 upper envelopes $U_{t+i\mid t}(x)$, yielding the conformal lower-bound SDF
