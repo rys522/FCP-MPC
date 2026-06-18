@@ -44,11 +44,14 @@ class CPConfig:
     # with the empirical combined coverage validated to track 1-alpha).
     split_alpha: bool = False
 
-    # The projection-residual slack epsilon inflates U uniformly. Because the residual field
-    # is low-rank (L3), the p-component projection captures it and the truncation is negligible;
-    # we therefore drop epsilon (set ~0) by default and rely on the (empirically validated)
-    # coverage of the projected envelope. Set True to re-enable the conformalized epsilon.
-    proj_residual: bool = False
+    # Conformalize the projection-residual slack epsilon (= Quantile_{1-alpha} of the sup-norm
+    # truncation ||S - Pi_p S||) so the envelope covers the FULL field, not just its projection.
+    # Kept True: epsilon is the term that makes the full-field guarantee rigorous; it is data-
+    # determined (~1.0 here) and cannot be shrunk by fiat without breaking validity. Any
+    # over-conservatism is handled by the horizon-dependent clearance relaxation, not by
+    # lowering epsilon. Set False to drop it -> only the projected field is covered (LRW Prop 3.1),
+    # tighter but a weaker (projection-only) claim.
+    proj_residual: bool = True
 
     # numerical stability
     cov_jitter: float = 1e-8
@@ -422,10 +425,9 @@ class PCAGMMResidualCP:
             test_size=self.cfg.test_size,
             random_state=self.cfg.random_state
         )
-        # Projection-residual slack: dropped by default (proj_residual=False) since the
-        # residual field is low-rank (L3) so the truncation is negligible -> the envelope
-        # is then the single-step LRW projection band (Prop 3.1, exact 1-alpha on the
-        # projection). Enable proj_residual to conformalize epsilon (Bonferroni via split_alpha).
+        # Projection-residual slack epsilon: conformal sup-norm quantile of the truncation,
+        # kept (proj_residual=True) so the envelope covers the full field (not just the
+        # projection). With proj_residual=False it is dropped -> LRW projection band only.
         epsilon = float(np.quantile(err_cal, 1.0 - alpha_eps)) if self.cfg.proj_residual else 0.0
 
         # 3) Fit GMM and choose lambda (density superlevel) via calibration.
