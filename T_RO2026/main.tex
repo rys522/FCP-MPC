@@ -1374,37 +1374,41 @@ $0.22$, oracle future noise $0.20$), averaged over $17$ seeds. The high-level
 planner runs at $\Delta t=0.1$\,s, so any per-step cost above $100$\,ms violates
 the real-time budget.
 
-All controllers share the same goal-anchored sampling-based planner, so the comparison
-isolates the conformal method rather than the planner. Neither uncertainty-reasoning
-baseline reaches the goal: both fly the full horizon, but their hard conformal filters are
-too conservative to thread the dense field and time out on every seed. ACP-MPC~\cite{dixit2023adaptive}
-inflates a scalar conformal radius per obstacle (collision $0.049$, infeasible $0.125$) at
-$216$\,ms/step; ECP-MPC~\cite{shin2025egocentric} is by far the slowest ($1283$\,ms/step,
-over $12\times$ the budget), with collision $0.036$ and infeasible $0.082$. CC-MPC does
-reach the goal on every seed ($186$ steps) thanks to its purely soft formulation (zero
-infeasible by construction), but at a higher collision rate ($0.085$) and a per-step cost
-($209$\,ms) that also exceeds the budget.
+Because all controllers share the same goal-anchored planner, the differences in
+Table~\ref{tab:pybullet_results} stem from the conformal method alone, and fall along two
+axes: how \emph{conservative} each safety construction is---whether the robot can reach the
+goal at all---and how \emph{expensive} it is per step---whether it meets the $100$\,ms budget.
 
-The two deployments of the \emph{same} offline-conformalized field behave very
-differently at this density.
-FCP-MPC~(hard) enforces the bound as a hard feasibility filter and inherits the
-guarantee of Theorems~\ref{thm:asymptotic_safety}--\ref{thm:asymptotic_safety_afcp};
-it is the only method within the $100$\,ms budget ($40.2$\,ms/step) and attains a low
-collision rate ($0.023$), but at this extreme density the worst-case envelope compounds
-over the horizon until almost no candidate remains feasible (infeasible $0.833$), so the
-planner stalls and times out before reaching the goal.
-FCP-MPC~(soft) applies the same field as a penalty: it reaches the goal on every seed
-($100$ steps), removes infeasibility by construction, and attains the lowest collision
-rate among the goal-reaching methods ($0.028$, within the target $\alpha=0.10$); its
-per-step cost ($161$\,ms) exceeds the budget but is roughly $8\times$ faster than ECP-MPC.
+The two baselines that enforce uncertainty as a \emph{hard} exclusion never reach the goal.
+ACP-MPC~\cite{dixit2023adaptive} inflates a scalar conformal radius around each obstacle and
+ECP-MPC~\cite{shin2025egocentric} conformalizes an egocentric score at each robot state; both
+fly the full horizon, but their inflation is too conservative to thread $280$ moving
+obstacles, so they time out on every seed (collision $0.049$/$0.036$, infeasible
+$0.125$/$0.082$). FCP-MPC~(hard) enforces the \emph{same} style of hard feasibility filter
+and inherits the guarantee of
+Theorems~\ref{thm:asymptotic_safety}--\ref{thm:asymptotic_safety_afcp}, but over a conformal
+\emph{field} rather than per-obstacle inflation; this is markedly less conservative, yet at
+this extreme density even it eventually exhausts the feasible set (infeasible $0.833$) and
+times out. No hard filter clears $280$ obstacles, then---but the field bound is the least
+conservative of the three and runs at the lowest per-step cost of any method ($40.2$\,ms,
+the only one within budget), whereas ECP-MPC is by far the most expensive ($1283$\,ms/step,
+over $12\times$ the budget).
 
-Table~\ref{tab:results_sparse} repeats the comparison at $N_{\mathrm{obs}}=50$, where free
-space is ample. FCP-MPC~(soft) again reaches the goal on every seed with the lowest
-collision rate ($0.008$), and FCP-MPC~(hard)---no longer starved of feasible candidates---
-reaches it on $88\%$ of seeds with the infeasible rate dropping to $0.353$. CC-MPC also
-reaches the goal, whereas ACP- and ECP-MPC still time out on every seed even with ample
-free space, as their per-obstacle and egocentric inflation stays too conservative to
-approach the goal. We discuss this density trend in Section~\ref{sec:discussion}.
+Relaxing the bound from a constraint to a penalty restores progress. CC-MPC---a purely soft
+formulation with no spatial uncertainty model---reaches the goal on every seed but is slow
+($186$ steps, $209$\,ms/step) and less safe (collision $0.085$). FCP-MPC~(soft) applies the
+same conformal field as a penalty and is the strongest method overall: it reaches the goal
+on every seed in the fewest steps ($100$), removes infeasibility by construction, and attains
+the lowest collision rate of any goal-reaching method ($0.028$, within the target
+$\alpha=0.10$), at $161$\,ms/step---over budget, but still $\sim\!8\times$ faster than ECP-MPC.
+
+Reducing the workspace to $N_{\mathrm{obs}}=50$ (Table~\ref{tab:results_sparse}) confirms that
+conservativeness, not the planner, drives these outcomes. With ample free space FCP-MPC~(hard)
+now threads the field on $88\%$ of seeds (infeasible $0.353$) and FCP-MPC~(soft) again reaches
+every seed at the lowest collision rate ($0.008$); CC-MPC also reaches the goal. ACP- and
+ECP-MPC, however, still time out on every seed---their per-obstacle and egocentric inflation
+stays too tight even when space is plentiful. We return to this density trend in
+Section~\ref{sec:discussion}.
 Figure~\ref{fig:fcp_3d} illustrates the conformal bound in 3D, and
 Figure~\ref{fig:traj_3d} compares closed-loop trajectories across three seeds:
 FCP-MPC threads to the goal in every panel while the baselines, under the same planner,
@@ -1516,18 +1520,15 @@ where free space is scarce, complementing the open 3D study below.
 
 
 \paragraph{Separating conformal prediction from real-time planning in 3D.}
-With a shared planner, the behaviors in Table~\ref{tab:pybullet_results} separate two
-axes: how \emph{conservative} each conformal filter is (whether it can reach the goal at
-all) and how \emph{expensive} it is per step (whether it meets the real-time budget).
-ECP-MPC fails on both---its egocentric inflation is too conservative to thread the field
-(times out) and its per-step latency ($1283$\,ms) far exceeds the budget.
-ACP-MPC's per-obstacle inflation likewise never reaches the goal, at a cost ($216$\,ms)
-that also exceeds the budget.
-CC-MPC reaches the goal through a pure soft penalty but, lacking any spatial uncertainty
-model, is both slower and less safe.
-FCP-MPC moves the expensive estimation offline, so at runtime safety is a fieldwise query
-against a cached bound---fast, largely obstacle-count-insensitive, and, as a \emph{field}
-rather than per-obstacle inflation, far less conservative.
+The two ways the baselines fail---too conservative to reach the goal (ACP, ECP) or too
+expensive to run in real time (ECP most of all, with CC and ACP also over budget)---share a
+root cause: they quantify uncertainty \emph{online}, per obstacle or per robot state. That is
+both costly at runtime and forces a locally tight margin around every object. FCP instead
+estimates the conformal \emph{field} once, offline; at runtime safety is a single cached-field
+query---fast and largely obstacle-count-insensitive---and, because the bound is reasoned
+globally over space rather than inflated object by object, far less conservative. This is why
+FCP is at once the cheapest method and the only conformal construction whose hard filter ever
+clears the field.
 
 \paragraph{Certified hard filter vs.\ practical soft deployment.}
 The same offline field can be deployed in two ways. As a \emph{hard} filter it carries the
