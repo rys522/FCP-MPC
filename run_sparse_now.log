@@ -1,0 +1,743 @@
+=== SPARSE START 2026-06-18T19:02:38+09:00 ===
+pybullet build time: Jun 17 2026 20:49:40
+[sparse N_obs=50] 85 episodes (sequential)
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+b3Warning[examples/SharedMemory/PhysicsDirect.cpp,864]:
+Remove body failed
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 20 reach=0 coll=0.000 infeas=0.000 steps= 38 (3s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 20 reach=1 coll=0.000 infeas=0.000 steps=181 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 0 infeasibility 6 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=42.941 ms | p50=42.985 | p90=43.474 | p99=43.523 | max=43.528
+[timing] env.step (physics): mean=17.943 ms | p50=17.954 | p90=18.242 | p99=18.286 | max=18.291
+[timing] total loop: mean=70.590 ms | p50=70.114 | p90=79.903 | p99=82.114 | max=82.360
+===================================
+
+  ECP-MPC          seed= 20 reach=0 coll=0.000 infeas=0.000 steps=  6 (1s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 20 reach=1 coll=0.000 infeas=0.045 steps=111 (18s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 20 reach=1 coll=0.000 infeas=0.000 steps= 92 (18s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 21 reach=0 coll=0.000 infeas=0.000 steps= 32 (2s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 21 reach=1 coll=0.029 infeas=0.000 steps=173 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 3 infeasibility 4 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=40.872 ms | p50=40.630 | p90=41.869 | p99=42.133 | max=42.163
+[timing] env.step (physics): mean=17.421 ms | p50=17.397 | p90=17.521 | p99=17.567 | max=17.572
+[timing] total loop: mean=62.709 ms | p50=61.646 | p90=67.055 | p99=68.423 | max=68.575
+===================================
+
+  ECP-MPC          seed= 21 reach=0 coll=0.000 infeas=0.750 steps=  4 (0s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 21 reach=1 coll=0.018 infeas=0.576 steps=224 (20s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 21 reach=1 coll=0.000 infeas=0.000 steps= 82 (24s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 22 reach=0 coll=0.000 infeas=0.000 steps=  8 (1s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 22 reach=1 coll=0.056 infeas=0.000 steps=179 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 0 infeasibility 2 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=41.851 ms | p50=41.851 | p90=42.264 | p99=42.357 | max=42.367
+[timing] env.step (physics): mean=17.381 ms | p50=17.381 | p90=17.612 | p99=17.664 | max=17.670
+[timing] total loop: mean=59.423 ms | p50=59.423 | p90=60.072 | p99=60.218 | max=60.234
+===================================
+
+  ECP-MPC          seed= 22 reach=0 coll=0.000 infeas=0.000 steps=  2 (0s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 22 reach=1 coll=0.000 infeas=0.168 steps= 95 (16s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 22 reach=1 coll=0.000 infeas=0.000 steps= 82 (24s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 23 reach=0 coll=0.000 infeas=0.000 steps= 29 (2s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 23 reach=1 coll=0.000 infeas=0.000 steps=179 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 0 infeasibility 7 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=40.806 ms | p50=40.770 | p90=41.627 | p99=41.697 | max=41.704
+[timing] env.step (physics): mean=17.692 ms | p50=17.617 | p90=18.180 | p99=18.447 | max=18.477
+[timing] total loop: mean=70.303 ms | p50=70.541 | p90=81.762 | p99=85.033 | max=85.396
+===================================
+
+  ECP-MPC          seed= 23 reach=0 coll=0.000 infeas=0.000 steps=  7 (1s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 23 reach=1 coll=0.102 infeas=0.386 steps=127 (17s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 23 reach=1 coll=0.000 infeas=0.000 steps= 73 (24s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 24 reach=0 coll=0.000 infeas=0.000 steps= 16 (1s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 24 reach=1 coll=0.060 infeas=0.000 steps=184 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 1 infeasibility 2 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=40.068 ms | p50=40.068 | p90=40.313 | p99=40.368 | max=40.374
+[timing] env.step (physics): mean=17.426 ms | p50=17.426 | p90=17.477 | p99=17.488 | max=17.489
+[timing] total loop: mean=57.702 ms | p50=57.702 | p90=57.890 | p99=57.933 | max=57.938
+===================================
+
+  ECP-MPC          seed= 24 reach=0 coll=0.000 infeas=0.500 steps=  2 (0s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 24 reach=0 coll=0.000 infeas=0.844 steps=250 (26s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 24 reach=1 coll=0.000 infeas=0.000 steps= 73 (19s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 30 reach=0 coll=0.000 infeas=0.000 steps= 41 (3s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 30 reach=1 coll=0.000 infeas=0.000 steps=173 (10s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 0 infeasibility 7 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=39.667 ms | p50=39.638 | p90=40.406 | p99=40.473 | max=40.481
+[timing] env.step (physics): mean=17.613 ms | p50=17.581 | p90=17.845 | p99=17.927 | max=17.936
+[timing] total loop: mean=69.023 ms | p50=67.709 | p90=80.914 | p99=83.568 | max=83.863
+===================================
+
+  ECP-MPC          seed= 30 reach=0 coll=0.000 infeas=0.000 steps=  7 (1s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 30 reach=0 coll=0.032 infeas=0.736 steps=250 (22s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 30 reach=1 coll=0.000 infeas=0.000 steps= 77 (17s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 31 reach=0 coll=0.000 infeas=0.000 steps= 27 (2s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 31 reach=1 coll=0.000 infeas=0.000 steps=180 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 0 infeasibility 59 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=648.999 ms | p50=921.733 | p90=938.096 | p99=944.521 | max=946.764
+[timing] env.step (physics): mean=18.082 ms | p50=17.865 | p90=18.716 | p99=18.821 | max=18.850
+[timing] total loop: mean=721.999 ms | p50=1001.779 | p90=1018.682 | p99=1024.494 | max=1026.170
+===================================
+
+  ECP-MPC          seed= 31 reach=0 coll=0.000 infeas=0.000 steps= 59 (43s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 31 reach=1 coll=0.000 infeas=0.192 steps= 99 (23s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 31 reach=1 coll=0.000 infeas=0.000 steps= 72 (16s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 32 reach=0 coll=0.000 infeas=0.000 steps= 27 (2s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 32 reach=1 coll=0.038 infeas=0.000 steps=186 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 1 infeasibility 13 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=45.453 ms | p50=40.908 | p90=41.748 | p99=97.100 | max=104.645
+[timing] env.step (physics): mean=17.841 ms | p50=17.696 | p90=18.312 | p99=18.715 | max=18.767
+[timing] total loop: mean=90.289 ms | p50=85.521 | p90=109.794 | p99=174.155 | max=182.752
+===================================
+
+  ECP-MPC          seed= 32 reach=0 coll=0.000 infeas=0.077 steps= 13 (1s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 32 reach=1 coll=0.000 infeas=0.331 steps=139 (24s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 32 reach=1 coll=0.000 infeas=0.000 steps=100 (20s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 33 reach=0 coll=0.000 infeas=0.000 steps= 52 (3s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 33 reach=1 coll=0.000 infeas=0.000 steps=182 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 0 infeasibility 5 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=41.748 ms | p50=41.331 | p90=43.196 | p99=43.479 | max=43.511
+[timing] env.step (physics): mean=17.879 ms | p50=17.788 | p90=18.216 | p99=18.299 | max=18.309
+[timing] total loop: mean=66.479 ms | p50=64.078 | p90=73.155 | p99=75.021 | max=75.228
+===================================
+
+  ECP-MPC          seed= 33 reach=0 coll=0.000 infeas=0.000 steps=  5 (0s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 33 reach=1 coll=0.000 infeas=0.000 steps= 82 (18s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 33 reach=1 coll=0.000 infeas=0.000 steps= 82 (24s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 34 reach=0 coll=0.000 infeas=0.000 steps= 34 (2s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 34 reach=1 coll=0.000 infeas=0.000 steps=212 (13s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 0 infeasibility 14 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=54.683 ms | p50=41.687 | p90=87.135 | p99=157.086 | max=164.709
+[timing] env.step (physics): mean=18.052 ms | p50=18.037 | p90=18.517 | p99=18.588 | max=18.591
+[timing] total loop: mean=102.847 ms | p50=89.669 | p90=163.000 | p99=240.091 | max=248.454
+===================================
+
+  ECP-MPC          seed= 34 reach=0 coll=0.000 infeas=0.000 steps= 14 (2s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 34 reach=1 coll=0.000 infeas=0.611 steps=247 (22s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 34 reach=1 coll=0.000 infeas=0.000 steps= 86 (20s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 35 reach=0 coll=0.129 infeas=0.000 steps= 31 (2s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 35 reach=1 coll=0.054 infeas=0.000 steps=186 (11s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+2 collisions, 1 infeasibility 2 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=42.267 ms | p50=42.267 | p90=42.770 | p99=42.883 | max=42.896
+[timing] env.step (physics): mean=18.498 ms | p50=18.498 | p90=18.660 | p99=18.696 | max=18.700
+[timing] total loop: mean=60.991 ms | p50=60.991 | p90=61.653 | p99=61.802 | max=61.818
+===================================
+
+  ECP-MPC          seed= 35 reach=0 coll=1.000 infeas=0.500 steps=  2 (0s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (hard)   seed= 35 reach=1 coll=0.026 infeas=0.461 steps=154 (25s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+Running simulation for max 250 steps to record Ground Truth...
+  FCP-MPC (soft)   seed= 35 reach=1 coll=0.110 infeas=0.000 steps= 73 (16s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  ACP-MPC          seed= 36 reach=0 coll=0.000 infeas=0.000 steps= 36 (2s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+  CC-MPC           seed= 36 reach=1 coll=0.000 infeas=0.000 steps=171 (10s)
+[INFO] BaseAviary.__init__() loaded parameters from the drone's .urdf:
+[INFO] m 0.027000, L 0.039700,
+[INFO] ixx 0.000014, iyy 0.000014, izz 0.000022,
+[INFO] kf 3.160000e-10, km 7.940000e-12,
+[INFO] t2w 2.250000, max_speed_kmh 30.000000,
+[INFO] gnd_eff_coeff 11.368590, prop_radius 0.023135,
+[INFO] drag_xy_coeff 0.000001, drag_z_coeff 0.000001,
+[INFO] dw_coeff_1 2267.180000, dw_coeff_2 0.160000, dw_coeff_3 -0.110000
+0 collisions, 0 infeasibility 2 step
+
+==== Online compute timing (ms) ====
+[timing] controller (ECP): mean=40.192 ms | p50=40.192 | p90=40.312 | p99=40.339 | max=40.342
+[timing] env.step (physics): mean=17.824 ms | p50=17.824 | p90=17.828 | p99=17.829 | max=17.829
+[timing] total loop: mean=58.219 ms | p50=58.219 | p90=58.333 | p99=58.359 | max=58.362
+===================================
+
+  ECP-MPC          seed= 36 reach=0 coll=0.000 infeas=0.000 steps=  2 (0s)
