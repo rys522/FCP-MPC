@@ -215,3 +215,65 @@ Social Etiquette…*, ECCV 2016. OpenTraj (if its zip/toolkit used) — Amirian 
 - **FCP-3D is non-adaptive** (offline field only; the 2D ablation covers adaptation).
 - ECP-3D control time is high (~1 s/step at n_obs=280) — inherent to its per-path online
   calibration, not a misconfiguration.
+
+---
+
+## ✅ Completed overnight (2026-06-18) — commits `44c7bcf`, `231db4d`
+
+Run on the desktop in conda env `cp` (built from scratch this session: Python 3.12 +
+pinned `requirements.txt`, `gym-pybullet-drones` from the pinned commit, `setuptools` 75.8.0
+for `pkg_resources`; **`rerun-sdk` is uninstallable here — glibc 2.27 < 2.31 — so a no-op
+`rerun` shim sits in the env's site-packages**; rerun is viewer-logging only and irrelevant
+to the tables/figures). Commits are local; **`git push origin main` still needed** (no
+GitHub credentials on this machine).
+
+### §1b — 3D fairness audit (read the code; two real asymmetries found + fixed)
+The "only FCP reaches at dense" pattern was **partly an artifact**. Fixed and verified:
+1. **Env RNG never reset across episodes.** `quad_env.reset()` re-inited obstacles from the
+   *current* RNG without reseeding, so FCP's offline calibration (which steps the env and
+   advances `self.rng`) made FCP fly a **different** obstacle realization than the baselines
+   at the same seed. Fix: `reset()` reseeds `self.rng`/`oracle_rng` to the base seed →
+   verified obstacle fields are now **byte-identical** across methods per seed.
+2. **`goal_finish_dist` not pinned.** ACP/FCP used 0.8 but CC/ECP fell back to 0.3 (~2.7×
+   closer to count as "reached"). Fix: `make_figs_3d.EXP_BASE` pins `goal_finish_dist=0.8`
+   for all methods.
+3. (Documented, not changed) ECP-3D ignores the static wall boxes CC/FCP enforce — this
+   only **disadvantages** ECP, so it doesn't fake FCP's win.
+
+### §1 — re-run under the fair env (the headline changed, honestly)
+- **Sparse (N_obs=50):** CC-MPC now **reaches (1.00)** alongside FCP-hard/soft; ACP/ECP fail.
+- **Dense (N_obs=280):** CC-MPC also **reaches (186.5 steps)**; ACP/ECP crash; **FCP-MPC
+  (soft) is best** (84.8 steps, collision 0.032). Story is now "FCP is best," not "only FCP."
+- Regenerated `table_3d_results.tex`, `table_3d_sparse.tex`, `traj_3d_seeds.png` (auto-seeds
+  21/30/31), `control_time_3d.png`, and the env-dependent `Func_cp_3d_zoom.png` +
+  `traj_3d_overlay.png` (added `goal_directed_frac=0.5` to their local `ENV_KWARGS`).
+
+### §2 — SDD spatial-uncertainty evidence (see `SDD_FINDINGS.md`)
+- **L1 (geometry/turning → uncertainty): NOT supported.** Full 60-video sweep: only 5
+  low-sample videos clear the controlled gate; **deathCircle (prime roundabout) WEAK on all**.
+  → do not put an SDD L1 overlay in the paper.
+- **L2 (time-invariance): mostly holds.** `make_fig_stationarity_split.py` → split-halves
+  cell agreement hotel +0.91, eth +0.73, univ +0.71 (zara1 +0.45, zara2 +0.04).
+- **L3 (low-rank): holds.** `make_fig_fpca_lowrank.py` → 5–7 PCs for 90% variance on 4/5
+  ETH-UCY datasets (univ 13), out of 1600 grid dims. **L2+L3 are the load-bearing
+  justification** for offline calibration.
+- **§2b nav benchmark: NOT run** (deliberate). L1 gate failed and a correct SDD→pkl adapter
+  needs the pixel→metre scale, a forecaster choice, and per-scene nav tasks — guessing those
+  would put wrong numbers in the paper. Blockers documented in `SDD_FINDINGS.md`.
+- **§2c main.tex: deferred to review** (L1 didn't hold; a recommended L2/L3 snippet is in
+  `SDD_FINDINGS.md`).
+
+### §4 — 2D-table propagation: fixed
+`make_table_2d.py` now writes the 2D tables into **both** `tables/` and `T_RO2026/`, so the
+paper's `\input` can't desync. The current `T_RO2026/` tables already carry the MPPI numbers
+(propagated earlier), so no number change.
+
+### New files this session
+`make_fig_fpca_lowrank.py` (L3), `make_fig_stationarity_split.py` (L2), `SDD_FINDINGS.md`,
+`run_dynamic_3d.sh` / `run_extra_3d_figs.sh` (runners, held awake via `systemd-inhibit`),
+and the tracked `sdd_*_{diag,overlay,cells}` outputs + `sdd_all_analysis.log`.
+
+### Open items needing your input
+- Push the two commits (`git push origin main`).
+- SDD nav benchmark: confirm metre-scale source + CV-vs-trained forecaster, then it can run.
+- main.tex: approve the L2/L3 figures/snippet from `SDD_FINDINGS.md`.
