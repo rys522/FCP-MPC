@@ -459,16 +459,34 @@ def main():
     # The trajectory figure must show FCP (the headline soft variant) reaching the goal.
     # Prefer the requested seeds where FCP-soft actually succeeds, then fill from any
     # other successful seeds; only fall back to raw requested seeds if none succeeded.
-    def _fcp_soft_reached(seed):
+    def _metric(seed, label, key):
         for r in results_main:
-            if r["seed"] == seed and r["label"] == "FCP-MPC (soft)":
-                return bool(r["metrics"].get("reached_goal"))
-        return False
+            if r["seed"] == seed and r["label"] == label:
+                return r["metrics"].get(key)
+        return None
+
+    def _fcp_soft_reached(seed):
+        return bool(_metric(seed, "FCP-MPC (soft)", "reached_goal"))
+
+    # Panels should show (1) FCP-soft reaching the goal AND (2) baselines that travel a
+    # visible distance before failing (not crashing at step ~1). Rank the FCP-soft
+    # successes by how far the *worst* baseline got (max-min steps over ACP/CC/ECP), so the
+    # chosen seeds have all baselines visibly under way; tie-break on a shorter FCP path.
+    BASELINES = ["ACP-MPC", "CC-MPC", "ECP-MPC"]
     succ = [s for s in seeds if _fcp_soft_reached(s)]
-    traj_seeds = [s for s in args.traj_seeds if s in succ]
-    traj_seeds += [s for s in succ if s not in traj_seeds]
-    traj_seeds = traj_seeds[:3] or ([s for s in args.traj_seeds if s in seeds] or list(seeds)[:3])
-    print(f"[traj] FCP-soft reaches goal on seeds {succ}; figure uses {traj_seeds}", flush=True)
+
+    def _baseline_min_steps(seed):
+        steps = [(_metric(seed, b, "steps") or 0) for b in BASELINES]
+        return min(steps) if steps else 0
+
+    def _fcp_steps(seed):
+        return _metric(seed, "FCP-MPC (soft)", "steps") or 1e9
+
+    ranked = sorted(succ, key=lambda s: (_baseline_min_steps(s), -_fcp_steps(s)), reverse=True)
+    traj_seeds = ranked[:3] or ([s for s in args.traj_seeds if s in seeds] or list(seeds)[:3])
+    print(f"[traj] FCP-soft reaches on {succ}; baseline min-steps "
+          f"{[(s, _baseline_min_steps(s)) for s in ranked[:6]]}; figure uses {traj_seeds}",
+          flush=True)
     render_traj(results_main, traj_seeds)
     render_scalability()
     print("[done] table + traj + scalability (outcomes parallel, timing sequential)")

@@ -25,6 +25,8 @@ import os
 import time
 
 import numpy as np
+from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -151,6 +153,35 @@ def load_cache(path: str) -> dict:
     return blob["data"].item()
 
 
+def _smooth_path(traj, n_out: int = 240, frac: float = 0.25):
+    """Render a control trajectory as a smooth curve: a Savitzky-Golay low-pass over the
+    raw closed-loop waypoints (removes the per-step zig-zag without overshooting into fake
+    altitude drops) followed by arclength cubic up-sampling. True endpoints are preserved so
+    the start/goal/crash markers still land on the real path."""
+    traj = np.asarray(traj, dtype=float)
+    m = traj.shape[0]
+    if m < 5:
+        return traj
+    win = max(5, int(m * frac))
+    if win % 2 == 0:
+        win += 1
+    win = min(win, m if m % 2 == 1 else m - 1)
+    if win < 5:
+        return traj
+    sm = np.column_stack([savgol_filter(traj[:, k], win, 3) for k in range(3)])
+    sm[0], sm[-1] = traj[0], traj[-1]          # keep the real endpoints
+    d = np.r_[0.0, np.cumsum(np.linalg.norm(np.diff(sm, axis=0), axis=1))]
+    if d[-1] < 1e-6:
+        return sm
+    u = d / d[-1]
+    keep = np.r_[True, np.diff(u) > 1e-9]
+    u, sm = u[keep], sm[keep]
+    if sm.shape[0] < 4:
+        return sm
+    uu = np.linspace(0.0, 1.0, n_out)
+    return np.column_stack([interp1d(u, sm[:, k], kind="cubic")(uu) for k in range(3)])
+
+
 def make_figure(data: dict, out_path: str) -> None:
     seeds = sorted(data.keys())[:3]
     n = len(seeds)
@@ -173,7 +204,8 @@ def make_figure(data: dict, out_path: str) -> None:
             if traj is None or len(traj) == 0:
                 continue
             if len(traj) >= 2:
-                ax.plot(traj[:, 0], traj[:, 1], traj[:, 2],
+                sm = _smooth_path(traj)
+                ax.plot(sm[:, 0], sm[:, 1], sm[:, 2],
                         color=color, lw=lw, alpha=0.95, zorder=z)
             else:
                 # crashed almost immediately (one logged pose): still show the
