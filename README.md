@@ -202,22 +202,7 @@ $$\Delta(i) = \tfrac{1}{2} a_{\text{lat,max}} (i \Delta t)^2, \quad a_{\text{lat
 
 and the effective safety radius used at step $i$ is $r_\text{safe}^{(i)} = \max(0,\, r_\text{safe} - \Delta(i))$.
 
----
 
-## Citation
-
-```bibtex
-@article{fcp2026,
-  title   = {Planning Meets Functional Calibration: Function Conformal Prediction
-             for Safe Motion Planning in Uncertain Environments},
-  author  = {},
-  journal = {IEEE Transactions on Robotics},
-  year    = {2026},
-  note    = {Under review}
-}
-```
-
----
 
 ## License
 
