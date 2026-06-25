@@ -74,6 +74,17 @@ def nanmean_or_nan(vals):
     return float(np.mean(a)) if a.size else float("nan")
 
 
+def nanstd_or_nan(vals):
+    """Sample std (ddof=1) over finite entries; 0 for a single scene, NaN if none."""
+    a = np.asarray(vals, dtype=np.float64)
+    a = a[np.isfinite(a)]
+    if a.size == 0:
+        return float("nan")
+    if a.size == 1:
+        return 0.0
+    return float(np.std(a, ddof=1))
+
+
 def read_json(path):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
@@ -144,15 +155,20 @@ def load_results(dataset, controller_keys):
 
         d = read_json(path)
         mask = valid_scene_mask(d)
+        nan = float("nan")
         if not any(mask):
-            results[key] = {"collision": float("nan"), "infeasible": float("nan"),
-                            "steps": float("nan"), "ctrl_ms": float("nan")}
+            results[key] = {"collision": nan, "collision_std": nan,
+                            "infeasible": nan, "infeasible_std": nan,
+                            "steps": nan, "steps_std": nan, "ctrl_ms": nan}
             continue
 
+        coll = masked(d.get("collision", []), mask)
+        infe = masked(d.get("infeasible", []), mask)
+        stp = masked(d.get("time", []), mask)
         results[key] = {
-            "collision": nanmean_or_nan(masked(d.get("collision", []), mask)),
-            "infeasible": nanmean_or_nan(masked(d.get("infeasible", []), mask)),
-            "steps": nanmean_or_nan(masked(d.get("time", []), mask)),
+            "collision": nanmean_or_nan(coll),   "collision_std": nanstd_or_nan(coll),
+            "infeasible": nanmean_or_nan(infe),   "infeasible_std": nanstd_or_nan(infe),
+            "steps": nanmean_or_nan(stp),         "steps_std": nanstd_or_nan(stp),
             "ctrl_ms": ctrl_time_mean(d, mask),
         }
     return present, results
@@ -186,22 +202,42 @@ def best_values(dataset, results, keys):
     }
 
 
+def pm(mean, std, nd, is_best):
+    """Render a ``$mean\\pm std$`` cell; the mean is \\mathbf-bold when column-best."""
+    if not math.isfinite(mean):
+        return NA
+    m = f"{mean:.{nd}f}"
+    if is_best:
+        m = r"\mathbf{" + m + "}"
+    s = f"{std:.{nd}f}" if math.isfinite(std) else "0"
+    return f"${m}\\pm{s}$"
+
+
 def render_metric_cells(dataset, r, best, infeas_na=False):
-    """Format the four metric cells for one row, bolding column-best values.
-    ``infeas_na`` marks soft/penalty methods whose infeasibility is N/A by construction."""
+    """Format the four metric cells (mean$\\pm$std) for one row, bolding column-best
+    means. ``infeas_na`` marks soft/penalty methods whose infeasibility is N/A."""
     c, i, s, t = r["collision"], r["infeasible"], r["steps"], r["ctrl_ms"]
 
-    c_str = fmt(c, 3)
-    i_str = "N/A" if infeas_na else fmt(i, 3)
-    s_str = format_steps(s, MAX_N_STEPS[dataset])
-    t_str = fmt(t, 2)
+    c_best = math.isfinite(c) and abs(c - best["collision"]) < 1e-9
+    c_str = pm(c, r.get("collision_std", float("nan")), 3, c_best)
 
-    if math.isfinite(c) and abs(c - best["collision"]) < 1e-9:
-        c_str = bold(c_str)
-    if (not infeas_na) and math.isfinite(i) and abs(i - best["infeasible"]) < 1e-9:
-        i_str = bold(i_str)
-    if s_str not in (NA, "timeout") and math.isfinite(s) and abs(s - best["steps"]) < 1e-9:
-        s_str = bold(s_str)
+    if infeas_na:
+        i_str = "N/A"
+    else:
+        i_best = math.isfinite(i) and abs(i - best["infeasible"]) < 1e-9
+        i_str = pm(i, r.get("infeasible_std", float("nan")), 3, i_best)
+
+    # steps: keep the qualitative 'timeout' label, otherwise mean$\pm$std
+    if not math.isfinite(s):
+        s_str = NA
+    elif s >= MAX_N_STEPS[dataset] - TIMEOUT_EPS:
+        s_str = "timeout"
+    else:
+        s_best = abs(s - best["steps"]) < 1e-9
+        s_str = pm(s, r.get("steps_std", float("nan")), 1, s_best)
+
+    # control time: single value (matches the 3D table), \textbf-bold when best
+    t_str = fmt(t, 2)
     if math.isfinite(t) and abs(t - best["ctrl_ms"]) < 1e-9:
         t_str = bold(t_str)
 

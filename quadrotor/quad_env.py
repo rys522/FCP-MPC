@@ -103,6 +103,13 @@ class QuadWorldEnv3D(BaseAviary):
         mode_max_ttl: int = 25,
         turn_rate_std: float = 1.0,
         stop_go_p: float = 0.1,
+        # Motion-mode mixture for the structural distribution-shift study.
+        # Probability vector over [CV, Turn, Wander, Stop-Go]. None => uniform
+        # (the legacy behaviour, exactly equivalent to rng.integers(0, 4)).
+        # Calibration vs. deployment are made to differ ONLY through this knob:
+        # a CV-leaning vector at calibration time and a turn/stop-go-heavy vector
+        # at deployment time produce a shift the frozen CV predictor cannot track.
+        mode_probs: Optional[List[float]] = None,
         # Goal-directed (crossing-pedestrian) obstacles
         goal_directed_frac: float = 0.0,        # fraction of obstacles that walk toward a goal
         goal_speed_range: Tuple = (0.3, 0.7),   # cruising speed sampled per goal-directed agent
@@ -154,6 +161,16 @@ class QuadWorldEnv3D(BaseAviary):
         self.mode_max_ttl = mode_max_ttl
         self.turn_rate_std = turn_rate_std
         self.stop_go_p = stop_go_p
+
+        if mode_probs is None:
+            self.mode_probs = None
+        else:
+            mp = np.asarray(mode_probs, dtype=np.float64).reshape(-1)
+            if mp.size != 4 or np.any(mp < 0) or mp.sum() <= 0:
+                raise ValueError(
+                    f"mode_probs must be 4 non-negative entries summing to >0, got {mode_probs}"
+                )
+            self.mode_probs = mp / mp.sum()
 
         self.goal_directed_frac = float(goal_directed_frac)
         self.goal_speed_range = goal_speed_range
@@ -424,7 +441,10 @@ class QuadWorldEnv3D(BaseAviary):
             else:
                 # 1. Mode Switch
                 if ob.mode_ttl <= 0 or self.rng.random() < self.mode_switch_p:
-                    ob.mode = self.rng.integers(0, 4)
+                    if self.mode_probs is None:
+                        ob.mode = self.rng.integers(0, 4)
+                    else:
+                        ob.mode = int(self.rng.choice(4, p=self.mode_probs))
                     ob.mode_ttl = self.rng.integers(self.mode_min_ttl, self.mode_max_ttl)
                 ob.mode_ttl -= 1
 
