@@ -22,16 +22,23 @@ TABLE_CITE = {"ACP-MPC": r"~\cite{dixit2023adaptive}",
               "FCP-MPC (hard)": "", "FCP-MPC (soft)": ""}
 SOFT_INFEAS_NA = {"CC-MPC", "FCP-MPC (soft)"}
 
-# Preserved control-time (ms) from the contention-free sequential timing pass
-# (unchanged by the start-altitude fix). Keyed by density.
+# Per-step control time (ms): fair, contention-free, STEADY-STATE timing measured by
+# quadrotor/retime_fair_3d.py, all five methods on one machine, mean over 5 seeds
+# (steady-state window after ECP's online calibration set has filled, so ECP is no longer
+# under-reported by its cheap warmup/early-crash steps; CC/ACP/FCP have constant per-step
+# cost so their steady-state == full-episode mean). Replaces the earlier pass in which ECP
+# was biased low. NOTE: this machine is ~2.1x faster than the server the prior numbers were
+# taken on, so the absolute ms (and the 100 ms-budget verdicts) differ; the relative
+# ordering is machine-invariant.
 CTRL_MS = {
-    280: {"ACP-MPC": 215.9, "CC-MPC": 209.0, "ECP-MPC": 1282.9,
-          "FCP-MPC (hard)": 40.2, "FCP-MPC (soft)": 160.7},
-    50:  {"ACP-MPC": 42.2, "CC-MPC": 40.8, "ECP-MPC": 198.8,
-          "FCP-MPC (hard)": 25.9, "FCP-MPC (soft)": 38.2},
+    280: {"ACP-MPC": 100.3, "CC-MPC": 94.2, "ECP-MPC": 2399.1,
+          "FCP-MPC (hard)": 19.9, "FCP-MPC (soft)": 74.8},
+    50:  {"ACP-MPC": 17.2, "CC-MPC": 16.8, "ECP-MPC": 458.8,
+          "FCP-MPC (hard)": 8.7, "FCP-MPC (soft)": 16.7},
 }
-OUT_TEX = {280: os.path.join(PAPER, "table_3d_results.tex"),
-           50: os.path.join(PAPER, "table_3d_sparse.tex")}
+TABLES = os.path.join(HERE, "tables")   # tables live in quadrotor/tables/ (mirrors planar/tables/)
+OUT_TEX = {280: os.path.join(TABLES, "table_3d_results.tex"),
+           50: os.path.join(TABLES, "table_3d_sparse.tex")}
 
 
 def _steps_cell(rs, max_steps):
@@ -146,7 +153,11 @@ def build_table(results, density):
 
 
 def main():
-    d = pickle.load(open(os.path.join(HERE, "outcomes_3d_fixed.pkl"), "rb"))
+    os.makedirs(TABLES, exist_ok=True)
+    pkl_path = os.path.join(HERE, "outcomes_3d_fixed.pkl")
+    if not os.path.isfile(pkl_path):
+        pkl_path = os.path.join(os.path.dirname(HERE), "outcomes_3d_fixed.pkl")  # repo root
+    d = pickle.load(open(pkl_path, "rb"))
     results = [{"label": r["label"], "n_obs": r["n_obs"], **r["metrics"]} for r in d["main"]]
     for density in (280, 50):
         sub = [m for m in results if m["n_obs"] == density]

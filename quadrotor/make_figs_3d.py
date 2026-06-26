@@ -86,7 +86,10 @@ METHODS = [
     ("CC-MPC",      run_cc,  {"break_on_collision": True},                       "#7f7f7f", 1.6, 2),
     ("ECP-MPC",     run_ecp, {"miscoverage_level": 0.10, "step_size": 0.05, "break_on_collision": True}, "#ff7f0e", 1.6, 2),
     ("ACP-MPC",     run_acp, {"target_miscoverage_level": 0.10, "step_size": 0.05, "break_on_collision": True}, "#9467bd", 1.6, 2),
-    ("FCP-MPC (ours)", run_fcp, {"CP": True, "alpha": 0.10, "break_on_collision": True}, "#1f77b4", 2.6, 4),
+    # "ours" is the SOFT headline variant (matches the paper's Fig. 10 and Table IV/V soft
+    # row). run_fcp defaults to safety_mode="hard", which times out at N=280 and would draw
+    # an FCP line that never reaches the goal, so the soft mode is pinned explicitly here.
+    ("FCP-MPC (ours)", run_fcp, {"CP": True, "alpha": 0.10, "safety_mode": "soft", "break_on_collision": True}, "#1f77b4", 2.6, 4),
 ]
 
 
@@ -182,6 +185,25 @@ def _smooth_path(traj, n_out: int = 240, frac: float = 0.25):
     return np.column_stack([interp1d(u, sm[:, k], kind="cubic")(uu) for k in range(3)])
 
 
+def _draw_drone_glyph_3d(ax, center, *, size=0.55, color="#11364f", zorder=11):
+    """Draw a small quadrotor glyph (X-frame + 4 rotor rings) at `center`, marking the
+    FCP-MPC executed path -- the 3D analogue of the wheeled-robot glyph on the 2D FCP
+    trajectory (Fig. 8). Pure matplotlib primitives, so it rotates with the 3D view and
+    needs no image asset."""
+    cx, cy, cz = float(center[0]), float(center[1]), float(center[2])
+    arm = float(size)              # arm half-length
+    rot = float(size) * 0.45       # rotor-ring radius
+    th = np.linspace(0.0, 2.0 * np.pi, 28)
+    inv = 1.0 / np.sqrt(2.0)
+    for dx, dy in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+        ex, ey = cx + arm * dx * inv, cy + arm * dy * inv
+        ax.plot([cx, ex], [cy, ey], [cz, cz], color=color, lw=1.5,
+                solid_capstyle="round", zorder=zorder)
+        ax.plot(ex + rot * np.cos(th), ey + rot * np.sin(th), np.full_like(th, cz),
+                color=color, lw=1.1, zorder=zorder)
+    ax.scatter([cx], [cy], [cz], color=color, s=16, depthshade=False, zorder=zorder + 1)
+
+
 def make_figure(data: dict, out_path: str) -> None:
     seeds = sorted(data.keys())[:3]
     n = len(seeds)
@@ -207,6 +229,10 @@ def make_figure(data: dict, out_path: str) -> None:
                 sm = _smooth_path(traj)
                 ax.plot(sm[:, 0], sm[:, 1], sm[:, 2],
                         color=color, lw=lw, alpha=0.95, zorder=z)
+                # mark the FCP-MPC (ours) executed path with a quadrotor glyph (2D analogue:
+                # the wheeled-robot glyph on the FCP trajectory in Fig. 8)
+                if name == "FCP-MPC (ours)" and len(sm) >= 3:
+                    _draw_drone_glyph_3d(ax, sm[int(0.6 * (len(sm) - 1))])
             else:
                 # crashed almost immediately (one logged pose): still show the
                 # method with a colored dot so it does not vanish from the panel.
@@ -254,8 +280,11 @@ def make_figure(data: dict, out_path: str) -> None:
                markersize=12, label="goal"),
         Line2D([0], [0], marker="x", color="#d62728", linestyle="none",
                markersize=8, markeredgewidth=2.0, label="crash"),
+        Line2D([0], [0], marker="P", color="none", markerfacecolor="#11364f",
+               markeredgecolor="#11364f", markersize=9, linestyle="none",
+               label="drone (ours)"),
     ]
-    labels += ["start", "goal", "crash"]
+    labels += ["start", "goal", "crash", "drone (ours)"]
     fig.legend(handles, labels, loc="lower center", ncol=len(handles),
                fontsize=9, frameon=False, bbox_to_anchor=(0.5, -0.02),
                columnspacing=1.3, handletextpad=0.5)

@@ -1,0 +1,41 @@
+\begin{tabular}{lccccc}
+\hline
+Method &
+Collision rate $\downarrow$ &
+Infeasible rate $\downarrow$ &
+Steps to goal $\downarrow$ &
+Ctrl.\ time (ms) $\downarrow$ &
+Goal reached $\uparrow$ \\
+\hline
+ACP-MPC~\cite{dixit2023adaptive}
+& $0.049\pm0.114$
+& $0.125\pm0.161$
+& timeout
+& 100.3
+& 0\% \\
+CC-MPC~\cite{lekeufack2024decision}
+& $0.053\pm0.040$
+& N/A
+& $124.4\pm9.5$
+& 94.2
+& 41\% \\
+ECP-MPC~\cite{shin2025egocentric}
+& $0.036\pm0.058$
+& $\mathbf{0.082}\pm0.068$
+& timeout
+& 2399.1
+& 0\% \\
+FCP-MPC (hard)
+& $\mathbf{0.023}\pm0.036$
+& $0.833\pm0.118$
+& timeout
+& \textbf{19.9}
+& 0\% \\
+FCP-MPC (soft)
+& $0.028\pm0.032$
+& N/A
+& $\mathbf{100.4}\pm33.2$
+& 74.8
+& \textbf{100\%} \\
+\hline
+\end{tabular}

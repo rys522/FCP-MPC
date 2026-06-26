@@ -32,13 +32,18 @@ def main():
     # table-only. Without this remap FCP is dropped from the scalability plot entirely.
     df['method_display'] = df['method_display'].replace({'FCP-MPC (soft)': 'FCP-MPC (ours)'})
 
-    # colours/markers consistent with the trajectory figure (make_figs_3d); ours emphasized
+    # colours/markers consistent with the trajectory figure (make_figs_3d); ours emphasized.
+    # CC and ACP land within ~5% of each other, so they visually merge. To separate them we
+    # draw CC as a thick, slightly transparent gray "band" underneath and ACP as a thin,
+    # opaque purple line with a higher zorder on top -- the purple reads cleanly through the
+    # gray, and the distinct markers (o vs ^) disambiguate at each point.
+    # tuple: (color, linestyle, marker, linewidth, markersize, zorder, alpha)
     style = {
-        "CC-MPC":         ("#7f7f7f", "-",  "o", 1.8, 5),
-        "ECP-MPC":        ("#ff7f0e", "-",  "s", 1.8, 5),
-        "ACP-MPC":        ("#9467bd", "-",  "^", 1.8, 5),
-        "Nominal MPC":    ("#8c564b", "--", "D", 1.8, 5),
-        "FCP-MPC (ours)": ("#1f77b4", "-",  "*", 2.8, 9),
+        "CC-MPC":         ("#7f7f7f", "-",  "o", 3.6, 5.5, 2, 0.80),
+        "ECP-MPC":        ("#ff7f0e", "-",  "s", 1.8, 5.0, 3, 1.0),
+        "ACP-MPC":        ("#9467bd", "-",  "^", 1.5, 5.0, 5, 1.0),
+        "Nominal MPC":    ("#8c564b", "--", "D", 1.8, 5.0, 2, 1.0),
+        "FCP-MPC (ours)": ("#1f77b4", "-",  "*", 2.8, 9.0, 6, 1.0),
     }
     # Nominal MPC is shown in the table but excluded from the scalability plot.
     order = [m for m in ["CC-MPC", "ECP-MPC", "ACP-MPC", "FCP-MPC (ours)"]
@@ -56,9 +61,10 @@ def main():
         sub = (df[df['method_display'] == m]
                .groupby('n_obs').apply(_per_step_mean).reset_index(name='ctrl_mean_ms')
                .sort_values('n_obs'))
-        c, ls, mk, lw, ms = style.get(m, ("0.5", "-", "o", 1.8, 5))
+        c, ls, mk, lw, ms, zo, al = style.get(m, ("0.5", "-", "o", 1.8, 5, 2, 1.0))
         plt.plot(sub['n_obs'], sub['ctrl_mean_ms'], color=c, linestyle=ls,
-                 marker=mk, linewidth=lw, markersize=ms, label=m)
+                 marker=mk, linewidth=lw, markersize=ms, zorder=zo, alpha=al,
+                 label=m, markeredgecolor=c)
 
     plt.yscale('log')
 
