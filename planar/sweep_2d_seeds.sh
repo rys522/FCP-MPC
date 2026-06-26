@@ -1,44 +1,33 @@
 #!/bin/bash
-# Measure per-controller control (planning) time in the 2D pedestrian benchmarks
-# and rebuild the LaTeX results/ablation tables.
+# 2D multi-seed sweep: run every (dataset, controller) over N MPPI sampler seeds so the
+# result tables can report mean +/- std. Each run writes metric/{ds}_{ctrl}__s{seed}.json
+# (suffix keeps per-seed runs from overwriting each other); aggregate with:
+#   python make_table_2d_std.py --seeds 0-9 [--write-paper]
 #
-# Runs every (dataset, controller) pair SEQUENTIALLY in a single process so the
-# per-step control timing (timing_ctrl_ms) is free of CPU contention. Each run
-# writes planar/metric/<dataset>_<controller>.json; make_table_2d.py then
-# aggregates the masked, per-scene control-time means into the paper tables.
-#
-# Usage:
-#   conda run -n cp bash planar/sweep_2d_seeds.sh                 # all datasets
-#   conda run -n cp bash planar/sweep_2d_seeds.sh --datasets zara1 eth
-set -euo pipefail
+# Usage:  ./sweep_2d_seeds.sh [n_seeds]      (default 10 -> seeds 0..9)
+# Env:    CONDA_ENV (default urban-nav)
+set -u
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$HERE"
+source /home/jaeuk/anaconda3/etc/profile.d/conda.sh 2>/dev/null && conda activate "${CONDA_ENV:-urban-nav}"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PY="${PY:-python}"   # invoke via `conda run -n cp bash ...` so this resolves to the cp env
+NSEEDS="${1:-10}"
+CTRLS="acp-mpc cc ecp-mpc fcp-hard-nonadaptive fcp-hard-adaptive fcp-soft-nonadaptive fcp-soft-adaptive"
+DSETS="eth hotel univ zara1 zara2"
+LOGDIR="$HERE/sweep_logs"; mkdir -p "$LOGDIR"
+PROG="$LOGDIR/sweep_progress.log"; : > "$PROG"
 
-DATASETS=("eth" "hotel" "univ" "zara1" "zara2")
-CONTROLLERS=("cc" "ecp-mpc" "acp-mpc" \
-             "fcp-hard-adaptive" "fcp-hard-nonadaptive" \
-             "fcp-soft-adaptive" "fcp-soft-nonadaptive")
-
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --datasets) shift; DATASETS=(); while [[ $# -gt 0 && "$1" != --* ]]; do DATASETS+=("$1"); shift; done ;;
-    --controllers) shift; CONTROLLERS=(); while [[ $# -gt 0 && "$1" != --* ]]; do CONTROLLERS+=("$1"); shift; done ;;
-    *) echo "unknown arg: $1"; exit 1 ;;
-  esac
-done
-
-echo "[sweep] datasets: ${DATASETS[*]}"
-echo "[sweep] controllers: ${CONTROLLERS[*]}"
-
-for dataset in "${DATASETS[@]}"; do
-  for controller in "${CONTROLLERS[@]}"; do
-    echo "==== ${dataset} / ${controller} ===="
-    "$PY" "$SCRIPT_DIR/runner_2d.py" --dataset "$dataset" --controller "$controller"
+t0=$(date +%s)
+echo "2D seed sweep: ${NSEEDS} seeds x 5 datasets x 7 controllers" | tee -a "$PROG"
+for ((sd=0; sd<NSEEDS; sd++)); do
+  for ds in $DSETS; do
+    for c in $CTRLS; do
+      python runner_2d.py --dataset "$ds" --controller "$c" --seed "$sd" --out-suffix "__s$sd" \
+        > "$LOGDIR/run_${ds}_${c}_s${sd}.log" 2>&1
+      rc=$?
+      [ $rc -ne 0 ] && echo "FAIL s$sd/$ds/$c rc=$rc :: $(tail -1 "$LOGDIR/run_${ds}_${c}_s${sd}.log")" >> "$PROG"
+    done
   done
+  echo "[seed $sd done] elapsed $(( $(date +%s)-t0 ))s" >> "$PROG"
 done
-
-echo "[sweep] rebuilding 2D tables..."
-cd "$SCRIPT_DIR"
-"$PY" "$SCRIPT_DIR/make_table_2d.py"
-echo "[sweep] done -> planar/tables/table_2d_results.tex , planar/tables/table_2d_ablation.tex"
+echo "SWEEP COMPLETE elapsed $(( $(date +%s)-t0 ))s" | tee -a "$PROG"

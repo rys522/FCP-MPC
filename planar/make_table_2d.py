@@ -110,14 +110,23 @@ def masked(lst, mask):
     return out
 
 
-def ctrl_time_mean(d, mask):
-    """Average the per-scene mean controller time over valid scenes only."""
+def _ctrl_time_vals(d, mask):
     timing = d.get("timing_ctrl_ms", []) or []
     vals = []
     for i, m in enumerate(mask):
         if m and i < len(timing) and isinstance(timing[i], dict):
             vals.append(safe_float(timing[i].get("mean")))
-    return nanmean_or_nan(vals)
+    return vals
+
+
+def ctrl_time_mean(d, mask):
+    """Average the per-scene mean controller time over valid scenes only."""
+    return nanmean_or_nan(_ctrl_time_vals(d, mask))
+
+
+def ctrl_time_std(d, mask):
+    """Std of the per-scene mean controller time over valid scenes only."""
+    return nanstd_or_nan(_ctrl_time_vals(d, mask))
 
 
 def format_steps(val, max_steps):
@@ -159,7 +168,8 @@ def load_results(dataset, controller_keys):
         if not any(mask):
             results[key] = {"collision": nan, "collision_std": nan,
                             "infeasible": nan, "infeasible_std": nan,
-                            "steps": nan, "steps_std": nan, "ctrl_ms": nan}
+                            "steps": nan, "steps_std": nan,
+                            "ctrl_ms": nan, "ctrl_ms_std": nan}
             continue
 
         coll = masked(d.get("collision", []), mask)
@@ -169,7 +179,7 @@ def load_results(dataset, controller_keys):
             "collision": nanmean_or_nan(coll),   "collision_std": nanstd_or_nan(coll),
             "infeasible": nanmean_or_nan(infe),   "infeasible_std": nanstd_or_nan(infe),
             "steps": nanmean_or_nan(stp),         "steps_std": nanstd_or_nan(stp),
-            "ctrl_ms": ctrl_time_mean(d, mask),
+            "ctrl_ms": ctrl_time_mean(d, mask),   "ctrl_ms_std": ctrl_time_std(d, mask),
         }
     return present, results
 
@@ -236,10 +246,9 @@ def render_metric_cells(dataset, r, best, infeas_na=False):
         s_best = abs(s - best["steps"]) < 1e-9
         s_str = pm(s, r.get("steps_std", float("nan")), 1, s_best)
 
-    # control time: single value (matches the 3D table), \textbf-bold when best
-    t_str = fmt(t, 2)
-    if math.isfinite(t) and abs(t - best["ctrl_ms"]) < 1e-9:
-        t_str = bold(t_str)
+    # control time: mean$\pm$std, \mathbf-bold mean when best
+    t_best = math.isfinite(t) and abs(t - best["ctrl_ms"]) < 1e-9
+    t_str = pm(t, r.get("ctrl_ms_std", float("nan")), 2, t_best)
 
     return c_str, i_str, s_str, t_str
 

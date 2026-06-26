@@ -163,6 +163,14 @@ def run_one_episode_rerun_simple(
         )
         t1 = time.perf_counter()
 
+        # Lekeufack et al. (2024) online conformal-decision update: adapt the avoidance
+        # weight lambda from the realized robot-obstacle clearance each step. This is the
+        # defining online adaptation of CC-MPC [11] and was already wired into the 2D
+        # deployment (planar/sims/sim_cc.py) but missing here. Kept OUTSIDE the timed
+        # window, exactly as in the 2D CC loop and ECP's ACI update, so the reported
+        # control time stays the MPC solve and the CC/baseline timing stays comparable.
+        ctrl.update_conformal_var(robot, obs.get("history", {}))
+
         is_feasible = bool(info.get("feasible", False))
         if not is_feasible:
             n_infeasible += 1

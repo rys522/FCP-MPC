@@ -18,6 +18,10 @@ parser.add_argument("--dataset", help="id of dataset to evaluate on", type=str, 
 parser.add_argument("--controller", help="control method to use", type=str, required=True)
 parser.add_argument("--visualize", help="visualize rollout", action='store_true')
 parser.add_argument("--asset_dir", help="asset dirpath for visualization", type=str)
+parser.add_argument("--seed", help="RNG seed for the MPPI sampler (variance source)", type=int, default=0)
+parser.add_argument("--out-suffix", dest="out_suffix",
+                    help="suffix appended to the metric JSON filename (e.g. __s3) so "
+                         "per-seed runs do not overwrite each other", type=str, default="")
 args = parser.parse_args()
 
 
@@ -121,7 +125,12 @@ if __name__ == "__main__":
         # starts with long consecutive prediction runs instead.
         'eth': [732, 339, 653],
         'hotel': [1001, 1245, 1582],
-        'univ': [100]
+        # univ has a single fixed recording (frames 1..540); we draw 3 episodes by
+        # varying the robot's entry phase into it. Pedestrians replay deterministically
+        # and are independent of the robot, so each phase exposes a different crowd
+        # configuration -> a clean, data-driven variance source (the 2D analog of the
+        # 3D obstacle realizations). 300-step episodes keep starts <=240.
+        'univ': [40, 140, 240]
     }
 
     init_frames = {
@@ -151,6 +160,10 @@ if __name__ == "__main__":
     ctrl_kwargs = controller_configs.get(args.controller, {})
 
     predictions = load_prediction_results(args.dataset)
+
+    # Reseed right before the rollout so --seed actually varies the MPPI sampler
+    # (the per-seed variance source aggregated into mean +/- std).
+    np.random.seed(args.seed)
 
     metric_dict, trajectories = eval_func(
         dataset=args.dataset,
