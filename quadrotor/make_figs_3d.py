@@ -83,13 +83,18 @@ EXP_BASE = dict(
 # (label, run_fn, method-specific kwargs, colour, linewidth, zorder).
 # Colours/labels mirror make_figs_2d.py; FCP (ours) is emphasised and drawn on top.
 METHODS = [
-    ("CC-MPC",      run_cc,  {"break_on_collision": True},                       "#7f7f7f", 1.6, 2),
-    ("ECP-MPC",     run_ecp, {"miscoverage_level": 0.10, "step_size": 0.05, "break_on_collision": True}, "#ff7f0e", 1.6, 2),
-    ("ACP-MPC",     run_acp, {"target_miscoverage_level": 0.10, "step_size": 0.05, "break_on_collision": True}, "#9467bd", 1.6, 2),
+    # Colours matched to the paper's Fig. 10 (sampled from the PDF): CC=magenta, ECP=red,
+    # ACP=blue, FCP=teal.
+    # ACP/ECP barely move (~2 m) at N=280 -- too conservative to thread the field -- so their
+    # trajectories are short stubs near the start. Give them a heavier line and a higher zorder
+    # than CC so the stubs stay visible through the (now wandering/crashing) CC clutter.
+    ("CC-MPC",      run_cc,  {"break_on_collision": True},                       "#c84898", 1.6, 2),
+    ("ECP-MPC",     run_ecp, {"miscoverage_level": 0.10, "step_size": 0.05, "break_on_collision": True}, "#d85838", 2.6, 3),
+    ("ACP-MPC",     run_acp, {"target_miscoverage_level": 0.10, "step_size": 0.05, "break_on_collision": True}, "#2868a8", 2.6, 3),
     # "ours" is the SOFT headline variant (matches the paper's Fig. 10 and Table IV/V soft
     # row). run_fcp defaults to safety_mode="hard", which times out at N=280 and would draw
     # an FCP line that never reaches the goal, so the soft mode is pinned explicitly here.
-    ("FCP-MPC (ours)", run_fcp, {"CP": True, "alpha": 0.10, "safety_mode": "soft", "break_on_collision": True}, "#1f77b4", 2.6, 4),
+    ("FCP-MPC (ours)", run_fcp, {"CP": True, "alpha": 0.10, "safety_mode": "soft", "break_on_collision": True}, "#28a8a8", 2.6, 4),
 ]
 
 
@@ -185,7 +190,10 @@ def _smooth_path(traj, n_out: int = 240, frac: float = 0.25):
     return np.column_stack([interp1d(u, sm[:, k], kind="cubic")(uu) for k in range(3)])
 
 
-def _draw_drone_glyph_3d(ax, center, *, size=0.55, color="#11364f", zorder=11):
+N_DRONE_GLYPHS = 5   # number of quadrotor glyphs spaced along the FCP path (matches Fig. 10)
+
+
+def _draw_drone_glyph_3d(ax, center, *, size=0.42, color="#1f1f1f", zorder=11):
     """Draw a small quadrotor glyph (X-frame + 4 rotor rings) at `center`, marking the
     FCP-MPC executed path -- the 3D analogue of the wheeled-robot glyph on the 2D FCP
     trajectory (Fig. 8). Pure matplotlib primitives, so it rotates with the 3D view and
@@ -229,10 +237,11 @@ def make_figure(data: dict, out_path: str) -> None:
                 sm = _smooth_path(traj)
                 ax.plot(sm[:, 0], sm[:, 1], sm[:, 2],
                         color=color, lw=lw, alpha=0.95, zorder=z)
-                # mark the FCP-MPC (ours) executed path with a quadrotor glyph (2D analogue:
-                # the wheeled-robot glyph on the FCP trajectory in Fig. 8)
+                # mark the FCP-MPC (ours) executed path with quadrotor glyphs spaced along
+                # it (matches the paper's Fig. 10, which shows several drones on the FCP path)
                 if name == "FCP-MPC (ours)" and len(sm) >= 3:
-                    _draw_drone_glyph_3d(ax, sm[int(0.6 * (len(sm) - 1))])
+                    for f in np.linspace(0.12, 0.90, N_DRONE_GLYPHS):
+                        _draw_drone_glyph_3d(ax, sm[int(f * (len(sm) - 1))])
             else:
                 # crashed almost immediately (one logged pose): still show the
                 # method with a colored dot so it does not vanish from the panel.
@@ -252,11 +261,11 @@ def make_figure(data: dict, out_path: str) -> None:
         if start_pt is None:
             start_pt = d.get("start")
         if start_pt is not None:
-            ax.scatter(*start_pt, c="#2ca02c", s=45, marker="s",
+            ax.scatter(*start_pt, c="#7f7f7f", s=45, marker="o",
                        depthshade=False, zorder=6)
         if d.get("goal") is not None:
-            ax.scatter(*d["goal"], c="#111111", s=90, marker="*",
-                       depthshade=False, zorder=7)
+            ax.scatter(*d["goal"], c="#e0a800", s=80, marker="o",
+                       edgecolors="#9a7400", depthshade=False, zorder=7)
 
         ax.set_xlim(x0, x1); ax.set_ylim(y0, y1); ax.set_zlim(z0, z1)
         ax.set_box_aspect((1, 1, 0.7))
@@ -274,17 +283,14 @@ def make_figure(data: dict, out_path: str) -> None:
     handles = [Line2D([0], [0], color=c, lw=2.2) for _n, _f, _e, c, _lw, _z in METHODS]
     labels = [m[0] for m in METHODS]
     handles += [
-        Line2D([0], [0], marker="s", color="none", markerfacecolor="#2ca02c",
+        Line2D([0], [0], marker="o", color="none", markerfacecolor="#7f7f7f",
                markersize=8, label="start"),
-        Line2D([0], [0], marker="*", color="none", markerfacecolor="#111111",
-               markersize=12, label="goal"),
+        Line2D([0], [0], marker="o", color="none", markerfacecolor="#e0a800",
+               markeredgecolor="#9a7400", markersize=9, label="goal"),
         Line2D([0], [0], marker="x", color="#d62728", linestyle="none",
                markersize=8, markeredgewidth=2.0, label="crash"),
-        Line2D([0], [0], marker="P", color="none", markerfacecolor="#11364f",
-               markeredgecolor="#11364f", markersize=9, linestyle="none",
-               label="drone (ours)"),
     ]
-    labels += ["start", "goal", "crash", "drone (ours)"]
+    labels += ["start", "goal", "crash"]
     fig.legend(handles, labels, loc="lower center", ncol=len(handles),
                fontsize=9, frameon=False, bbox_to_anchor=(0.5, -0.02),
                columnspacing=1.3, handletextpad=0.5)

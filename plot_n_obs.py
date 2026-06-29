@@ -38,12 +38,15 @@ def main():
     # opaque purple line with a higher zorder on top -- the purple reads cleanly through the
     # gray, and the distinct markers (o vs ^) disambiguate at each point.
     # tuple: (color, linestyle, marker, linewidth, markersize, zorder, alpha)
+    # Colors matched to the paper's Fig. 10 (sampled from the PDF): CC=magenta, ECP=red,
+    # ACP=blue, FCP=teal. With distinct hues, CC and ACP are separable even where their
+    # values nearly coincide; FCP (ours, teal) is emphasized.
     style = {
-        "CC-MPC":         ("#7f7f7f", "-",  "o", 3.6, 5.5, 2, 0.80),
-        "ECP-MPC":        ("#ff7f0e", "-",  "s", 1.8, 5.0, 3, 1.0),
-        "ACP-MPC":        ("#9467bd", "-",  "^", 1.5, 5.0, 5, 1.0),
+        "CC-MPC":         ("#c84898", "-",  "o", 2.0, 5.0, 3, 1.0),
+        "ECP-MPC":        ("#d85838", "-",  "s", 2.0, 5.0, 3, 1.0),
+        "ACP-MPC":        ("#2868a8", "-",  "^", 2.0, 5.0, 4, 1.0),
         "Nominal MPC":    ("#8c564b", "--", "D", 1.8, 5.0, 2, 1.0),
-        "FCP-MPC (ours)": ("#1f77b4", "-",  "*", 2.8, 9.0, 6, 1.0),
+        "FCP-MPC (ours)": ("#28a8a8", "-",  "*", 3.0, 9.5, 6, 1.0),
     }
     # Nominal MPC is shown in the table but excluded from the scalability plot.
     order = [m for m in ["CC-MPC", "ECP-MPC", "ACP-MPC", "FCP-MPC (ours)"]
@@ -74,7 +77,9 @@ def main():
     plt.xticks([10, 50, 100, 150, 200, 280], fontsize=10)
     plt.yticks(fontsize=10)
     plt.tick_params(axis='both', which='major', labelsize=10)
-    plt.legend(fontsize=9.5, loc='upper left', frameon=True, framealpha=0.9)
+    # legend outside the axes (above the plot), 2 columns
+    plt.legend(fontsize=9.5, loc='lower center', bbox_to_anchor=(0.5, 1.02),
+               ncol=2, columnspacing=1.3, handletextpad=0.5, frameon=False)
     plt.tight_layout()
 
     os.makedirs(os.path.dirname(OUT_PATH) or ".", exist_ok=True)
