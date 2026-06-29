@@ -30,6 +30,18 @@
 !planar/assets/homographies/
 !planar/assets/homographies/*.txt
 
+# Backup snapshots (e.g. metric/*.json.de100bak kept locally for revert to de=1.0).
+**/*.bak
+**/*.de100bak
+
+# Exploratory work that backs decisions but is not part of the paper:
+#  - planar/_scratch/      : oracle/ICS experiment + delta_evade / w_safety sweep scripts
+#  - planar/metric_oracle/ : their outputs (reports, figures, raw pickles)
+#  - **/T_RO2026/          : local paper-sync copies of tables (the paper repo is external)
+planar/_scratch/
+planar/metric_oracle/
+**/T_RO2026/
+
 # Raw SDD dataset (downloaded, large) -- not tracked; re-fetch per docs/HANDOFF.md.
 SDD/
 sdd_data/

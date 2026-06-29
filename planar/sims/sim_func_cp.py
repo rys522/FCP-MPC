@@ -265,6 +265,7 @@ def run_fcp_mpc(
     adaptive: bool = True,                  # True = ACP online update; False = fixed offline coeffs
     safety_mode: str = "hard",              # "hard" = filter paths; "soft" = penalty in cost
     w_safety: float = 50.0,                 # soft-mode safety-shaping weight (declared hyperparameter)
+    evade_relax_scale: float = 1.0,         # far-horizon clearance relaxation scale (1.0=orig, 0.0=strict)
 ):
     # ----- fixed controller settings -----
     # Horizon unified to 12 = the predictor's horizon = the baselines' horizon, for a clean
@@ -353,6 +354,7 @@ def run_fcp_mpc(
             adaptive=bool(adaptive),
             safety_mode=str(safety_mode),
             weights=FuncMPCWeights(w_safety=float(w_safety)),
+            evade_relax_scale=float(evade_relax_scale),
         )
 
         robot_xy = np.asarray(init_robot_pose[:2], dtype=np.float32).copy()

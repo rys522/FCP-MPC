@@ -93,10 +93,36 @@ if __name__ == "__main__":
         # Legacy alias (hard + adaptive)
         'fcp-mpc': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': True, 'safety_mode': 'hard'},
         # Four explicit variants for the ablation study
-        'fcp-hard-adaptive':    {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': True,  'safety_mode': 'hard'},
-        'fcp-hard-nonadaptive': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'hard'},
+        # Default hard relaxation reduced 1.0 -> 0.5: the original a_lat=vmax*wmax overestimates
+        # a unicycle's evasion, doubling collisions for no completion gain (univ 0.416 -> 0.204
+        # at the same goal-reach). 0.5 is the swept sweet spot. See metric_oracle/DE_DECISION.md.
+        'fcp-hard-adaptive':    {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': True,  'safety_mode': 'hard', 'evade_relax_scale': 0.5},
+        'fcp-hard-nonadaptive': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'hard', 'evade_relax_scale': 0.5},
         'fcp-soft-adaptive':    {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': True,  'safety_mode': 'soft', 'w_safety': 100.0},
         'fcp-soft-nonadaptive': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 100.0},
+        # delta_evade ablation: FCP-hard-nonadaptive with the far-horizon clearance relaxation
+        # scaled down (de100 = original, de00 = strict full r_safe at every step).
+        'fcp-hard-de100': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'hard', 'evade_relax_scale': 1.0},
+        'fcp-hard-de50':  {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'hard', 'evade_relax_scale': 0.5},
+        'fcp-hard-de25':  {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'hard', 'evade_relax_scale': 0.25},
+        'fcp-hard-de00':  {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'hard', 'evade_relax_scale': 0.0},
+        # soft variant with the relaxation ON (current) vs OFF — to test "route dense to soft".
+        'fcp-soft-de100': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 100.0, 'evade_relax_scale': 1.0},
+        'fcp-soft-de00':  {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 100.0, 'evade_relax_scale': 0.0},
+        # DECISIVE TEST: soft, delta_evade OFF, sweep the penalty weight w. Does raising w
+        # recover the near-field safety delta_evade provided (matching soft-de1.0's collision)
+        # while keeping ~100% completion?  If yes -> w absorbs delta_evade (clean thesis).
+        'fcp-soft-de00-w25':  {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 25.0,   'evade_relax_scale': 0.0},
+        'fcp-soft-de00-w50':  {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 50.0,   'evade_relax_scale': 0.0},
+        'fcp-soft-de00-w200': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 200.0,  'evade_relax_scale': 0.0},
+        'fcp-soft-de00-w400': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 400.0,  'evade_relax_scale': 0.0},
+        'fcp-soft-de00-w800': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 800.0,  'evade_relax_scale': 0.0},
+        # delta ON, w sweep (the other half of the soft frontier).
+        'fcp-soft-de100-w25':  {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 25.0,  'evade_relax_scale': 1.0},
+        'fcp-soft-de100-w50':  {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 50.0,  'evade_relax_scale': 1.0},
+        'fcp-soft-de100-w200': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 200.0, 'evade_relax_scale': 1.0},
+        'fcp-soft-de100-w400': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 400.0, 'evade_relax_scale': 1.0},
+        'fcp-soft-de100-w800': {'target_miscoverage_level': 0.1, 'step_size': 10.0, 'adaptive': False, 'safety_mode': 'soft', 'w_safety': 800.0, 'evade_relax_scale': 1.0},
     }
 
     eval_functions = {
@@ -109,6 +135,11 @@ if __name__ == "__main__":
         'fcp-soft-adaptive':    run_fcp_mpc,
         'fcp-soft-nonadaptive': run_fcp_mpc,
     }
+    # Every fcp-* controller routes to run_fcp_mpc; register any defined above that
+    # isn't already mapped (covers the delta_evade / w_safety sweep variants).
+    for _k in controller_configs:
+        if _k.startswith('fcp') and _k not in eval_functions:
+            eval_functions[_k] = run_fcp_mpc
 
     eval_task_configs = {
         'zara1': {'init_robot_pose': np.array([12., 5., np.pi]), 'goal_pos': np.array([3., 6.])},
@@ -292,5 +323,8 @@ if __name__ == "__main__":
     save_dir = os.path.join(os.path.dirname(__file__), 'metric')
     os.makedirs(save_dir, exist_ok=True)
 
-    with open(os.path.join(save_dir, f'{args.dataset}_{args.controller}.json'), 'w') as f:
+    # Honor --out-suffix so per-seed sweeps (sweep_2d_seeds.sh, the delta_evade sweep)
+    # don't overwrite each other. Empty suffix reproduces the original filename.
+    out_name = f'{args.dataset}_{args.controller}{args.out_suffix}.json'
+    with open(os.path.join(save_dir, out_name), 'w') as f:
         json.dump(dict_to_save, f, ensure_ascii=False, indent=4)

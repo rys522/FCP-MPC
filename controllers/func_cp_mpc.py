@@ -319,6 +319,7 @@ class FunctionalCPMPC:
         CP: bool = True,
         adaptive: bool = True,
         safety_mode: str = "hard",
+        evade_relax_scale: float = 1.0,
     ):
         """
         Parameters
@@ -367,6 +368,10 @@ class FunctionalCPMPC:
         self.CP = CP
         self.adaptive = bool(adaptive)
         self.safety_mode = str(safety_mode).lower()
+        # Scales the far-horizon clearance relaxation delta_evade (1.0 = original behavior,
+        # 0.0 = strict full r_safe at every horizon step). Exposed so the dense-2D collision
+        # source can be ablated without forking the controller.
+        self.evade_relax_scale = float(evade_relax_scale)
         if self.safety_mode not in ("hard", "soft"):
             raise ValueError(f"safety_mode must be 'hard' or 'soft', got '{safety_mode}'")
 
@@ -791,7 +796,7 @@ class FunctionalCPMPC:
                 # lateral displacement the robot can still realize over the t steps remaining
                 # (Delta_0 = 0, so the applied/1-step keeps full clearance and the i=1
                 # guarantee is unaffected; relaxation only acts for t>=1, i.e. >=2 steps ahead).
-                delta_evade = 0.5 * (self.max_v * self.max_w) * (t * self.dt) ** 2
+                delta_evade = self.evade_relax_scale * 0.5 * (self.max_v * self.max_w) * (t * self.dt) ** 2
                 effective_r_safe = max(0.0, self.safe_rad - delta_evade)
                 hit = d_lower < effective_r_safe
 
@@ -958,7 +963,7 @@ class FunctionalCPMPC:
                     else:
                         d_lower = d_nom
 
-                    delta_evade = 0.5 * (self.max_v * self.max_w) * (t * self.dt) ** 2
+                    delta_evade = self.evade_relax_scale * 0.5 * (self.max_v * self.max_w) * (t * self.dt) ** 2
                     effective_r_safe = max(0.0, self.safe_rad - delta_evade)
                     violation = np.maximum(0.0, effective_r_safe - d_lower)
                     safety_pen += violation ** 2
